@@ -319,18 +319,20 @@ function renderTracking() {
         const textCol = dClass === 'late' ? 'var(--danger)' : 'var(--accent)';
 
         card.innerHTML = `
-            <div class="tracking-left">
-                <div class="tk-status" style="color: ${textCol}">${prazoText}</div>
-                <div class="tk-date"><i class="ph ph-calendar"></i> Prazo: ${dateDesc}</div>
-            </div>
             <div class="tracking-body">
-                <h3><i class="ph ph-buildings text-primary"></i> ${p.name}</h3>
+                <div class="flex-between mb-2">
+                    <h3 style="font-size: 1.4rem;"><i class="ph ph-buildings text-primary"></i> ${p.name}</h3>
+                    <div class="tk-status" style="color: ${textCol}; font-weight: 700; font-size: 1.1rem;">${prazoText}</div>
+                </div>
+                <div class="tk-date" style="margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">
+                    <i class="ph ph-calendar"></i> Prazo Final: <strong style="color:var(--text-main)">${p.dueDate ? dateDesc : '--/--/----'}</strong>
+                </div>
                 <div class="tk-progress-bg">
                     <div class="tk-progress-fill" style="width: ${progressPct}%; background: ${barColor};"></div>
                 </div>
                 <div class="tk-labels">
                     <span>Início: ${formatDateToPT(p.createdAt) || '--/--/----'}</span>
-                    <span>Fim: ${p.dueDate ? dateDesc : '--/--/----'}</span>
+                    <span>Progresso do Cronograma</span>
                 </div>
             </div>
         `;
