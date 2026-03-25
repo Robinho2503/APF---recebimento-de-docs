@@ -260,7 +260,15 @@ btnDeleteProject.addEventListener('click', () => {
 // Tracker Render
 function renderTracking() {
     trackingContainer.innerHTML = '';
-    const trackableProjects = state.projects.filter(p => p.id !== 'p_default');
+    let trackableProjects = state.projects.filter(p => p.id !== 'p_default');
+    
+    // Ordena de acordo com o prazo: quem está mais atrasado (negativo) ou próximo (0) aparece primeiro
+    trackableProjects.sort((a, b) => {
+        if (!a.dueDate && b.dueDate) return 1;
+        if (a.dueDate && !b.dueDate) return -1;
+        if (!a.dueDate && !b.dueDate) return 0;
+        return calculateDays(a.dueDate) - calculateDays(b.dueDate);
+    });
     
     if(trackableProjects.length === 0) {
         trackingContainer.innerHTML = '<p style="color:var(--text-muted); padding: 1rem; border: 1px dashed rgba(255,255,255,0.1); border-radius:0.5rem;"><i class="ph ph-warning"></i> Nenhum empreendimento ativo criado ainda. Primeiramente, crie no Acesso APF.</p>';
