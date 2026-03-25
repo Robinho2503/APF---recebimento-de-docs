@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checklist APF Avançado</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/@phosphor-icons/web@2.0.3/src/regular/style.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Project Selector Header -->
+        <header class="glass-panel project-header">
+            <div class="header-content">
+                <h1><i class="ph ph-buildings"></i> Checklist APF</h1>
+                <p>Sistema Gestor de Documentações e Prazos</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 2rem;">
+                <div class="project-selector" style="text-align: right;">
+                    <label for="project-select">Empreendimento:</label><br>
+                    <select id="project-select" class="input-modern" style="margin-top: 0.25rem;"></select>
+                </div>
+                <!-- Mgmt Button moved to top right -->
+                <button class="tab-btn apf-access-btn" data-tab="management">
+                    <i class="ph ph-shield-check"></i> <span style="font-weight: 600;">Acesso APF</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="content-area">
+            <nav class="tabs">
+                <button class="tab-btn active" data-tab="checklist">
+                    <i class="ph ph-list-checks"></i> Visão Geral
+                </button>
+                <button class="tab-btn" data-tab="tracking">
+                    <i class="ph ph-calendar-check"></i> Acompanhamento
+                </button>
+                <button class="tab-btn" data-tab="ai-insights">
+                    <i class="ph ph-magic-wand"></i> Insights IA
+                </button>
+            </nav>
+
+            <!-- Checklist Tab Content -->
+            <section id="tab-checklist" class="tab-content active glass-panel mt-4">
+                <div class="section-header flex-between mb-4">
+                    <div>
+                        <p style="font-size:1.5rem; margin-bottom:0.25rem;"><strong id="checklist-proj-name" style="color: white; font-weight:700;"></strong></p>
+                        <h2 style="font-size:1.15rem; color: var(--text-muted)">Entrega de documentação</h2>
+                    </div>
+                    <div id="project-global-countdown" class="date-info" style="text-align: right; background: rgba(0,0,0,0.2); padding: 0.5rem 1rem; border-radius: 0.5rem; display: none;">
+                        <!-- JS injected -->
+                    </div>
+                </div>
+                <!-- Drag Info Map -->
+                <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem;"><i class="ph ph-info"></i> Dica: Você pode anexar arquivos clicando em "Anexar" ou arrastando os arquivos diretamente para cima da subpasta desejada.</p>
+                <div id="checklist-render-area" class="tree-container">
+                    <!-- Tree rendered via JS -->
+                </div>
+            </section>
+
+            <!-- Tracking Tab Content -->
+            <section id="tab-tracking" class="tab-content glass-panel mt-4">
+                <div class="section-header" style="margin-bottom: 2.5rem;">
+                    <h2>Gestão de Prazos (Acompanhamento)</h2>
+                    <p>Visão global dos prazos e andamento de todos os Empreendimentos geridos na plataforma.</p>
+                </div>
+                <div id="tracking-render-area" style="display:flex; flex-direction:column; gap:1.5rem;">
+                    <!-- Tracker rendered via JS -->
+                </div>
+            </section>
+
+            <!-- AI Insights Tab Content -->
+            <section id="tab-ai-insights" class="tab-content glass-panel mt-4">
+                <div class="section-header">
+                    <h2>Inteligência Artificial & Analytics</h2>
+                    <p>O poderoso motor do Gemini avalia o fluxo de entregas, identifica documentações em atraso extremo e sumariza a eficácia dos Setores.</p>
+                </div>
+                <div class="flex-center" style="margin: 2.5rem 0;">
+                    <button id="btn-generate-ai" class="btn btn-primary" style="font-size: 1.15rem; padding: 1rem 2.5rem; border-radius: 1rem; box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);">
+                        <i class="ph ph-brain"></i> Gerar Análise Deep Analytics
+                    </button>
+                </div>
+                <div id="ai-loading" style="display:none; text-align:center; padding: 2rem; color:var(--primary);">
+                    <i class="ph ph-spinner ph-spin" style="font-size: 2.5rem;"></i>
+                    <p style="margin-top: 1rem;">O Gemini 1.5 está correlacionando os atributos e atrasos lógicos. Por favor, aguarde...</p>
+                </div>
+                <div id="ai-report-output" style="display:none; background: rgba(10, 15, 30, 0.5); padding: 2rem; border-radius: 0.75rem; border: 1px solid rgba(99, 102, 241, 0.2); line-height: 1.8; font-size: 0.95rem; color: var(--text-main);">
+                </div>
+            </section>
+
+            <!-- Acesso APF Tab Content -->
+            <section id="tab-management" class="tab-content glass-panel mt-4">
+                <!-- Lock Screen -->
+                <div id="password-lock">
+                    <i class="ph ph-shield-warning" style="font-size:3rem; color:var(--warning);"></i>
+                    <h2 style="color:var(--warning); margin-top:0.5rem; margin-bottom:1rem;">Acesso Restrito</h2>
+                    <p style="color:var(--text-muted); margin-bottom: 2rem;">Insira a senha de controle para gerenciar pastas, prazos e avaliações desse empreendimento.</p>
+                    <div class="auth-form flex-center">
+                        <input type="password" id="apf-password" class="input-modern text-center" placeholder="Senha" />
+                        <button id="btn-unlock" class="btn btn-primary"><i class="ph ph-key"></i> Desbloquear</button>
+                    </div>
+                    <p id="password-error" class="error-text mt-4 mx-auto text-center" style="display: none; font-weight: 500;">Senha incorreta. Dica: A senha requisitada é 1234</p>
+                </div>
+
+                <!-- Management Content -->
+                <div id="management-content" style="display: none;">
+                    <div class="section-header mb-4">
+                        <h2>Gestão APF: <span id="current-project-name"></span></h2>
+                        <p>Crie, edite pastas, valide os documentos das áreas e gerencie o prazo geral da entrega.</p>
+                        
+                        <div class="management-fields mt-4 flex-between" style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 0.5rem; flex-wrap: wrap;">
+                            <div>
+                                <label style="display:block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.2rem;">Data de Entrega (Geral)</label>
+                                <input type="date" id="project-due-date" class="input-modern">
+                            </div>
+                            <div style="flex-grow:1; display:flex; gap:0.5rem; justify-content: flex-end;">
+                                <button id="btn-new-project" class="btn btn-primary"><i class="ph ph-plus"></i> Novo Empreendimento</button>
+                                <button id="btn-delete-project" class="btn btn-danger" style="display:none;" title="Excluir Empreendimento Atual - Cuidado!"><i class="ph ph-trash"></i> Excluir Este Empreendimento</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <button id="btn-add-root" class="btn btn-primary">
+                            <i class="ph ph-folder-plus"></i> Nova Pasta Principal
+                        </button>
+                    </div>
+                    <div id="management-render-area" class="tree-container management-mode">
+                        <!-- Tree rendered via JS -->
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Preview Modal -->
+    <div id="preview-modal" class="modal-backdrop hidden">
+        <div class="modal glass-panel">
+            <div class="modal-header">
+                <h3 id="preview-title">Visualização</h3>
+                <button id="btn-close-modal" class="icon-btn"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body" id="preview-body"></div>
+            <div class="modal-footer">
+                <a id="preview-download-btn" href="#" download class="btn btn-primary">
+                    <i class="ph ph-download-simple"></i> Baixar Arquivo
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
