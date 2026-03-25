@@ -106,21 +106,24 @@
 
                 <!-- Management Content -->
                 <div id="management-content" style="display: none;">
-                    <div class="section-header mb-4">
-                        <h2>Gestão APF: <span id="current-project-name"></span></h2>
-                        <p>Crie, edite pastas, valide os documentos das áreas e gerencie o prazo geral da entrega.</p>
-                        
-                        <div class="management-fields mt-4 flex-between" style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 0.5rem; flex-wrap: wrap;">
-                            <div>
-                                <label style="display:block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.2rem;">Data de Entrega (Geral)</label>
-                                <input type="date" id="project-due-date" class="input-modern">
+                    <div class="management-controls mb-4" style="background: rgba(0,0,0,0.2); padding: 1.25rem; border-radius: 0.75rem; border: 1px solid rgba(255,255,255,0.05);">
+                        <div class="flex-between flex-wrap gap-4">
+                            <div style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+                                <button id="btn-new-project" class="btn btn-primary"><i class="ph ph-plus-circle"></i> Novo Empreendimento</button>
+                                <button id="btn-delete-project" class="btn btn-danger" style="display:none;" title="Excluir Empreendimento Atual - Cuidado!"><i class="ph ph-trash"></i> Excluir</button>
                             </div>
-                            <div style="flex-grow:1; display:flex; gap:0.5rem; justify-content: flex-end;">
-                                <button id="btn-new-project" class="btn btn-primary"><i class="ph ph-plus"></i> Novo Empreendimento</button>
-                                <button id="btn-delete-project" class="btn btn-danger" style="display:none;" title="Excluir Empreendimento Atual - Cuidado!"><i class="ph ph-trash"></i> Excluir Este Empreendimento</button>
+                            <div style="text-align: right;">
+                                <label style="display:block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.25rem;">Prazo Geral da Entrega</label>
+                                <input type="date" id="project-due-date" class="input-modern">
                             </div>
                         </div>
                     </div>
+
+                    <div class="section-header mb-4">
+                        <h2>Gestão de Pastas: <span id="current-project-name" style="color:var(--primary)"></span></h2>
+                        <p>Gerencie a estrutura de arquivos e valide documentações para este empreendimento.</p>
+                    </div>
+
                     <div class="mb-4">
                         <button id="btn-add-root" class="btn btn-primary">
                             <i class="ph ph-folder-plus"></i> Nova Pasta Principal
