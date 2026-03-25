@@ -772,7 +772,12 @@ function initAIEngine() {
             "DADOS ORGÂNICOS DESSA SESSÃO:\n\n" + reportData.join('\n\n');
 
         try {
-            const apiKey = 'AIzaSyALzzFoN-ilJeKwvQuwlaO9Cl6W2cvpwgU';
+            let apiKey = localStorage.getItem('apf_gemini_key');
+            if(!apiKey) {
+                apiKey = prompt("Google Gemini API Key não encontrada no seu navegador.\n\nPor motivos de segurança (o repositório é público no GitHub), a chave antiga foi revogada automaticamente pelo Google.\nPor favor, crie uma chave gratuita no site Google AI Studio e cole aqui:");
+                if(!apiKey) throw new Error("API Key não fornecida.");
+                localStorage.setItem('apf_gemini_key', apiKey);
+            }
             const aiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + apiKey;
             
             const aiRes = await fetch(aiUrl, {
@@ -781,7 +786,10 @@ function initAIEngine() {
                 body: JSON.stringify({ contents: [{ parts: [{ text: systemPrompt }] }] })
             });
 
-            if(!aiRes.ok) throw new Error('Carga rejeitada pelo provedor da chave Google / Gemini.');
+            if(!aiRes.ok) {
+                localStorage.removeItem('apf_gemini_key');
+                throw new Error('A chave de API foi rejeitada pelo Google. Ela foi removida do sistema; tente novamente com uma chave válida.');
+            }
             const data = await aiRes.json();
             const textOut = data.candidates[0].content.parts[0].text;
             
@@ -823,7 +831,12 @@ window.analyzeDocumentAI = async function(url, mimeType, name) {
             reader.readAsDataURL(blob);
         });
 
-        const apiKey = 'AIzaSyALzzFoN-ilJeKwvQuwlaO9Cl6W2cvpwgU';
+        let apiKey = localStorage.getItem('apf_gemini_key');
+        if(!apiKey) {
+            apiKey = prompt("Google Gemini API Key não encontrada no seu navegador.\n\nPor favor, insira sua chave do Google AI Studio:");
+            if(!apiKey) throw new Error("API Key não fornecida.");
+            localStorage.setItem('apf_gemini_key', apiKey);
+        }
         const aiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + apiKey;
         
         if(!['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'].includes(mimeType)) {
@@ -846,7 +859,10 @@ window.analyzeDocumentAI = async function(url, mimeType, name) {
             body: JSON.stringify(payload)
         });
 
-        if(!aiRes.ok) throw new Error('A Key API Gemini foi bloqueada na requisição de payload blob.');
+        if(!aiRes.ok) {
+            localStorage.removeItem('apf_gemini_key');
+            throw new Error('A Key API Gemini foi bloqueada na requisição. Chave removida.');
+        }
         const data = await aiRes.json();
         const textOut = data.candidates[0].content.parts[0].text;
         
