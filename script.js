@@ -8,7 +8,7 @@ const DEFAULT_ITEMS = [
 
 let state = {
     projects: [
-        { id: 'p_default', name: 'Modelo de Entrega', items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)), dueDate: '', createdAt: new Date().toISOString().split('T')[0] }
+        { id: 'p_default', name: 'Modelo de Entrega', items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)), dueDate: '', createdAt: new Date().toISOString().split('T')[0], engAnalysisOpened: false }
     ],
     currentProjectId: 'p_default'
 };
@@ -75,6 +75,7 @@ async function loadState() {
             // Restore file objectURLs from IndexedDB
             for (const p of parsed.projects) {
                 if (!p.createdAt) p.createdAt = new Date().toISOString().split('T')[0];
+                if (p.engAnalysisOpened === undefined) p.engAnalysisOpened = false;
                 for (const item of p.items) {
                     if (item.attachments && item.attachments.length > 0) {
                         for (const att of item.attachments) {
@@ -112,6 +113,7 @@ function saveState() {
     const saveableState = {
         projects: state.projects.map(p => ({
             ...p,
+            engAnalysisOpened: p.engAnalysisOpened || false,
             items: p.items.map(item => ({
                 ...item,
                 attachments: (item.attachments || []).map(att => ({
@@ -131,6 +133,7 @@ function saveState() {
 const projectSelect = document.getElementById('project-select');
 const btnNewProject = document.getElementById('btn-new-project');
 const btnExportZip = document.getElementById('btn-export-zip');
+const btnToggleEng = document.getElementById('btn-toggle-eng');
 const btnDeleteProject = document.getElementById('btn-delete-project');
 
 const checklistContainer = document.getElementById('checklist-render-area');
@@ -209,11 +212,23 @@ function updateGlobalDateUI() {
     }
     
     document.getElementById('checklist-proj-name').textContent = curr.name;
+    
+    const engBadgeContainer = document.getElementById('eng-badge-container');
+    if (engBadgeContainer) {
+        engBadgeContainer.innerHTML = curr.engAnalysisOpened ? '<span class="badge badge-eng"><i class="ph ph-wrench"></i> Engenharia Aberta</span>' : '';
+    }
+
     projectDueDateInp.value = curr.dueDate || '';
     
     const dueDateContainer = document.getElementById('due-date-container');
     if (dueDateContainer) {
         dueDateContainer.style.display = (curr.id === 'p_default') ? 'none' : 'flex';
+    }
+
+    if (btnToggleEng) {
+        btnToggleEng.style.display = (curr.id === 'p_default') ? 'none' : 'inline-flex';
+        btnToggleEng.className = curr.engAnalysisOpened ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm';
+        btnToggleEng.innerHTML = curr.engAnalysisOpened ? '<i class="ph ph-check-circle"></i> Engenharia Aberta' : '<i class="ph ph-circle"></i> Abrir Engenharia';
     }
     
     if(curr.dueDate) {
@@ -334,6 +349,7 @@ btnNewProject.addEventListener('click', () => {
             id: 'p_' + generateId(),
             name: name.trim(),
             dueDate: '',
+            engAnalysisOpened: false,
             createdAt: new Date().toISOString().split('T')[0],
             items: duplicatedItems
         };
@@ -423,6 +439,18 @@ if (btnToggleSidebar) {
     });
 }
 
+if (btnToggleEng) {
+    btnToggleEng.addEventListener('click', () => {
+        const curr = getCurrentProject();
+        if (curr && curr.id !== 'p_default') {
+            curr.engAnalysisOpened = !curr.engAnalysisOpened;
+            saveState();
+            updateGlobalDateUI();
+            renderTracking();
+        }
+    });
+}
+
 btnDeleteProject.addEventListener('click', () => {
     if(confirm('Atenção: Tem certeza que deseja excluir ESTE empreendimento completamente?')){
         state.projects = state.projects.filter(p => p.id !== state.currentProjectId);
@@ -495,11 +523,13 @@ function renderTracking() {
         };
         const barColor = fillColors[fillClass] || 'var(--primary)';
         const textCol = dClass === 'late' ? 'var(--danger)' : 'var(--accent)';
+        const engStatusIcon = p.engAnalysisOpened ? '<i class="ph ph-wrench text-accent" title="Engenharia Aberta"></i> ' : '';
 
         card.innerHTML = `
             <div class="tracking-body">
-                <div class="mb-1">
+                <div class="mb-1 flex-between">
                     <h3 style="font-weight:700;"><i class="ph ph-buildings text-primary"></i> ${p.name}</h3>
+                    ${engStatusIcon}
                 </div>
                 <div class="flex-between mb-2">
                     <div class="tk-status" style="color: ${textCol}; font-weight: 700;">${prazoText}</div>
