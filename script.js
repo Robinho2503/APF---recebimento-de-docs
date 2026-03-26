@@ -215,7 +215,7 @@ function updateGlobalDateUI() {
     
     const engBadgeContainer = document.getElementById('eng-badge-container');
     if (engBadgeContainer) {
-        engBadgeContainer.innerHTML = curr.engAnalysisOpened ? '<span class="badge badge-eng"><i class="ph ph-wrench"></i> Engenharia Aberta</span>' : '';
+        engBadgeContainer.innerHTML = curr.engAnalysisOpened ? '<span class="badge badge-eng"><i class="ph ph-magnifying-glass"></i> Engenharia Aberta</span>' : '';
     }
 
     projectDueDateInp.value = curr.dueDate || '';
@@ -228,7 +228,7 @@ function updateGlobalDateUI() {
     if (btnToggleEng) {
         btnToggleEng.style.display = (curr.id === 'p_default') ? 'none' : 'inline-flex';
         btnToggleEng.className = curr.engAnalysisOpened ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm';
-        btnToggleEng.innerHTML = curr.engAnalysisOpened ? '<i class="ph ph-check-circle"></i> Engenharia Aberta' : '<i class="ph ph-circle"></i> Abrir Engenharia';
+        btnToggleEng.innerHTML = curr.engAnalysisOpened ? '<i class="ph ph-check-circle"></i> Engenharia Aberta' : '<i class="ph ph-magnifying-glass"></i> Abrir Engenharia';
     }
     
     if(curr.dueDate) {
@@ -523,7 +523,7 @@ function renderTracking() {
         };
         const barColor = fillColors[fillClass] || 'var(--primary)';
         const textCol = dClass === 'late' ? 'var(--danger)' : 'var(--accent)';
-        const engStatusIcon = p.engAnalysisOpened ? '<i class="ph ph-wrench text-accent" title="Engenharia Aberta"></i> ' : '';
+        const engStatusIcon = p.engAnalysisOpened ? '<i class="ph ph-magnifying-glass text-accent" title="Engenharia Aberta"></i> ' : '';
 
         card.innerHTML = `
             <div class="tracking-body">

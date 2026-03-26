@@ -45,8 +45,25 @@ body {
 .sidebar.collapsed .sidebar-header h2, 
 .sidebar.collapsed .sidebar-header p,
 .sidebar.collapsed .sidebar-content { display: none; }
+.sidebar.collapsed .collapsed-label { display: flex; }
 .sidebar.collapsed .sidebar-header { justify-content: center; padding: 1.5rem 0; }
 .sidebar.collapsed #btn-toggle-sidebar { transform: rotate(180deg); }
+
+.collapsed-label {
+    display: none;
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 0.2rem;
+    opacity: 0.6;
+    user-select: none;
+}
 
 .sidebar-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--panel-border); }
 .sidebar-header h2 { font-size: 1.25rem; }
