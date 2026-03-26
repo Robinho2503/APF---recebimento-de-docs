@@ -651,7 +651,8 @@ function createNode(item, isMgmt) {
     itemLeft.appendChild(nameSpan);
 
     // ROOT FOLDER STATS in itemLeft for column layout
-    if(isRootFolder) {
+    // Only show stats for root folders if NOT in the template project
+    if(isRootFolder && state.currentProjectId !== 'p_default') {
         const stats = getNodeStats(item.id);
         const statsSpan = document.createElement('div');
         statsSpan.className = 'root-stats-column';
@@ -777,6 +778,18 @@ function createNode(item, isMgmt) {
             const mgmtFields = document.createElement('div');
             mgmtFields.className = 'management-fields';
             
+            // Only show status select if NOT in the template project
+            if (state.currentProjectId !== 'p_default') {
+                const statusHtml = `
+                    <select class="input-modern btn-sm status-select" style="max-width: 120px;" onchange="updateItemStatus('${item.id}', this.value)">
+                        <option value="pendente" ${item.status === 'pendente' ? 'selected' : ''}>Pendente</option>
+                        <option value="analise" ${item.status === 'analise' ? 'selected' : ''}>Em Análise</option>
+                        <option value="apontamento" ${item.status === 'apontamento' ? 'selected' : ''}>Apontamento</option>
+                        <option value="validado" ${item.status === 'validado' ? 'selected' : ''}>Validado</option>
+                    </select>
+                `;
+                itemRight.insertAdjacentHTML('afterbegin', statusHtml);
+            }
             const valSelect = document.createElement('select');
             valSelect.className = 'input-modern btn-sm';
             valSelect.title = 'Status de Validação';
