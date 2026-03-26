@@ -100,7 +100,6 @@ async function loadState() {
             }
             
             // Re-render after loading files
-            updateProjectDropdown();
             updateGlobalDateUI();
             renderTree();
             renderTracking();
@@ -136,6 +135,7 @@ const btnNewProject = document.getElementById('btn-new-project');
 const btnExportZip = document.getElementById('btn-export-zip');
 const btnToggleEng = document.getElementById('btn-toggle-eng');
 const btnDeleteProject = document.getElementById('btn-delete-project');
+const btnOpenTemplate = document.getElementById('btn-open-template');
 
 const checklistContainer = document.getElementById('checklist-render-area');
 const sidebarApf = document.getElementById('sidebar-apf');
@@ -194,11 +194,9 @@ tabs.forEach(tab => {
         tab.classList.add('active');
         document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
         
-        updateProjectDropdown();
         updateGlobalDateUI();
         renderTree();
-        
-        if(tab.dataset.tab === 'tracking') renderTracking();
+        renderTracking();
     });
 });
 
@@ -227,6 +225,10 @@ function updateGlobalDateUI() {
         btnToggleEng.style.display = (curr.id === 'p_default') ? 'none' : 'inline-flex';
         btnToggleEng.className = curr.engAnalysisOpened ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm';
         btnToggleEng.innerHTML = curr.engAnalysisOpened ? '<i class="ph ph-check-circle"></i> Engenharia Aberta' : '<i class="ph ph-magnifying-glass"></i> Abrir Engenharia';
+    }
+
+    if (btnDeleteProject) {
+        btnDeleteProject.style.display = (curr.id === 'p_default') ? 'none' : 'inline-flex';
     }
     
     if(curr.dueDate) {
@@ -461,9 +463,16 @@ if (btnToggleEng) {
 }
 
 btnDeleteProject.addEventListener('click', () => {
-    if(confirm('Atenção: Tem certeza que deseja excluir ESTE empreendimento completamente?')){
+    if (state.currentProjectId === 'p_default') {
+        alert('O Modelo de Entrega não pode ser excluído.');
+        return;
+    }
+    const curr = getCurrentProject();
+    if(confirm(`Atenção: Tem certeza que deseja excluir o empreendimento "${curr.name}" completamente?`)){
         state.projects = state.projects.filter(p => p.id !== state.currentProjectId);
-        state.currentProjectId = 'p_default'; // fallback
+        // Fallback to the first project that isn't the template, or the template if none left
+        const nextProj = state.projects.find(p => p.id !== 'p_default') || state.projects[0];
+        state.currentProjectId = nextProj.id;
         saveState();
         updateGlobalDateUI();
         renderTree();
@@ -471,14 +480,24 @@ btnDeleteProject.addEventListener('click', () => {
     }
 });
 
+if (btnOpenTemplate) {
+    btnOpenTemplate.addEventListener('click', () => {
+        state.currentProjectId = 'p_default';
+        saveState();
+        updateGlobalDateUI();
+        renderTree();
+        renderTracking();
+    });
+}
+
 // Remove unused function
 function updateMgmtProjectDropdown() {
     if(!mgmtProjectSelect) return;
     mgmtProjectSelect.innerHTML = '';
-    state.projects.forEach(p => {
+    state.projects.filter(p => p.id !== 'p_default').forEach(p => {
         const opt = document.createElement('option');
         opt.value = p.id;
-        opt.textContent = p.name + (p.id === 'p_default' ? ' (Modelo)' : '');
+        opt.textContent = p.name;
         if(p.id === state.currentProjectId) opt.selected = true;
         mgmtProjectSelect.appendChild(opt);
     });
@@ -504,9 +523,8 @@ function renderTracking() {
     if(!trackingContainer) return;
     trackingContainer.innerHTML = '';
 
-    const mgmt = isMgmtActive();
-    // In mgmt mode, show all projects including the template
-    const trackableProjects = mgmt ? state.projects : state.projects.filter(p => p.id !== 'p_default');
+    // ALWAYS filter out the template from the sidebar as per user request
+    const trackableProjects = state.projects.filter(p => p.id !== 'p_default');
     
     // Ordena de acordo com o prazo: quem está mais atrasado (negativo) ou próximo (0) aparece primeiro
     trackableProjects.sort((a, b) => {

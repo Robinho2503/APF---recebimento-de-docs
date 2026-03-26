@@ -165,8 +165,8 @@ input[type="date"].input-modern::-webkit-calendar-picker-indicator { filter: inv
 }
 .btn-primary { background: var(--primary); color: white; }
 .btn-primary:hover { background: var(--primary-hover); }
-.btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
-.btn-danger:hover { background: rgba(239, 68, 68, 0.2); border-color: var(--danger); }
+.btn-danger { background: var(--danger); color: white; border: none; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2); }
+.btn-danger:hover { background: #dc2626; transform: translateY(-1px); box-shadow: 0 6px 15px rgba(239, 68, 68, 0.3); }
 .btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: var(--text-main); }
 .btn-outline:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.4); }
 .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
