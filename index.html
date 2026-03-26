@@ -12,10 +12,15 @@
 <body>
     <div class="main-layout">
         <!-- Sidebar Acompanhamento sempre visível -->
-        <aside class="sidebar glass-panel">
-            <div class="sidebar-header">
-                <h2><i class="ph ph-calendar-check text-primary"></i> Acompanhamento</h2>
-                <p>Status global dos prazos</p>
+        <aside id="sidebar-apf" class="sidebar glass-panel">
+            <div class="sidebar-header flex-between">
+                <div>
+                    <h2><i class="ph ph-calendar-check text-primary"></i> Acompanhamento</h2>
+                    <p>Status global dos prazos</p>
+                </div>
+                <button id="btn-toggle-sidebar" class="icon-btn" title="Recolher Barra Lateral">
+                    <i class="ph ph-caret-double-left"></i>
+                </button>
             </div>
             <div id="tracking-render-area" class="sidebar-content">
                 <!-- Tracker rendered via JS -->

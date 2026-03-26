@@ -134,6 +134,8 @@ const btnExportZip = document.getElementById('btn-export-zip');
 const btnDeleteProject = document.getElementById('btn-delete-project');
 
 const checklistContainer = document.getElementById('checklist-render-area');
+const sidebarApf = document.getElementById('sidebar-apf');
+const btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
 const managementContainer = document.getElementById('management-render-area');
 const trackingContainer = document.getElementById('tracking-render-area');
 
@@ -220,9 +222,9 @@ function updateGlobalDateUI() {
         let progressPct = 0;
         let fillClass = 'good';
 
-        if(diff === 0) { diffText = '(Entrega HOJE!)'; dClass='late'; }
-        else if(diff > 0) { diffText = `(Falta(m) ${diff} dia(s))`; dClass='good'; }
-        else { diffText = `(ATRASADO ${Math.abs(diff)} dia(s))`; dClass='late'; }
+        if(diff === 0) { diffText = '(HOJE!)'; dClass='late'; }
+        else if(diff > 0) { diffText = `(${diff}d)`; dClass='good'; }
+        else { diffText = `(ATRASADO ${Math.abs(diff)}d)`; dClass='late'; }
         
         if (curr.createdAt) {
             const tStart = new Date(curr.createdAt).getTime();
@@ -414,6 +416,13 @@ btnExportZip.addEventListener('click', async () => {
     }
 });
 
+if (btnToggleSidebar) {
+    btnToggleSidebar.addEventListener('click', () => {
+        sidebarApf.classList.toggle('collapsed');
+        // Re-render tree might be needed if layout changes significantly, but CSS should handle it
+    });
+}
+
 btnDeleteProject.addEventListener('click', () => {
     if(confirm('Atenção: Tem certeza que deseja excluir ESTE empreendimento completamente?')){
         state.projects = state.projects.filter(p => p.id !== state.currentProjectId);
@@ -489,19 +498,17 @@ function renderTracking() {
 
         card.innerHTML = `
             <div class="tracking-body">
-                <div class="flex-between mb-2">
-                    <h3 style="font-size: 1.4rem;"><i class="ph ph-buildings text-primary"></i> ${p.name}</h3>
-                    <div class="tk-status" style="color: ${textCol}; font-weight: 700; font-size: 1.1rem;">${prazoText}</div>
+                <div class="mb-1">
+                    <h3 style="font-weight:700;"><i class="ph ph-buildings text-primary"></i> ${p.name}</h3>
                 </div>
-                <div class="tk-date" style="margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">
-                    <i class="ph ph-calendar"></i> Prazo Final: <strong style="color:var(--text-main)">${p.dueDate ? dateDesc : '--/--/----'}</strong>
+                <div class="flex-between mb-2">
+                    <div class="tk-status" style="color: ${textCol}; font-weight: 700;">${prazoText}</div>
+                    <div class="tk-date" style="color: var(--text-muted); font-weight: 500;">
+                        ${p.dueDate ? formatDateToPT(p.dueDate) : '--/--/----'}
+                    </div>
                 </div>
                 <div class="tk-progress-bg">
                     <div class="tk-progress-fill" style="width: ${progressPct}%; background: ${barColor};"></div>
-                </div>
-                <div class="tk-labels">
-                    <span>Início: ${formatDateToPT(p.createdAt) || '--/--/----'}</span>
-                    <span>Progresso do Cronograma</span>
                 </div>
             </div>
         `;
