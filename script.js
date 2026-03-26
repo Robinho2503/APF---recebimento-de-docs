@@ -240,6 +240,9 @@ function updateGlobalDateUI() {
         if(diff === 0) { diffText = '(HOJE!)'; dClass='late'; }
         else if(diff > 0) { diffText = `(${diff}d)`; dClass='good'; }
         else { diffText = `(ATRASADO ${Math.abs(diff)}d)`; dClass='late'; }
+
+        const bizDays = calculateBusinessDays(curr.dueDate);
+        const bizDaysHtml = (diff > 0) ? `<span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 400; opacity: 0.8;"> | ${bizDays} d. úteis</span>` : '';
         
         if (curr.createdAt) {
             const tStart = new Date(curr.createdAt).getTime();
@@ -260,7 +263,7 @@ function updateGlobalDateUI() {
         projectGlobalCountdown.style.display = 'block';
         projectGlobalCountdown.innerHTML = `
             <div class="flex-between mb-1">
-                <span class="date-label" style="font-size:0.85rem;">Prazo: <strong>${formatDateToPT(curr.dueDate)}</strong></span>
+                <span class="date-label" style="font-size:0.85rem;">Prazo: <strong>${formatDateToPT(curr.dueDate)}</strong>${bizDaysHtml}</span>
                 <span class="date-countdown ${dClass}" style="font-size: 0.85rem; font-weight:700;">${diffText}</span>
             </div>
             <div class="tk-progress-bg" style="height:10px; margin-top:5px; background: rgba(255,255,255,0.1);">
@@ -594,11 +597,33 @@ function renderTree() {
 
 function calculateDays(dueDate) {
     if(!dueDate) return null;
-    const now = new Date();
-    const due = new Date(dueDate);
-    now.setHours(0,0,0,0); due.setHours(0,0,0,0);
-    const diffTime = due - now;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(dueDate);
+    target.setHours(target.getTimezoneOffset() * 60 * 1000 / 60000); // adjust for timezone if needed, but simple diff is usually fine
+    const diffTime = target - today;
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+}
+
+function calculateBusinessDays(targetDateStr) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(targetDateStr);
+    target.setHours(0, 0, 0, 0);
+    
+    if (target < today) return 0;
+    
+    let count = 0;
+    let current = new Date(today);
+    
+    while (current < target) {
+        current.setDate(current.getDate() + 1);
+        const day = current.getDay();
+        if (day !== 0 && day !== 6) { // 0 = Sunday, 6 = Saturday
+            count++;
+        }
+    }
+    return count;
 }
 
 function formatDateToPT(isoStr) {
