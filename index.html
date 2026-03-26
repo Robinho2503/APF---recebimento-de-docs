@@ -13,14 +13,17 @@
     <div class="main-layout">
         <!-- Sidebar Acompanhamento sempre visível -->
         <aside id="sidebar-apf" class="sidebar glass-panel">
-            <div class="sidebar-header flex-between">
-                <div>
-                    <h2><i class="ph ph-calendar-check text-primary"></i> Acompanhamento</h2>
-                    <p>Status global dos prazos</p>
+            <div class="sidebar-header">
+                <div class="flex-between mb-2">
+                    <h2 style="font-size: 1.1rem;"><i class="ph ph-calendar-check text-primary"></i> Acompanhamento</h2>
+                    <button id="btn-toggle-sidebar" class="icon-btn" title="Recolher Barra Lateral">
+                        <i class="ph ph-caret-double-left"></i>
+                    </button>
                 </div>
-                <button id="btn-toggle-sidebar" class="icon-btn" title="Recolher Barra Lateral">
-                    <i class="ph ph-caret-double-left"></i>
+                <button class="tab-btn apf-access-btn" data-tab="management" style="width: 100%; justify-content: center; margin-bottom: 0.5rem; border-style: solid;">
+                    <i class="ph ph-shield-check"></i> <strong>Acesso APF</strong>
                 </button>
+                <p style="font-size: 0.75rem; color: var(--text-muted);">Navegue pelos empreendimentos abaixo:</p>
             </div>
             <div id="collapsed-label" class="collapsed-label">
                 <span>ENTREGAS FUTURAS</span>
@@ -31,23 +34,6 @@
         </aside>
 
         <div class="app-container">
-        <!-- Project Selector Header -->
-        <header class="glass-panel project-header">
-            <div class="header-content">
-                <h1><i class="ph ph-buildings"></i> Checklist APF</h1>
-                <p>Sistema Gestor de Documentações e Prazos</p>
-            </div>
-            <div style="display: flex; align-items: center; gap: 2rem;">
-                <div class="project-selector" style="text-align: right;">
-                    <label for="project-select">Empreendimento:</label><br>
-                    <select id="project-select" class="input-modern" style="margin-top: 0.25rem;"></select>
-                </div>
-                <!-- Mgmt Button moved to top right -->
-                <button class="tab-btn apf-access-btn" data-tab="management">
-                    <i class="ph ph-shield-check"></i> <span style="font-weight: 600;">Acesso APF</span>
-                </button>
-            </div>
-        </header>
 
         <!-- Main Content -->
         <main class="content-area">

@@ -130,7 +130,7 @@ function saveState() {
 }
 
 // DOM Elements
-const projectSelect = document.getElementById('project-select');
+// const projectSelect = document.getElementById('project-select'); // Removed
 const btnNewProject = document.getElementById('btn-new-project');
 const btnExportZip = document.getElementById('btn-export-zip');
 const btnToggleEng = document.getElementById('btn-toggle-eng');
@@ -204,12 +204,9 @@ tabs.forEach(tab => {
 // Project Management & Global UI
 function updateGlobalDateUI() {
     const curr = getCurrentProject();
-    if(!curr || curr.id === 'none' || (!isMgmtActive() && curr.id === 'p_default')) {
-        document.getElementById('checklist-proj-name').textContent = '';
-        projectGlobalCountdown.style.display = 'none';
-        projectDueDateInp.value = '';
-        return;
-    }
+    if(!curr) return;
+    
+    // updateProjectDropdown(); // Removed
     
     document.getElementById('checklist-proj-name').textContent = curr.name;
     
@@ -285,55 +282,55 @@ projectDueDateInp.addEventListener('change', (e) => {
     }
 });
 
-function updateProjectDropdown() {
-    const mgmt = isMgmtActive();
-    projectSelect.innerHTML = '';
+// function updateProjectDropdown() {
+//     const mgmt = isMgmtActive();
+//     projectSelect.innerHTML = '';
     
-    let visibleProjects = state.projects;
+//     let visibleProjects = state.projects;
     
-    if (!mgmt) {
-        visibleProjects = state.projects.filter(p => p.id !== 'p_default');
+//     if (!mgmt) {
+//         visibleProjects = state.projects.filter(p => p.id !== 'p_default');
         
-        const defOpt = document.createElement('option');
-        defOpt.value = 'none';
-        defOpt.textContent = visibleProjects.length === 0 ? '-- Crie um Empreendimento no Acesso APF --' : '-- Selecionar Empreendimento --';
-        projectSelect.appendChild(defOpt);
-    }
+//         const defOpt = document.createElement('option');
+//         defOpt.value = 'none';
+//         defOpt.textContent = visibleProjects.length === 0 ? '-- Crie um Empreendimento no Acesso APF --' : '-- Selecionar Empreendimento --';
+//         projectSelect.appendChild(defOpt);
+//     }
     
-    visibleProjects.forEach(p => {
-        const opt = document.createElement('option');
-        opt.value = p.id;
-        opt.textContent = p.name;
-        projectSelect.appendChild(opt);
-    });
+//     visibleProjects.forEach(p => {
+//         const opt = document.createElement('option');
+//         opt.value = p.id;
+//         opt.textContent = p.name;
+//         projectSelect.appendChild(opt);
+//     });
 
-    if (mgmt) {
-        projectSelect.value = state.currentProjectId;
-    } else {
-        if (state.currentProjectId === 'p_default') {
-            projectSelect.value = 'none';
-        } else {
-            projectSelect.value = state.currentProjectId || 'none';
-        }
-    }
+//     if (mgmt) {
+//         projectSelect.value = state.currentProjectId;
+//     } else {
+//         if (state.currentProjectId === 'p_default') {
+//             projectSelect.value = 'none';
+//         } else {
+//             projectSelect.value = state.currentProjectId || 'none';
+//         }
+//     }
 
-    btnDeleteProject.style.display = state.projects.length > 1 ? 'inline-flex' : 'none';
+//     btnDeleteProject.style.display = state.projects.length > 1 ? 'inline-flex' : 'none';
     
-    const curr = getCurrentProject();
-    if(curr && curr.id !== 'none' && (mgmt || curr.id !== 'p_default')) {
-        currentProjectName.textContent = curr.name;
-    } else {
-        currentProjectName.textContent = '';
-    }
-}
+//     const curr = getCurrentProject();
+//     if(curr && curr.id !== 'none' && (mgmt || curr.id !== 'p_default')) {
+//         currentProjectName.textContent = curr.name;
+//     } else {
+//         currentProjectName.textContent = '';
+//     }
+// }
 
-projectSelect.addEventListener('change', (e) => {
-    state.currentProjectId = e.target.value;
-    saveState();
-    updateProjectDropdown();
-    updateGlobalDateUI();
-    renderTree();
-});
+// projectSelect.addEventListener('change', (e) => {
+//     state.currentProjectId = e.target.value;
+//     saveState();
+//     updateGlobalDateUI();
+//     renderTree();
+//     renderTracking();
+// });
 
 btnNewProject.addEventListener('click', () => {
     const name = prompt('Nome do novo empreendimento (que herdará as pastas do Modelo de Entrega):');
@@ -359,10 +356,18 @@ btnNewProject.addEventListener('click', () => {
         state.projects.push(newProj);
         state.currentProjectId = newProj.id;
         saveState();
-        updateProjectDropdown();
         updateGlobalDateUI();
         renderTree();
         renderTracking();
+        
+        // Switch to Management tab to show the new project structure editor
+        tabs.forEach(t => t.classList.remove('active'));
+        tabContents.forEach(c => c.classList.remove('active'));
+        document.querySelector('[data-tab="management"]').classList.add('active');
+        document.getElementById('tab-management').classList.add('active');
+        unlockManagement();
+
+        // projectInp.value = ''; // This variable doesn't exist in the provided context, commenting out.
     }
 });
 
@@ -457,14 +462,16 @@ if (btnToggleEng) {
 btnDeleteProject.addEventListener('click', () => {
     if(confirm('Atenção: Tem certeza que deseja excluir ESTE empreendimento completamente?')){
         state.projects = state.projects.filter(p => p.id !== state.currentProjectId);
-        state.currentProjectId = state.projects[0].id; // fallback
+        state.currentProjectId = 'p_default'; // fallback
         saveState();
-        updateProjectDropdown();
         updateGlobalDateUI();
         renderTree();
         renderTracking();
     }
 });
+
+// Remove unused function
+// function updateProjectDropdown() { ... }
 
 // Tracker Render
 function renderTracking() {
@@ -486,8 +493,21 @@ function renderTracking() {
 
     trackableProjects.forEach(p => {
         const card = document.createElement('div');
-        card.className = 'tracking-card';
+        card.className = `tracking-card glass-panel ${p.id === state.currentProjectId ? 'active' : ''}`;
         
+        card.addEventListener('click', () => {
+            state.currentProjectId = p.id;
+            saveState();
+            updateGlobalDateUI();
+            renderTree();
+            renderTracking();
+            // If in AI tab, update might be needed
+            if (document.getElementById('tab-ai-insights').classList.contains('active')) {
+                // Clear AI output to avoid confusion
+                document.getElementById('ai-report-output').style.display = 'none';
+            }
+        });
+
         let prazoText = 'Sem data inicializada';
         let dClass = 'good';
         let progressPct = 0;
