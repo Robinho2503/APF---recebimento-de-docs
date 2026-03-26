@@ -130,7 +130,6 @@ function saveState() {
 
 // DOM Elements
 // const projectSelect = document.getElementById('project-select'); // Removed
-const mgmtProjectSelect = document.getElementById('mgmt-project-select');
 const btnNewProject = document.getElementById('btn-new-project');
 const btnExportZip = document.getElementById('btn-export-zip');
 const btnToggleEng = document.getElementById('btn-toggle-eng');
@@ -205,9 +204,8 @@ function updateGlobalDateUI() {
     const curr = getCurrentProject();
     if(!curr) return;
     
-    updateMgmtProjectDropdown();
-    
     document.getElementById('checklist-proj-name').textContent = curr.name;
+    if (currentProjectName) currentProjectName.textContent = curr.name;
     
     const engBadgeContainer = document.getElementById('eng-badge-container');
     if (engBadgeContainer) {
@@ -483,34 +481,6 @@ btnDeleteProject.addEventListener('click', () => {
 if (btnOpenTemplate) {
     btnOpenTemplate.addEventListener('click', () => {
         state.currentProjectId = 'p_default';
-        saveState();
-        updateGlobalDateUI();
-        renderTree();
-        renderTracking();
-    });
-}
-
-// Remove unused function
-function updateMgmtProjectDropdown() {
-    if(!mgmtProjectSelect) return;
-    mgmtProjectSelect.innerHTML = '';
-    state.projects.filter(p => p.id !== 'p_default').forEach(p => {
-        const opt = document.createElement('option');
-        opt.value = p.id;
-        opt.textContent = p.name;
-        if(p.id === state.currentProjectId) opt.selected = true;
-        mgmtProjectSelect.appendChild(opt);
-    });
-    
-    const curr = getCurrentProject();
-    if(curr) {
-        currentProjectName.textContent = curr.name;
-    }
-}
-
-if (mgmtProjectSelect) {
-    mgmtProjectSelect.addEventListener('change', (e) => {
-        state.currentProjectId = e.target.value;
         saveState();
         updateGlobalDateUI();
         renderTree();
