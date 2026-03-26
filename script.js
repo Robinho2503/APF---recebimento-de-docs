@@ -14,6 +14,48 @@ let state = {
 };
 let isAuthenticated = false;
 
+// IndexedDB Persistence for Files
+const DB_NAME = "APFChecklistDB";
+const STORE_NAME = "attachments";
+
+function openDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, 1);
+        request.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME);
+        };
+        request.onsuccess = (e) => resolve(e.target.result);
+        request.onerror = (e) => reject(e.target.error);
+    });
+}
+
+async function saveFileToDB(id, blob) {
+    const db = await openDB();
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    tx.objectStore(STORE_NAME).put(blob, id);
+    return new Promise((resolve, reject) => {
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+    });
+}
+
+async function getFileFromDB(id) {
+    const db = await openDB();
+    const tx = db.transaction(STORE_NAME, "readonly");
+    const request = tx.objectStore(STORE_NAME).get(id);
+    return new Promise((resolve, reject) => {
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+async function deleteFileFromDB(id) {
+    const db = await openDB();
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    tx.objectStore(STORE_NAME).delete(id);
+}
+
 // Helpers
 function generateId() { return Math.random().toString(36).substr(2, 9); }
 function getCurrentProject() { return state.projects.find(p => p.id === state.currentProjectId); }
@@ -24,15 +66,29 @@ function isMgmtActive() {
 }
 
 // Persistence
-function loadState() {
+async function loadState() {
     const saved = localStorage.getItem('apf_checklist_v2.2');
     if (saved) {
         try {
             const parsed = JSON.parse(saved);
-            parsed.projects.forEach(p => {
-                p.items.forEach(i => i.attachments = []);
-                if(!p.createdAt) p.createdAt = new Date().toISOString().split('T')[0];
-            });
+            
+            // Restore file objectURLs from IndexedDB
+            for (const p of parsed.projects) {
+                if (!p.createdAt) p.createdAt = new Date().toISOString().split('T')[0];
+                for (const item of p.items) {
+                    if (item.attachments && item.attachments.length > 0) {
+                        for (const att of item.attachments) {
+                            try {
+                                const blob = await getFileFromDB(att.id);
+                                if (blob) {
+                                    att.objectUrl = URL.createObjectURL(blob);
+                                }
+                            } catch (err) { console.error(`Failed to restore ${att.name}`, err); }
+                        }
+                    }
+                }
+            }
+
             state = parsed;
             
             const defP = state.projects.find(p => p.id === 'p_default');
@@ -41,15 +97,30 @@ function loadState() {
             if(!state.projects.find(p => p.id === state.currentProjectId)) {
                 state.currentProjectId = state.projects[0].id;
             }
+            
+            // Re-render after loading files
+            updateProjectDropdown();
+            updateGlobalDateUI();
+            renderTree();
+            renderTracking();
         } catch(e) { console.error('Error loading state', e); }
     }
 }
 
 function saveState() {
+    // We save the structure to localStorage, but files are already in IndexedDB
     const saveableState = {
         projects: state.projects.map(p => ({
             ...p,
-            items: p.items.map(item => ({...item, attachments: []}))
+            items: p.items.map(item => ({
+                ...item,
+                attachments: (item.attachments || []).map(att => ({
+                    id: att.id,
+                    name: att.name,
+                    type: att.type
+                    // We don't save objectUrl as it's temporary
+                }))
+            }))
         })),
         currentProjectId: state.currentProjectId
     };
@@ -59,6 +130,7 @@ function saveState() {
 // DOM Elements
 const projectSelect = document.getElementById('project-select');
 const btnNewProject = document.getElementById('btn-new-project');
+const btnExportZip = document.getElementById('btn-export-zip');
 const btnDeleteProject = document.getElementById('btn-delete-project');
 
 const checklistContainer = document.getElementById('checklist-render-area');
@@ -82,12 +154,8 @@ const projectGlobalCountdown = document.getElementById('project-global-countdown
 const modalOverlay = document.getElementById('preview-modal');
 
 // Init
-document.addEventListener('DOMContentLoaded', () => {
-    loadState();
-    updateProjectDropdown();
-    updateGlobalDateUI();
-    renderTree();
-    renderTracking();
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadState(); // Now re-renders everything internally
     initAIEngine();
 });
 
@@ -140,6 +208,7 @@ function updateGlobalDateUI() {
     
     document.getElementById('checklist-proj-name').textContent = curr.name;
     projectDueDateInp.value = curr.dueDate || '';
+    projectDueDateInp.disabled = (curr.id === 'p_default');
     
     if(curr.dueDate) {
         const diff = calculateDays(curr.dueDate);
@@ -157,7 +226,7 @@ function updateGlobalDateUI() {
 
 projectDueDateInp.addEventListener('change', (e) => {
     const curr = getCurrentProject();
-    if(curr) {
+    if(curr && curr.id !== 'p_default') {
         curr.dueDate = e.target.value;
         saveState();
         updateGlobalDateUI();
@@ -242,6 +311,75 @@ btnNewProject.addEventListener('click', () => {
         updateGlobalDateUI();
         renderTree();
         renderTracking();
+    }
+});
+
+btnExportZip.addEventListener('click', async () => {
+    const curr = getCurrentProject();
+    if (!curr || curr.id === 'none') {
+        alert('Selecione um empreendimento primeiro.');
+        return;
+    }
+
+    const originalBtnContent = btnExportZip.innerHTML;
+    btnExportZip.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Gerando ZIP...';
+    btnExportZip.disabled = true;
+
+    try {
+        const zip = new JSZip();
+        const rootFolder = zip.folder(curr.name);
+
+        async function processItem(item, folder) {
+            const children = getItems().filter(i => i.parentId === item.id);
+            const itemFolder = folder.folder(item.name);
+
+            // Add attachments
+            if (item.attachments && item.attachments.length > 0) {
+                for (const att of item.attachments) {
+                    try {
+                        const response = await fetch(att.objectUrl);
+                        const blob = await response.blob();
+                        itemFolder.file(att.name, blob);
+                    } catch (e) {
+                        console.error(`Erro ao baixar arquivo ${att.name}:`, e);
+                    }
+                }
+            }
+
+            // Process children
+            for (const child of children) {
+                await processItem(child, itemFolder);
+            }
+        }
+
+        const roots = getChildItems(null);
+        if (roots.length === 0) {
+            alert('Não há itens para exportar.');
+            btnExportZip.innerHTML = originalBtnContent;
+            btnExportZip.disabled = false;
+            return;
+        }
+
+        for (const root of roots) {
+            await processItem(root, rootFolder);
+        }
+
+        const content = await zip.generateAsync({ type: 'blob' });
+        const zipUrl = URL.createObjectURL(content);
+        const link = document.createElement('a');
+        link.href = zipUrl;
+        link.download = `${curr.name}_Export.zip`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(zipUrl);
+
+    } catch (error) {
+        console.error('Erro na exportação ZIP:', error);
+        alert('Ocorreu um erro ao gerar o arquivo ZIP.');
+    } finally {
+        btnExportZip.innerHTML = originalBtnContent;
+        btnExportZip.disabled = false;
     }
 });
 
@@ -680,27 +818,37 @@ function handleDeleteFolder(id) {
     }
 }
 
-window.handleFileUpload = function(files, itemId) {
+window.handleFileUpload = async function(files, itemId) {
     if(!files || files.length === 0) return;
     const targetItem = getItems().find(i => i.id === itemId);
     if(targetItem) {
         if(!targetItem.attachments) targetItem.attachments = [];
-        Array.from(files).forEach(file => {
-            targetItem.attachments.push({
-                id: generateId(),
-                name: file.name,
-                type: file.type,
-                objectUrl: URL.createObjectURL(file)
-            });
-        });
+        for (const file of Array.from(files)) {
+            const id = generateId();
+            try {
+                await saveFileToDB(id, file);
+                targetItem.attachments.push({
+                    id: id,
+                    name: file.name,
+                    type: file.type,
+                    objectUrl: URL.createObjectURL(file)
+                });
+            } catch (err) {
+                console.error("Erro ao salvar arquivo no banco de dados local", err);
+                alert("Erro ao salvar arquivo localmente. Verifique o espaço disponível.");
+            }
+        }
+        saveState();
         renderTree();
     }
 }
 
-window.handleDeleteFile = function(itemId, fileId) {
+window.handleDeleteFile = async function(itemId, fileId) {
     const targetItem = getItems().find(i => i.id === itemId);
     if(targetItem && targetItem.attachments){
         targetItem.attachments = targetItem.attachments.filter(a => a.id !== fileId);
+        await deleteFileFromDB(fileId);
+        saveState();
         renderTree();
     }
 }

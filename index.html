@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://unpkg.com/@phosphor-icons/web@2.0.3/src/regular/style.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -109,6 +110,7 @@
                     <div class="management-controls mb-4">
                         <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
                             <button id="btn-new-project" class="btn btn-primary"><i class="ph ph-plus-circle"></i> Novo Empreendimento</button>
+                            <button id="btn-export-zip" class="btn btn-outline" title="Exportar todas as pastas e arquivos deste projeto em ZIP"><i class="ph ph-file-zip"></i> Exportar Tudo (ZIP)</button>
                             <button id="btn-delete-project" class="btn btn-danger" style="display:none;" title="Excluir Empreendimento Atual - Cuidado!"><i class="ph ph-trash"></i> Excluir Projeto Atual</button>
                         </div>
                     </div>
