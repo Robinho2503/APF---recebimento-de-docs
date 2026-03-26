@@ -131,6 +131,7 @@ function saveState() {
 
 // DOM Elements
 // const projectSelect = document.getElementById('project-select'); // Removed
+const mgmtProjectSelect = document.getElementById('mgmt-project-select');
 const btnNewProject = document.getElementById('btn-new-project');
 const btnExportZip = document.getElementById('btn-export-zip');
 const btnToggleEng = document.getElementById('btn-toggle-eng');
@@ -206,7 +207,7 @@ function updateGlobalDateUI() {
     const curr = getCurrentProject();
     if(!curr) return;
     
-    // updateProjectDropdown(); // Removed
+    updateMgmtProjectDropdown();
     
     document.getElementById('checklist-proj-name').textContent = curr.name;
     
@@ -471,12 +472,41 @@ btnDeleteProject.addEventListener('click', () => {
 });
 
 // Remove unused function
-// function updateProjectDropdown() { ... }
+function updateMgmtProjectDropdown() {
+    if(!mgmtProjectSelect) return;
+    mgmtProjectSelect.innerHTML = '';
+    state.projects.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.name + (p.id === 'p_default' ? ' (Modelo)' : '');
+        if(p.id === state.currentProjectId) opt.selected = true;
+        mgmtProjectSelect.appendChild(opt);
+    });
+    
+    const curr = getCurrentProject();
+    if(curr) {
+        currentProjectName.textContent = curr.name;
+    }
+}
+
+if (mgmtProjectSelect) {
+    mgmtProjectSelect.addEventListener('change', (e) => {
+        state.currentProjectId = e.target.value;
+        saveState();
+        updateGlobalDateUI();
+        renderTree();
+        renderTracking();
+    });
+}
 
 // Tracker Render
 function renderTracking() {
+    if(!trackingContainer) return;
     trackingContainer.innerHTML = '';
-    let trackableProjects = state.projects.filter(p => p.id !== 'p_default');
+
+    const mgmt = isMgmtActive();
+    // In mgmt mode, show all projects including the template
+    const trackableProjects = mgmt ? state.projects : state.projects.filter(p => p.id !== 'p_default');
     
     // Ordena de acordo com o prazo: quem está mais atrasado (negativo) ou próximo (0) aparece primeiro
     trackableProjects.sort((a, b) => {
