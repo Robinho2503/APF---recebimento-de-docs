@@ -208,7 +208,11 @@ function updateGlobalDateUI() {
     
     document.getElementById('checklist-proj-name').textContent = curr.name;
     projectDueDateInp.value = curr.dueDate || '';
-    projectDueDateInp.disabled = (curr.id === 'p_default');
+    
+    const dueDateContainer = document.getElementById('due-date-container');
+    if (dueDateContainer) {
+        dueDateContainer.style.display = (curr.id === 'p_default') ? 'none' : 'flex';
+    }
     
     if(curr.dueDate) {
         const diff = calculateDays(curr.dueDate);
