@@ -106,14 +106,15 @@
                         <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
                             <button id="btn-open-template" class="btn btn-outline" title="Acessar e editar a estrutura do Modelo de Entrega"><i class="ph ph-layout"></i> Modelo de Entrega</button>
                             <button id="btn-new-project" class="btn btn-primary"><i class="ph ph-plus-circle"></i> Novo Empreendimento</button>
-                            <button id="btn-delete-project" class="btn btn-danger" style="display:none;" title="Excluir Empreendimento Atual - Cuidado!"><i class="ph ph-trash"></i> Excluir Projeto Atual</button>
                         </div>
                     </div>
 
                     <div class="section-header mb-4 glass-panel" style="padding: 1.25rem; background: rgba(0,0,0,0.2);">
                         <div class="flex-between flex-wrap gap-4">
-                            <div>
-                                <h2 style="font-size: 1.25rem;">Gestão de Pastas: <span id="current-project-name" style="color:var(--primary)"></span></h2>
+                                <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+                                    <h2 style="font-size: 1.25rem;">Gestão de Pastas: <span id="current-project-name" style="color:var(--primary)"></span></h2>
+                                    <button id="btn-delete-project" class="btn btn-danger btn-sm" style="display:none;" title="Excluir Empreendimento Atual - Cuidado!"><i class="ph ph-trash"></i> Excluir Projeto Atual</button>
+                                </div>
                                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">Estrutura de arquivos e validação para este empreendimento.</p>
                             </div>
                             <div id="due-date-container" style="display: flex; flex-direction: column; align-items: flex-end;">
