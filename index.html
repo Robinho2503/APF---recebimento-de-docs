@@ -10,7 +10,19 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
-    <div class="app-container">
+    <div class="main-layout">
+        <!-- Sidebar Acompanhamento sempre visível -->
+        <aside class="sidebar glass-panel">
+            <div class="sidebar-header">
+                <h2><i class="ph ph-calendar-check text-primary"></i> Acompanhamento</h2>
+                <p>Status global dos prazos</p>
+            </div>
+            <div id="tracking-render-area" class="sidebar-content">
+                <!-- Tracker rendered via JS -->
+            </div>
+        </aside>
+
+        <div class="app-container">
         <!-- Project Selector Header -->
         <header class="glass-panel project-header">
             <div class="header-content">
@@ -35,9 +47,6 @@
                 <button class="tab-btn active" data-tab="checklist">
                     <i class="ph ph-list-checks"></i> Visão Geral
                 </button>
-                <button class="tab-btn" data-tab="tracking">
-                    <i class="ph ph-calendar-check"></i> Acompanhamento
-                </button>
                 <button class="tab-btn" data-tab="ai-insights">
                     <i class="ph ph-magic-wand"></i> Insights IA
                 </button>
@@ -58,17 +67,6 @@
                 <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem;"><i class="ph ph-info"></i> Dica: Você pode anexar arquivos clicando em "Anexar" ou arrastando os arquivos diretamente para cima da subpasta desejada.</p>
                 <div id="checklist-render-area" class="tree-container">
                     <!-- Tree rendered via JS -->
-                </div>
-            </section>
-
-            <!-- Tracking Tab Content -->
-            <section id="tab-tracking" class="tab-content glass-panel mt-4">
-                <div class="section-header" style="margin-bottom: 2.5rem;">
-                    <h2>Gestão de Prazos (Acompanhamento)</h2>
-                    <p>Visão global dos prazos e andamento de todos os Empreendimentos geridos na plataforma.</p>
-                </div>
-                <div id="tracking-render-area" style="display:flex; flex-direction:column; gap:1.5rem;">
-                    <!-- Tracker rendered via JS -->
                 </div>
             </section>
 
@@ -140,7 +138,8 @@
                 </div>
             </section>
         </main>
-    </div>
+    </div> <!-- .app-container -->
+    </div> <!-- .main-layout -->
 
     <!-- Preview Modal -->
     <div id="preview-modal" class="modal-backdrop hidden">

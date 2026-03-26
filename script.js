@@ -217,12 +217,39 @@ function updateGlobalDateUI() {
     if(curr.dueDate) {
         const diff = calculateDays(curr.dueDate);
         let diffText = ''; let dClass = '';
-        if(diff === 0) { diffText = '(Hoje)'; dClass='good'; }
+        let progressPct = 0;
+        let fillClass = 'good';
+
+        if(diff === 0) { diffText = '(Entrega HOJE!)'; dClass='late'; }
         else if(diff > 0) { diffText = `(Falta(m) ${diff} dia(s))`; dClass='good'; }
-        else { diffText = `(Atrasado ${Math.abs(diff)} dia(s))`; dClass='late'; }
+        else { diffText = `(ATRASADO ${Math.abs(diff)} dia(s))`; dClass='late'; }
         
+        if (curr.createdAt) {
+            const tStart = new Date(curr.createdAt).getTime();
+            const tEnd = new Date(curr.dueDate).getTime();
+            const tNow = new Date().getTime();
+            if (tEnd > tStart) {
+                progressPct = ((tNow - tStart) / (tEnd - tStart)) * 100;
+                if(progressPct > 100) progressPct = 100;
+                if(progressPct < 0) progressPct = 0;
+            } else if(tNow >= tEnd) progressPct = 100;
+        }
+        if(diff < 0) fillClass = 'late';
+        else if(diff >= 0 && diff <= 5) fillClass = 'warning';
+
+        const fillColors = { 'good': 'var(--accent)', 'late': 'var(--danger)', 'warning': 'var(--warning)' };
+        const barColor = fillColors[fillClass] || 'var(--primary)';
+
         projectGlobalCountdown.style.display = 'block';
-        projectGlobalCountdown.innerHTML = `<span class="date-label">Data de Entrega Final: <strong style="color:var(--text-main)">${formatDateToPT(curr.dueDate)}</strong></span><br><span class="date-countdown ${dClass}" style="font-size: 0.95rem;">${diffText}</span>`;
+        projectGlobalCountdown.innerHTML = `
+            <div class="flex-between mb-1">
+                <span class="date-label" style="font-size:0.85rem;">Prazo: <strong>${formatDateToPT(curr.dueDate)}</strong></span>
+                <span class="date-countdown ${dClass}" style="font-size: 0.85rem; font-weight:700;">${diffText}</span>
+            </div>
+            <div class="tk-progress-bg" style="height:10px; margin-top:5px; background: rgba(255,255,255,0.1);">
+                <div class="tk-progress-fill" style="width: ${progressPct}%; background: ${barColor};"></div>
+            </div>
+        `;
     } else {
         projectGlobalCountdown.style.display = 'none';
     }
