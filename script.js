@@ -141,6 +141,7 @@ const sidebarApf = document.getElementById('sidebar-apf');
 const btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
 const managementContainer = document.getElementById('management-render-area');
 const trackingContainer = document.getElementById('tracking-render-area');
+const btnLogout = document.getElementById('btn-logout');
 
 const tabs = document.querySelectorAll('.tab-btn');
 const tabContents = document.querySelectorAll('.tab-content');
@@ -165,23 +166,47 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // Authentication
-btnUnlock.addEventListener('click', () => {
-    if(inputPassword.value === '1234') {
-        isAuthenticated = true;
-        inputPassword.value = '';
-        passwordError.style.display = 'none';
+if (btnUnlock) {
+    btnUnlock.addEventListener('click', () => {
+        if(inputPassword.value === '1234') {
+            isAuthenticated = true;
+            inputPassword.value = '';
+            passwordError.style.display = 'none';
+            applyAuthState();
+        } else {
+            passwordError.style.display = 'block';
+            inputPassword.style.borderColor = 'var(--danger)';
+            setTimeout(() => {
+                inputPassword.style.borderColor = '';
+            }, 1000);
+        }
+    });
+}
+
+if (btnLogout) {
+    btnLogout.addEventListener('click', () => {
+        isAuthenticated = false;
         applyAuthState();
-    } else {
-        passwordError.style.display = 'block';
-    }
-});
+    });
+}
+
+// Allow Enter key to unlock
+if (inputPassword) {
+    inputPassword.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') btnUnlock.click();
+    });
+}
+
 function applyAuthState() {
+    if(!passwordLock || !managementContent) return;
+    
     if(isAuthenticated) {
         passwordLock.style.display = 'none';
         managementContent.style.display = 'block';
     } else {
         passwordLock.style.display = 'block';
         managementContent.style.display = 'none';
+        if (inputPassword) inputPassword.focus();
     }
 }
 
@@ -189,10 +214,16 @@ function applyAuthState() {
 tabs.forEach(tab => {
     tab.addEventListener('click', () => {
         tabs.forEach(t => t.classList.remove('active'));
-        tabContents.forEach(c => c.classList.remove('active'));
         tab.classList.add('active');
-        document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
         
+        tabContents.forEach(tc => tc.classList.remove('active'));
+        document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+
+        // Force check auth state if entering management tab
+        if(tab.dataset.tab === 'management') {
+            applyAuthState();
+        }
+
         updateGlobalDateUI();
         renderTree();
         renderTracking();

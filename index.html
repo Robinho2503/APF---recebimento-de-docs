@@ -89,15 +89,24 @@
             <!-- Acesso APF Tab Content -->
             <section id="tab-management" class="tab-content glass-panel mt-4">
                 <!-- Lock Screen -->
-                <div id="password-lock">
-                    <i class="ph ph-shield-warning" style="font-size:3rem; color:var(--warning);"></i>
-                    <h2 style="color:var(--warning); margin-top:0.5rem; margin-bottom:1rem;">Acesso Restrito</h2>
-                    <p style="color:var(--text-muted); margin-bottom: 2rem;">Insira a senha de controle para gerenciar pastas, prazos e avaliações desse empreendimento.</p>
-                    <div class="auth-form flex-center">
-                        <input type="password" id="apf-password" class="input-modern text-center" placeholder="Senha" />
-                        <button id="btn-unlock" class="btn btn-primary"><i class="ph ph-key"></i> Desbloquear</button>
+                <!-- Password Lock Screen -->
+                <div id="password-lock" style="max-width: 450px; margin: 4rem auto; padding: 3rem; text-align: center;" class="glass-panel">
+                    <div style="width: 80px; height: 80px; background: rgba(245, 158, 11, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                        <i class="ph ph-lock-keyhole" style="font-size: 2.5rem; color: var(--warning);"></i>
                     </div>
-                    <p id="password-error" class="error-text mt-4 mx-auto text-center" style="display: none; font-weight: 500;">Senha incorreta. Dica: A senha requisitada é 1234</p>
+                    <h2 style="color: var(--text-main); margin-bottom: 0.75rem; font-size: 1.5rem;">Acesso Gerencial</h2>
+                    <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 0.9rem; line-height: 1.6;">Esta área é reservada para gestão de empreendimentos. Insira a senha de acesso para prosseguir.</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                        <input type="password" id="apf-password" class="input-modern text-center" placeholder="Digite a senha" style="font-size: 1.1rem; letter-spacing: 0.2rem; padding: 0.8rem;" />
+                        <button id="btn-unlock" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.8rem;">
+                            <i class="ph ph-key"></i> Desbloquear Acesso
+                        </button>
+                    </div>
+                    
+                    <p id="password-error" class="error-text mt-4" style="display: none; font-weight: 500; font-size: 0.85rem;">
+                        <i class="ph ph-warning-circle"></i> Senha incorreta. Verifique e tente novamente.
+                    </p>
                 </div>
 
                 <!-- Management Content -->
@@ -113,7 +122,10 @@
                         <div class="flex-between flex-wrap gap-4">
                                 <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
                                     <h2 style="font-size: 1.25rem;">Gestão de Pastas: <span id="current-project-name" style="color:var(--primary)"></span></h2>
-                                    <button id="btn-delete-project" class="btn btn-danger btn-sm" style="display:none;" title="Excluir Empreendimento Atual - Cuidado!"><i class="ph ph-trash"></i> Excluir Projeto Atual</button>
+                                    <div style="display:flex; gap:0.5rem; align-items:center;">
+                                        <button id="btn-delete-project" class="btn btn-danger btn-sm" style="display:none;" title="Excluir Empreendimento Atual - Cuidado!"><i class="ph ph-trash"></i> Excluir</button>
+                                        <button id="btn-logout" class="btn btn-outline btn-sm" title="Bloquear acesso gerencial"><i class="ph ph-lock"></i> Sair</button>
+                                    </div>
                                 </div>
                                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">Estrutura de arquivos e validação para este empreendimento.</p>
                             </div>
