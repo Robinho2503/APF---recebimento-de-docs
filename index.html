@@ -106,7 +106,6 @@
                         <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
                             <button id="btn-open-template" class="btn btn-outline" title="Acessar e editar a estrutura do Modelo de Entrega"><i class="ph ph-layout"></i> Modelo de Entrega</button>
                             <button id="btn-new-project" class="btn btn-primary"><i class="ph ph-plus-circle"></i> Novo Empreendimento</button>
-                            <button id="btn-export-zip" class="btn btn-outline" title="Exportar todas as pastas e arquivos deste projeto em ZIP"><i class="ph ph-file-zip"></i> Exportar Tudo (ZIP)</button>
                             <button id="btn-delete-project" class="btn btn-danger" style="display:none;" title="Excluir Empreendimento Atual - Cuidado!"><i class="ph ph-trash"></i> Excluir Projeto Atual</button>
                         </div>
                     </div>
@@ -125,13 +124,16 @@
                     </div>
 
 
-                    <div class="mb-4" style="display:flex; gap:1rem;">
-                        <button id="btn-add-root" class="btn btn-primary">
-                            <i class="ph ph-folder-plus"></i> Nova Pasta Principal
-                        </button>
-                        <button id="btn-toggle-eng" class="btn btn-outline" title="Sinalizar abertura de análise de engenharia">
-                            <i class="ph ph-magnifying-glass"></i> Abrir Engenharia
-                        </button>
+                    <div class="mb-4 flex-between">
+                        <div style="display:flex; gap:1rem;">
+                            <button id="btn-add-root" class="btn btn-primary">
+                                <i class="ph ph-folder-plus"></i> Nova Pasta Principal
+                            </button>
+                            <button id="btn-toggle-eng" class="btn btn-outline" title="Sinalizar abertura de análise de engenharia">
+                                <i class="ph ph-magnifying-glass"></i> Abrir Engenharia
+                            </button>
+                        </div>
+                        <button id="btn-export-zip" class="btn btn-outline" title="Exportar todas as pastas e arquivos deste projeto em ZIP"><i class="ph ph-file-zip"></i> Exportar Tudo (ZIP)</button>
                     </div>
                     <div id="management-render-area" class="tree-container management-mode">
                         <!-- Tree rendered via JS -->
