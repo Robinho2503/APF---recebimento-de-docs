@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.DS_Store
+*.local
+.env
+.agent/
+.gemini/
+.agents/
+_agent/
+_agents/
+brain/
+tmp/

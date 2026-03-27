@@ -200,13 +200,27 @@ if (inputPassword) {
 function applyAuthState() {
     if(!passwordLock || !managementContent) return;
     
+    const tabsNav = document.querySelector('.tabs');
+    const isMgmt = isMgmtActive();
+    
     if(isAuthenticated) {
         passwordLock.style.display = 'none';
         managementContent.style.display = 'block';
+        if (sidebarApf) sidebarApf.style.display = 'flex';
+        if (tabsNav) tabsNav.style.display = 'flex';
     } else {
-        passwordLock.style.display = 'block';
-        managementContent.style.display = 'none';
-        if (inputPassword) inputPassword.focus();
+        if(isMgmt) {
+            passwordLock.style.display = 'block';
+            managementContent.style.display = 'none';
+            if (sidebarApf) sidebarApf.style.display = 'none';
+            if (tabsNav) tabsNav.style.display = 'none';
+            if (inputPassword) inputPassword.focus();
+        } else {
+            passwordLock.style.display = 'block';
+            managementContent.style.display = 'none';
+            if (sidebarApf) sidebarApf.style.display = 'flex';
+            if (tabsNav) tabsNav.style.display = 'flex';
+        }
     }
 }
 
@@ -217,12 +231,11 @@ tabs.forEach(tab => {
         tab.classList.add('active');
         
         tabContents.forEach(tc => tc.classList.remove('active'));
-        document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+        const targetContent = document.getElementById(`tab-${tab.dataset.tab}`);
+        if (targetContent) targetContent.classList.add('active');
 
-        // Force check auth state if entering management tab
-        if(tab.dataset.tab === 'management') {
-            applyAuthState();
-        }
+        // Check/Apply auth state and UI visibility
+        applyAuthState();
 
         updateGlobalDateUI();
         renderTree();
