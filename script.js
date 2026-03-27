@@ -168,7 +168,12 @@ function initDropbox() {
     } else {
         if(btnDbx) {
             btnDbx.onclick = () => {
-                const redirectUri = window.location.origin + window.location.pathname;
+                let cleanPath = window.location.pathname.replace(/\/index\.html$/, '/');
+                if (!cleanPath.endsWith('/')) cleanPath += '/';
+                const redirectUri = window.location.origin + cleanPath;
+                
+                alert("COPIE ESTE ENDEREÇO EXACTO:\n\n" + redirectUri + "\n\nCole lá no painel do Dropbox (OAuth 2 Redirect URIs) na aba Settings do seu App, ou o Dropbox vai negar o acesso com 'pedido inválido'.");
+
                 const authUrl = `https://www.dropbox.com/oauth2/authorize?client_id=${DROPBOX_APP_KEY}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}`;
                 window.location.href = authUrl;
             };
