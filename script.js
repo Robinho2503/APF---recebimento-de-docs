@@ -184,13 +184,6 @@ if (btnUnlock) {
     });
 }
 
-if (btnLogout) {
-    btnLogout.addEventListener('click', () => {
-        isAuthenticated = false;
-        applyAuthState();
-    });
-}
-
 // Allow Enter key to unlock
 if (inputPassword) {
     inputPassword.addEventListener('keypress', (e) => {
@@ -689,8 +682,11 @@ function calculateDays(dueDate) {
     if(!dueDate) return null;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const target = new Date(dueDate);
-    target.setHours(target.getTimezoneOffset() * 60 * 1000 / 60000); // adjust for timezone if needed, but simple diff is usually fine
+    // targetDate format: YYYY-MM-DD
+    const parts = dueDate.split('-');
+    const target = new Date(parts[0], parts[1] - 1, parts[2]);
+    target.setHours(0, 0, 0, 0);
+    
     const diffTime = target - today;
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
