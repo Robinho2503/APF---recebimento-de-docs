@@ -151,6 +151,7 @@ const managementContent = document.getElementById('management-content');
 const inputPassword = document.getElementById('apf-password');
 const btnUnlock = document.getElementById('btn-unlock');
 const passwordError = document.getElementById('password-error');
+const btnBackToMain = document.getElementById('btn-back-to-main');
 
 const btnAddRoot = document.getElementById('btn-add-root');
 const currentProjectName = document.getElementById('current-project-name');
@@ -194,6 +195,13 @@ if (btnLogout) {
 if (inputPassword) {
     inputPassword.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') btnUnlock.click();
+    });
+}
+
+if (btnBackToMain) {
+    btnBackToMain.addEventListener('click', () => {
+        const checklistTab = Array.from(tabs).find(t => t.dataset.tab === 'checklist');
+        if (checklistTab) checklistTab.click();
     });
 }
 
