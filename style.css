@@ -188,6 +188,21 @@ input[type="date"].input-modern::-webkit-calendar-picker-indicator { filter: inv
 .badge-apontamento, .badge-pendente { background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
 .badge-eng { background: rgba(99, 102, 241, 0.15); color: var(--primary); border: 1px solid var(--primary); text-transform: none; font-size: 0.85rem; }
 
+.pending-circle {
+    background: var(--danger);
+    color: white;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
 /* Utilities */
 .flex-between { display: flex; justify-content: space-between; align-items: center; }
 .flex-center { display: flex; justify-content: center; align-items: center; gap: 1rem; }

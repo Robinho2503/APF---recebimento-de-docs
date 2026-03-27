@@ -759,36 +759,20 @@ function createNode(item, isMgmt) {
 
     const titleText = document.createTextNode(' ' + item.name);
     nameSpan.appendChild(titleText);
-    itemLeft.appendChild(nameSpan);
 
-    // ROOT FOLDER STATS in itemLeft for column layout
-    // Only show stats for root folders if NOT in the template project
+    // PENDING CIRCLE for ROOT FOLDERS
     if(isRootFolder && state.currentProjectId !== 'p_default') {
         const stats = getNodeStats(item.id);
-        const statsSpan = document.createElement('div');
-        statsSpan.className = 'root-stats-column';
-        
         if (stats.pendente > 0) {
-            const pBadge = document.createElement('span');
-            pBadge.className = 'badge badge-pendente';
-            pBadge.innerHTML = `<i class="ph ph-clock"></i> ${stats.pendente} Pendente(s)`;
-            statsSpan.appendChild(pBadge);
-        } else if (getChildItems(item.id).length > 0) {
-            const okBadge = document.createElement('span');
-            okBadge.className = 'badge badge-entregue';
-            okBadge.innerHTML = `<i class="ph ph-check-circle"></i> Tudo Entregue`;
-            statsSpan.appendChild(okBadge);
+            const circle = document.createElement('span');
+            circle.className = 'pending-circle';
+            circle.textContent = stats.pendente;
+            circle.title = `${stats.pendente} item(s) pendente(s)`;
+            itemLeft.prepend(circle);
         }
-        
-        if (stats.apontamento > 0) {
-            const aBadge = document.createElement('span');
-            aBadge.className = 'badge badge-apontamento';
-            aBadge.innerHTML = `<i class="ph ph-warning-circle"></i> ${stats.apontamento} Apontamento(s)`;
-            statsSpan.appendChild(aBadge);
-        }
-        
-        itemLeft.appendChild(statsSpan);
     }
+
+    itemLeft.appendChild(nameSpan);
 
     const itemRight = document.createElement('div');
     itemRight.className = 'item-right';
