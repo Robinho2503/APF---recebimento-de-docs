@@ -305,9 +305,9 @@ function updateGlobalDateUI() {
 
         projectGlobalCountdown.style.display = 'block';
         projectGlobalCountdown.innerHTML = `
-            <div class="flex-between mb-1">
-                <span class="date-label" style="font-size:0.85rem;">Prazo: <strong>${formatDateToPT(curr.dueDate)}</strong>${bizDaysHtml}</span>
-                <span class="date-countdown ${dClass}" style="font-size: 0.85rem; font-weight:700;">${diffText}</span>
+            <div class="flex-column mb-1" style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+                <span class="date-label" style="font-size: 1.15rem; font-weight: 700; color: var(--text-main);">Prazo: ${formatDateToPT(curr.dueDate)}</span>
+                <span class="date-countdown ${dClass}" style="font-size: 0.8rem; font-weight: 600; opacity: 0.9;">Status: ${diffText}${bizDaysHtml}</span>
             </div>
             <div class="tk-progress-bg" style="height:10px; margin-top:5px; background: rgba(255,255,255,0.1);">
                 <div class="tk-progress-fill" style="width: ${progressPct}%; background: ${barColor};"></div>
