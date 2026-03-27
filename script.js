@@ -172,6 +172,11 @@ function initDropbox() {
                 if (!cleanPath.endsWith('/')) cleanPath += '/';
                 const redirectUri = window.location.origin + cleanPath;
                 
+                if (window.location.protocol === 'file:') {
+                    alert("AVISO CRÍTICO:\n\nVocê está abrindo o projeto como um simples arquivo (file://).\nO Dropbox NÃO aceita esse tipo de endereço para realizar o login por segurança.\n\nPor favor, utilize o arquivo 'abrir_projeto.ps1' que eu criei na pasta do projeto para rodar o sistema no endereço http://localhost:8000 que é aceito pelo Dropbox.");
+                    return;
+                }
+
                 alert("COPIE ESTE ENDEREÇO EXACTO:\n\n" + redirectUri + "\n\nCole lá no painel do Dropbox (OAuth 2 Redirect URIs) na aba Settings do seu App, ou o Dropbox vai negar o acesso com 'pedido inválido'.");
 
                 const authUrl = `https://www.dropbox.com/oauth2/authorize?client_id=${DROPBOX_APP_KEY}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}`;
