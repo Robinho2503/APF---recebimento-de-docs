@@ -1,4 +1,7 @@
 // Data Models & State Initialization
+const DROPBOX_APP_KEY = '7uwxmlb4hz0im4x';
+let dbx = null;
+
 const DEFAULT_ITEMS = [
     { id: 'sec1', name: 'Legalização', parentId: null, protected: true, expanded: true, attachments: [] },
     { id: 'sec2', name: 'Arquitetura e Urbanismo', parentId: null, protected: true, expanded: true, attachments: [] },
@@ -14,47 +17,7 @@ let state = {
 };
 let isAuthenticated = false;
 
-// IndexedDB Persistence for Files
-const DB_NAME = "APFChecklistDB";
-const STORE_NAME = "attachments";
 
-function openDB() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, 1);
-        request.onupgradeneeded = (e) => {
-            const db = e.target.result;
-            if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME);
-        };
-        request.onsuccess = (e) => resolve(e.target.result);
-        request.onerror = (e) => reject(e.target.error);
-    });
-}
-
-async function saveFileToDB(id, blob) {
-    const db = await openDB();
-    const tx = db.transaction(STORE_NAME, "readwrite");
-    tx.objectStore(STORE_NAME).put(blob, id);
-    return new Promise((resolve, reject) => {
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
-    });
-}
-
-async function getFileFromDB(id) {
-    const db = await openDB();
-    const tx = db.transaction(STORE_NAME, "readonly");
-    const request = tx.objectStore(STORE_NAME).get(id);
-    return new Promise((resolve, reject) => {
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-    });
-}
-
-async function deleteFileFromDB(id) {
-    const db = await openDB();
-    const tx = db.transaction(STORE_NAME, "readwrite");
-    tx.objectStore(STORE_NAME).delete(id);
-}
 
 // Helpers
 function generateId() { return Math.random().toString(36).substr(2, 9); }
@@ -72,19 +35,15 @@ async function loadState() {
         try {
             const parsed = JSON.parse(saved);
             
-            // Restore file objectURLs from IndexedDB
             for (const p of parsed.projects) {
                 if (!p.createdAt) p.createdAt = new Date().toISOString().split('T')[0];
                 if (p.engAnalysisOpened === undefined) p.engAnalysisOpened = false;
                 for (const item of p.items) {
                     if (item.attachments && item.attachments.length > 0) {
                         for (const att of item.attachments) {
-                            try {
-                                const blob = await getFileFromDB(att.id);
-                                if (blob) {
-                                    att.objectUrl = URL.createObjectURL(blob);
-                                }
-                            } catch (err) { console.error(`Failed to restore ${att.name}`, err); }
+                            if (att.dropboxUrl && !att.objectUrl) {
+                                att.objectUrl = att.dropboxUrl;
+                            }
                         }
                     }
                 }
@@ -125,8 +84,10 @@ function saveState() {
                 attachments: (item.attachments || []).map(att => ({
                     id: att.id,
                     name: att.name,
-                    type: att.type
-                    // We don't save objectUrl as it's temporary
+                    type: att.type,
+                    dropboxPath: att.dropboxPath,
+                    dropboxUrl: att.dropboxUrl,
+                    objectUrl: att.dropboxUrl
                 }))
             }))
         })),
@@ -169,9 +130,51 @@ const modalOverlay = document.getElementById('preview-modal');
 
 // Init
 document.addEventListener('DOMContentLoaded', async () => {
+    initDropbox();
     await loadState(); // Now re-renders everything internally
     initAIEngine();
 });
+
+// Authentication - Dropbox
+function initDropbox() {
+    const hash = window.location.hash;
+    let token = localStorage.getItem('apf_dropbox_token');
+    
+    if (hash && hash.includes('access_token')) {
+        const params = new URLSearchParams(hash.substring(1));
+        token = params.get('access_token');
+        if (token) {
+            localStorage.setItem('apf_dropbox_token', token);
+            window.location.hash = ''; // Clear hash for clean URL
+        }
+    }
+    
+    const btnDbx = document.getElementById('btn-connect-dropbox');
+    if (token) {
+        dbx = new window.Dropbox.Dropbox({ accessToken: token });
+        if(btnDbx) {
+            btnDbx.innerHTML = '<i class="ph ph-check-circle"></i> Dropbox Conectado';
+            btnDbx.classList.remove('btn-outline');
+            btnDbx.classList.add('glass-panel');
+            btnDbx.style.color = 'var(--primary)';
+            btnDbx.style.border = '1px solid var(--primary)';
+            btnDbx.onclick = () => {
+                if(confirm('Deseja desconectar sua conta do Dropbox?')) {
+                    localStorage.removeItem('apf_dropbox_token');
+                    location.reload();
+                }
+            };
+        }
+    } else {
+        if(btnDbx) {
+            btnDbx.onclick = () => {
+                const redirectUri = window.location.origin + window.location.pathname;
+                const authUrl = `https://www.dropbox.com/oauth2/authorize?client_id=${DROPBOX_APP_KEY}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}`;
+                window.location.href = authUrl;
+            };
+        }
+    }
+}
 
 // Authentication
 if (btnUnlock) {
@@ -934,6 +937,46 @@ function createNode(item, isMgmt) {
             actionsDiv.appendChild(btnDel);
         }
         itemRight.appendChild(actionsDiv);
+
+        if(!isRootFolder && item.attachments && item.attachments.length > 0) {
+            const inlineAttachments = document.createElement('div');
+            inlineAttachments.style.display = 'flex';
+            inlineAttachments.style.gap = '0.5rem';
+            inlineAttachments.style.flexWrap = 'wrap';
+            inlineAttachments.style.marginTop = '0.5rem';
+            inlineAttachments.style.width = '100%';
+            inlineAttachments.style.justifyContent = 'flex-end';
+            
+            item.attachments.forEach(att => {
+                const attBadge = document.createElement('div');
+                attBadge.className = 'inline-attachment';
+                
+                const nameTxt = document.createElement('span');
+                nameTxt.className = 'text-truncate';
+                nameTxt.style.maxWidth = '150px';
+                nameTxt.title = att.name;
+                nameTxt.textContent = att.name;
+
+                const btnView = document.createElement('button');
+                btnView.className = 'icon-btn';
+                btnView.title = 'Visualizar';
+                btnView.innerHTML = '<i class="ph ph-eye"></i>';
+                btnView.onclick = () => window.openPreview(att);
+                
+                const btnDown = document.createElement('a');
+                btnDown.className = 'icon-btn';
+                btnDown.title = 'Baixar';
+                btnDown.download = att.name;
+                btnDown.href = att.objectUrl;
+                btnDown.innerHTML = '<i class="ph ph-download-simple"></i>';
+                
+                attBadge.appendChild(nameTxt);
+                attBadge.appendChild(btnView);
+                attBadge.appendChild(btnDown);
+                inlineAttachments.appendChild(attBadge);
+            });
+            itemRight.appendChild(inlineAttachments);
+        }
     }
 
     itemDiv.appendChild(itemLeft);
@@ -1001,36 +1044,86 @@ function handleDeleteFolder(id) {
     }
 }
 
+function getItemPath(itemId) {
+    let path = [];
+    let currentId = itemId;
+    while(currentId) {
+        const item = getItems().find(i => i.id === currentId);
+        if(!item) break;
+        path.unshift(item.name);
+        currentId = item.parentId;
+    }
+    return path.join('/');
+}
+
 window.handleFileUpload = async function(files, itemId) {
     if(!files || files.length === 0) return;
+    
+    // Dropbox enforcement
+    if(!dbx) {
+        alert("Atenção: Por favor, conecte a sua conta do Dropbox no painel para anexar documentações ao APF.");
+        return;
+    }
+
     const targetItem = getItems().find(i => i.id === itemId);
-    if(targetItem) {
-        if(!targetItem.attachments) targetItem.attachments = [];
-        for (const file of Array.from(files)) {
-            const id = generateId();
-            try {
-                await saveFileToDB(id, file);
-                targetItem.attachments.push({
-                    id: id,
-                    name: file.name,
-                    type: file.type,
-                    objectUrl: URL.createObjectURL(file)
-                });
-            } catch (err) {
-                console.error("Erro ao salvar arquivo no banco de dados local", err);
-                alert("Erro ao salvar arquivo localmente. Verifique o espaço disponível.");
+    const currProject = getCurrentProject();
+    
+    if(targetItem && currProject) {
+        const folderPath = getItemPath(itemId);
+        document.body.style.cursor = 'wait';
+        
+        try {
+            if(!targetItem.attachments) targetItem.attachments = [];
+            for (const file of Array.from(files)) {
+                const id = generateId();
+                const dbxPath = `/APF-Recebimento/${currProject.name}/${folderPath}/${file.name}`;
+                
+                try {
+                    // Upload to Dropbox
+                    const response = await dbx.filesUpload({ path: dbxPath, contents: file, mode: 'add', autorename: true });
+                    const uploadedPath = response.result.path_display;
+                    
+                    // Create Shared Link
+                    const linkRes = await dbx.sharingCreateSharedLinkWithSettings({ path: uploadedPath });
+                    let sharedUrl = linkRes.result.url;
+                    // Replace dl=0 with raw=1 if you want direct download (optional, we leave default dl=0 for visual preview)
+                    
+                    targetItem.attachments.push({
+                        id: id,
+                        name: response.result.name,
+                        type: file.type,
+                        dropboxPath: uploadedPath,
+                        dropboxUrl: sharedUrl,
+                        objectUrl: sharedUrl // Fallback layout compatibility
+                    });
+                } catch (err) {
+                    console.error("Erro no upload para o Dropbox", err);
+                    alert(`Falha ao enviar '${file.name}' ao Dropbox. Verifique sua conexão ou espaço livre.`);
+                }
             }
+            saveState();
+            renderTree();
+        } finally {
+            document.body.style.cursor = 'default';
         }
-        saveState();
-        renderTree();
     }
 }
 
 window.handleDeleteFile = async function(itemId, fileId) {
     const targetItem = getItems().find(i => i.id === itemId);
     if(targetItem && targetItem.attachments){
+        const att = targetItem.attachments.find(a => a.id === fileId);
+        
+        if (att && att.dropboxPath && dbx) {
+            try {
+                // Delete from Dropbox
+                await dbx.filesDeleteV2({ path: att.dropboxPath });
+            } catch (err) {
+                console.warn("Aviso: Arquivo já ausente no Dropbox ou token expirado.", err);
+            }
+        }
+        
         targetItem.attachments = targetItem.attachments.filter(a => a.id !== fileId);
-        await deleteFileFromDB(fileId);
         saveState();
         renderTree();
     }
@@ -1038,6 +1131,13 @@ window.handleDeleteFile = async function(itemId, fileId) {
 
 // Global modal helpers
 window.openPreview = function(fileObj) {
+    if (fileObj.dropboxUrl) {
+        // Redirect to DBX shared link (which has native file viewing)
+        window.open(fileObj.dropboxUrl, '_blank');
+        return;
+    }
+
+    // Legacy fallback for local files
     document.getElementById('preview-title').textContent = fileObj.name;
     document.getElementById('preview-download-btn').style.display = 'inline-flex';
     document.getElementById('preview-download-btn').href = fileObj.objectUrl;
