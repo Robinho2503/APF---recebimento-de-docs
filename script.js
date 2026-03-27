@@ -289,7 +289,14 @@ function updateGlobalDateUI() {
         btnDeleteProject.style.display = (curr.id === 'p_default') ? 'none' : 'inline-flex';
     }
     
-    if(curr.dueDate) {
+    if(curr.engAnalysisOpened) {
+        projectGlobalCountdown.style.display = 'block';
+        projectGlobalCountdown.innerHTML = `
+            <div class="flex-column mb-1" style="display: flex; flex-direction: column; align-items: flex-end; gap: 0;">
+                <span class="date-label" style="font-size: 1.4rem; font-weight: 700; color: var(--accent); line-height: 1.2;"><i class="ph ph-magnifying-glass"></i> Engenharia Aberta</span>
+            </div>
+        `;
+    } else if(curr.dueDate) {
         const diff = calculateDays(curr.dueDate);
         let diffText = ''; let dClass = '';
         let progressPct = 0;
@@ -626,6 +633,17 @@ function renderTracking() {
         const textCol = dClass === 'late' ? 'var(--danger)' : 'var(--accent)';
         const engStatusIcon = p.engAnalysisOpened ? '<i class="ph ph-magnifying-glass text-accent" title="Engenharia Aberta"></i> ' : '';
 
+        // Override text if engineering is open
+        let statusText = prazoText;
+        let dateText = p.dueDate ? formatDateToPT(p.dueDate) : '--/--/----';
+        let statusCol = textCol;
+
+        if (p.engAnalysisOpened) {
+            statusText = "Engenharia Aberta";
+            dateText = ""; // Replace whole date with empty or status
+            statusCol = 'var(--accent)';
+        }
+
         card.innerHTML = `
             <div class="tracking-body">
                 <div class="mb-1 flex-between">
@@ -633,14 +651,16 @@ function renderTracking() {
                     ${engStatusIcon}
                 </div>
                 <div class="flex-between mb-2">
-                    <div class="tk-status" style="color: ${textCol}; font-weight: 700;">${prazoText}</div>
+                    <div class="tk-status" style="color: ${statusCol}; font-weight: 700;">${statusText}</div>
                     <div class="tk-date" style="color: var(--text-muted); font-weight: 500;">
-                        ${p.dueDate ? formatDateToPT(p.dueDate) : '--/--/----'}
+                        ${dateText}
                     </div>
                 </div>
+                ${!p.engAnalysisOpened ? `
                 <div class="tk-progress-bg">
                     <div class="tk-progress-fill" style="width: ${progressPct}%; background: ${barColor};"></div>
                 </div>
+                ` : ''}
             </div>
         `;
         trackingContainer.appendChild(card);
