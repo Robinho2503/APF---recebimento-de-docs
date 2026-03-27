@@ -92,6 +92,13 @@ async function loadState() {
 
             state = parsed;
             
+            // Migration: Update old status labels
+            state.projects.forEach(p => {
+                p.items.forEach(item => {
+                    if (item.validationStatus === 'Em Análise') item.validationStatus = 'Em Análise de APF';
+                });
+            });
+
             const defP = state.projects.find(p => p.id === 'p_default');
             if(defP && defP.name === 'Empreendimento Base') defP.name = 'Modelo de Entrega';
 
@@ -878,7 +885,7 @@ function createNode(item, isMgmt) {
                 const statusHtml = `
                     <select class="input-modern btn-sm status-select" style="max-width: 120px;" onchange="updateItemStatus('${item.id}', this.value)">
                         <option value="pendente" ${item.status === 'pendente' ? 'selected' : ''}>Pendente</option>
-                        <option value="analise" ${item.status === 'analise' ? 'selected' : ''}>Em Análise</option>
+                        <option value="analise" ${item.status === 'analise' ? 'selected' : ''}>Em Análise de APF</option>
                         <option value="apontamento" ${item.status === 'apontamento' ? 'selected' : ''}>Apontamento</option>
                         <option value="validado" ${item.status === 'validado' ? 'selected' : ''}>Validado</option>
                     </select>
@@ -888,7 +895,7 @@ function createNode(item, isMgmt) {
             const valSelect = document.createElement('select');
             valSelect.className = 'input-modern btn-sm';
             valSelect.title = 'Status de Validação';
-            ['Em Análise', 'Validado', 'Apontamento'].forEach(opt => {
+            ['Em Análise de APF', 'Validado', 'Apontamento'].forEach(opt => {
                 const o = document.createElement('option');
                 o.value = opt; o.textContent = opt;
                 if(item.validationStatus === opt) o.selected = true;
@@ -966,7 +973,7 @@ function handleAddFolder(parentId) {
             protected: false,
             expanded: true,
             attachments: [],
-            validationStatus: 'Em Análise',
+            validationStatus: 'Em Análise de APF',
             observation: ''
         };
         getItems().push(item);
