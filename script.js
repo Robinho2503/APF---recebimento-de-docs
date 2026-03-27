@@ -1069,13 +1069,21 @@ function handleDeleteFolder(id) {
     }
 }
 
-function getItemPath(itemId) {
+function sanitizePathSegment(segment) {
+    if (!segment) return "";
+    // Remove invalid Dropbox characters: / \ : ? * " < > |
+    // Also trim and remove trailing spaces/dots which are problematic for some OS/sync systems
+    return segment.replace(/[\/\\:\?\*\"<>\|]/g, '-').trim().replace(/[\. ]+$/, '');
+}
+
+function getItemPath(itemId, sanitize = false) {
     let path = [];
     let currentId = itemId;
     while(currentId) {
         const item = getItems().find(i => i.id === currentId);
         if(!item) break;
-        path.unshift(item.name);
+        const name = sanitize ? sanitizePathSegment(item.name) : item.name;
+        path.unshift(name);
         currentId = item.parentId;
     }
     return path.join('/');
@@ -1094,14 +1102,16 @@ window.handleFileUpload = async function(files, itemId) {
     const currProject = getCurrentProject();
     
     if(targetItem && currProject) {
-        const folderPath = getItemPath(itemId);
+        const sanitizedProjName = sanitizePathSegment(currProject.name);
+        const folderPath = getItemPath(itemId, true); // Sanitize each segment
         document.body.style.cursor = 'wait';
         
         try {
             if(!targetItem.attachments) targetItem.attachments = [];
             for (const file of Array.from(files)) {
                 const id = generateId();
-                const dbxPath = `/APF-Recebimento/${currProject.name}/${folderPath}/${file.name}`;
+                const sanitizedFileName = file.name.trim();
+                const dbxPath = `/APF-Recebimento/${sanitizedProjName}/${folderPath}/${sanitizedFileName}`.replace(/\/+/g, '/');
                 
                 try {
                     // Upload to Dropbox
@@ -1111,7 +1121,6 @@ window.handleFileUpload = async function(files, itemId) {
                     // Create Shared Link
                     const linkRes = await dbx.sharingCreateSharedLinkWithSettings({ path: uploadedPath });
                     let sharedUrl = linkRes.result.url;
-                    // Replace dl=0 with raw=1 if you want direct download (optional, we leave default dl=0 for visual preview)
                     
                     targetItem.attachments.push({
                         id: id,
@@ -1119,11 +1128,12 @@ window.handleFileUpload = async function(files, itemId) {
                         type: file.type,
                         dropboxPath: uploadedPath,
                         dropboxUrl: sharedUrl,
-                        objectUrl: sharedUrl // Fallback layout compatibility
+                        objectUrl: sharedUrl 
                     });
                 } catch (err) {
                     console.error("Erro no upload para o Dropbox", err);
-                    alert(`Falha ao enviar '${file.name}' ao Dropbox. Verifique sua conexão ou espaço livre.`);
+                    const errorDetail = err?.error?.error?.summary || err?.status || 'Erro desconhecido';
+                    alert(`Falha ao enviar '${file.name}' ao Dropbox. Motivo: ${errorDetail}. Verifique sua conexão ou espaço livre.`);
                 }
             }
             saveState();
