@@ -120,24 +120,29 @@ function saveState() {
 }
 
 // DOM Elements
-// const projectSelect = document.getElementById('project-select'); // Removed
-const btnNewProject = document.getElementById('btn-new-project');
-const btnExportZip = document.getElementById('btn-export-zip');
-const btnToggleEng = document.getElementById('btn-toggle-eng');
-const btnDeleteProject = document.getElementById('btn-delete-project');
-const btnRenameProject = document.getElementById('btn-rename-project');
-const btnOpenTemplate = document.getElementById('btn-open-template');
-
-const checklistContainer = document.getElementById('checklist-render-area');
-const sidebarApf = document.getElementById('sidebar-apf');
-const btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
-const managementContainer = document.getElementById('management-render-area');
-const trackingContainer = document.getElementById('tracking-render-area');
-const btnLogout = document.getElementById('btn-logout');
-
-let tabs, tabContents, btnUnlock, btnBackToMain, inputPassword, passwordError, passwordLock, managementContent, sidebarApf, btnSettings, btnSaveSettings, btnResetModel, geminiModelInp, geminiKeyInp, btnToggleKey, dbxKeyInp, apfPassInp;
+let btnNewProject, btnExportZip, btnToggleEng, btnDeleteProject, btnRenameProject, btnOpenTemplate;
+let checklistContainer, sidebarApf, btnToggleSidebar, managementContainer, trackingContainer, btnLogout;
+let tabs, tabContents, btnUnlock, btnBackToMain, inputPassword, passwordError, passwordLock, managementContent;
+let btnSettings, btnSaveSettings, btnResetModel, geminiModelInp, geminiKeyInp, btnToggleKey, dbxKeyInp, apfPassInp;
 
 function initDOMElements() {
+    // Buttons
+    btnNewProject = document.getElementById('btn-new-project');
+    btnExportZip = document.getElementById('btn-export-zip');
+    btnToggleEng = document.getElementById('btn-toggle-eng');
+    btnDeleteProject = document.getElementById('btn-delete-project');
+    btnRenameProject = document.getElementById('btn-rename-project');
+    btnOpenTemplate = document.getElementById('btn-open-template');
+    
+    // Containers
+    checklistContainer = document.getElementById('checklist-render-area');
+    sidebarApf = document.getElementById('sidebar-apf');
+    btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
+    managementContainer = document.getElementById('management-render-area');
+    trackingContainer = document.getElementById('tracking-render-area');
+    btnLogout = document.getElementById('btn-logout');
+
+    // Tabs & Management
     tabs = document.querySelectorAll('.tab-btn');
     tabContents = document.querySelectorAll('.tab-content');
     btnUnlock = document.getElementById('btn-unlock');
@@ -146,7 +151,6 @@ function initDOMElements() {
     passwordError = document.getElementById('password-error');
     passwordLock = document.getElementById('password-lock');
     managementContent = document.getElementById('management-content');
-    sidebarApf = document.getElementById('sidebar-apf');
 }
 
 // Init
