@@ -8,17 +8,15 @@
     <link href="https://unpkg.com/@phosphor-icons/web@2.0.3/src/regular/style.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dropbox.js/10.34.0/Dropbox-sdk.min.js"></script>
 </head>
 <body>
     <div class="main-layout">
         <!-- Sidebar Acompanhamento sempre visível -->
         <aside id="sidebar-apf" class="sidebar glass-panel">
             <div class="sidebar-header">
-                <div class="flex-between mb-2">
+                <div class="mb-2">
                     <h2 style="font-size: 1.1rem;"><i class="ph ph-calendar-check text-primary"></i> Acompanhamento</h2>
-                    <button id="btn-toggle-sidebar" class="icon-btn" title="Recolher Barra Lateral">
-                        <i class="ph ph-caret-double-left"></i>
-                    </button>
                 </div>
                 <p style="font-size: 0.75rem; color: var(--text-muted); padding-top: 0.5rem;">Navegue pelos empreendimentos abaixo:</p>
             </div>
@@ -36,55 +34,74 @@
         <main class="content-area">
             <div class="flex-between mb-2">
                 <nav class="tabs" style="border-bottom: none; margin-bottom: 0;">
-                    <button class="tab-btn active" data-tab="checklist">
-                        <i class="ph ph-list-checks"></i> Visão Geral
-                    </button>
-                    <button class="tab-btn" data-tab="ai-insights">
-                        <i class="ph ph-magic-wand"></i> Insights IA
-                    </button>
+                    <span class="tab-fixed-label">
+                        <i class="ph ph-list-checks"></i> Entrega de documentação
+                    </span>
                 </nav>
-                <button class="tab-btn apf-access-btn" data-tab="management" style="border: 1px solid var(--panel-border); background: var(--panel-bg); border-radius: 0.5rem; padding: 0.4rem 1rem; font-weight: 700; font-size: 0.9rem; margin-bottom: 1rem;">
-                    APF
-                </button>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <div class="apf-nav-group">
+                        <button id="btn-theme-toggle" class="icon-btn" title="Alternar Modo Escuro/Claro" style="margin-right: 0.25rem;">
+                            <i class="ph ph-sun"></i>
+                        </button>
+                        <button class="tab-btn apf-access-btn" data-tab="management" style="border: 1px solid var(--panel-border); background: var(--panel-bg); border-radius: 0.5rem; padding: 0.4rem 1rem; font-weight: 700; font-size: 0.9rem;">
+                            APF
+                        </button>
+                        <div id="apf-submenu" class="apf-submenu" style="display:none;">
+                            <button id="btn-settings" class="icon-btn" title="Configurações Gerais">
+                                <i class="ph ph-gear"></i>
+                            </button>
+                            <button id="btn-connect-dropbox" class="icon-btn" title="Conectar Dropbox">
+                                <i class="ph ph-dropbox-logo"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Checklist Tab Content -->
-            <section id="tab-checklist" class="tab-content active glass-panel mt-4">
-                <div class="section-header flex-between mb-4">
-                    <div>
-                        <div style="display:flex; align-items:center; gap:0.75rem;">
-                            <strong id="checklist-proj-name" style="color: white; font-size:1.5rem; font-weight:700;"></strong>
-                            <div id="eng-badge-container"></div>
+            <!-- Checklist - Always Visible -->
+            <section id="tab-checklist" class="mt-4">
+                <div class="checklist-analysis-layout">
+                    <!-- Coluna principal: Checklist -->
+                    <div class="checklist-main-col glass-panel">
+                        <div class="section-header flex-between mb-4">
+                            <div>
+                                <div style="display:flex; align-items:center; gap:0.75rem;">
+                                    <strong id="checklist-proj-name" style="color: var(--text-main); font-size:1.5rem; font-weight:700;"></strong>
+                                </div>
+                                <h2 id="checklist-subtitle" class="default-subtitle">Entrega de documentação</h2>
+                            </div>
+                            <div id="project-global-countdown" class="date-info" style="text-align: right; background: rgba(0,0,0,0.2); padding: 0.5rem 1rem; border-radius: 0.5rem; display: none;">
+                                <!-- JS injected -->
+                            </div>
                         </div>
-                        <h2 style="font-size:1.15rem; color: var(--text-muted)">Entrega de documentação</h2>
+                        <!-- Progress Line -->
+                        <div id="project-progress-container" style="margin-bottom: 1rem; display: none;"></div>
+                        <!-- Drag Info Map -->
+                        <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem;"><i class="ph ph-info"></i> Dica: Você pode anexar arquivos clicando em "Anexar" ou arrastando os arquivos diretamente para cima da subpasta desejada.</p>
+                        <div id="checklist-render-area" class="tree-container">
+                            <!-- Tree rendered via JS -->
+                        </div>
                     </div>
-                    <div id="project-global-countdown" class="date-info" style="text-align: right; background: rgba(0,0,0,0.2); padding: 0.5rem 1rem; border-radius: 0.5rem; display: none;">
-                        <!-- JS injected -->
-                    </div>
-                </div>
-                <!-- Drag Info Map -->
-                <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem;"><i class="ph ph-info"></i> Dica: Você pode anexar arquivos clicando em "Anexar" ou arrastando os arquivos diretamente para cima da subpasta desejada.</p>
-                <div id="checklist-render-area" class="tree-container">
-                    <!-- Tree rendered via JS -->
-                </div>
-            </section>
 
-            <!-- AI Insights Tab Content -->
-            <section id="tab-ai-insights" class="tab-content glass-panel mt-4">
-                <div class="section-header">
-                    <h2>Inteligência Artificial & Analytics</h2>
-                    <p>O poderoso motor do Gemini avalia o fluxo de entregas, identifica documentações em atraso extremo e sumariza a eficácia dos Setores.</p>
-                </div>
-                <div class="flex-center" style="margin: 2.5rem 0;">
-                    <button id="btn-generate-ai" class="btn btn-primary" style="font-size: 1.15rem; padding: 1rem 2.5rem; border-radius: 1rem; box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);">
-                        <i class="ph ph-brain"></i> Gerar Análise Deep Analytics
-                    </button>
-                </div>
-                <div id="ai-loading" style="display:none; text-align:center; padding: 2rem; color:var(--primary);">
-                    <i class="ph ph-spinner ph-spin" style="font-size: 2.5rem;"></i>
-                    <p style="margin-top: 1rem;">O Gemini 1.5 está correlacionando os atributos e atrasos lógicos. Por favor, aguarde...</p>
-                </div>
-                <div id="ai-report-output" style="display:none; background: rgba(10, 15, 30, 0.5); padding: 2rem; border-radius: 0.75rem; border: 1px solid rgba(99, 102, 241, 0.2); line-height: 1.8; font-size: 0.95rem; color: var(--text-main);">
+                        <!-- Wrapper dos dois painéis de Análise -->
+                        <div class="analysis-panels-wrapper">
+
+                            <!-- Painel 2: Análise por Setor -->
+                            <aside class="analysis-side-panel glass-panel">
+                                <div class="analysis-panel-header">
+                                    <h3><i class="ph ph-chart-pie" style="color:var(--accent);"></i> Análise por Setor</h3>
+                                    <button id="btn-refresh-analysis" class="icon-btn" title="Atualizar análise">
+                                        <i class="ph ph-arrows-clockwise"></i>
+                                    </button>
+                                </div>
+                            <div id="panel-sectors">
+                                <div style="text-align:center; padding:1.5rem; color:var(--text-muted); font-size:0.82rem;">
+                                    <i class="ph ph-spinner ph-spin" style="font-size:1.5rem;"></i>
+                                </div>
+                            </div>
+                        </aside>
+
+                    </div>
                 </div>
             </section>
 
@@ -92,10 +109,20 @@
             <section id="tab-management" class="tab-content glass-panel mt-4">
                 <!-- Lock Screen -->
                 <!-- Password Lock Screen -->
-                <div id="password-lock" style="max-width: 450px; margin: 4rem auto; padding: 3rem; text-align: center;" class="glass-panel">
-                    <div style="width: 80px; height: 80px; background: rgba(245, 158, 11, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
-                        <i class="ph ph-lock-keyhole" style="font-size: 2.5rem; color: var(--warning);"></i>
+                <div id="password-lock" style="max-width: 450px; margin: 4rem auto; padding: 3rem; text-align: center;" class="glass-panel stagger-enter">
+                    <div class="apf-logo-box">
+                        <svg class="apf-logo-svg" viewBox="0 0 400 240" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Minimalist Background Circle - Centered -->
+                            <circle cx="200" cy="120" r="45" fill="rgba(255,255,255,0.05)"/>
+                            <!-- Modern Letter A - Shifted left to center -->
+                            <path d="M92 180 V120 C92 95 107 75 122 75 C137 75 152 95 152 120 V180 M92 145 H152" stroke="white" stroke-width="14" fill="none" stroke-linecap="round"/>
+                            <!-- Modern Letter P - Shifted left to center -->
+                            <path d="M177 180 V75 H212 C237 75 237 120 212 120 H177" stroke="white" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                            <!-- Modern Letter F - Shifted left to center -->
+                            <path d="M257 180 V75 H307 M257 120 H297" stroke="white" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
                     </div>
+
                     <h2 style="color: var(--text-main); margin-bottom: 0.75rem; font-size: 1.5rem;">Acesso restrito</h2>
                     <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 0.9rem; line-height: 1.6;">Área destinada apenas para as validações de APF</p>
                     
@@ -105,7 +132,7 @@
                             <i class="ph ph-key"></i> Acessar
                         </button>
                         <button id="btn-back-to-main" class="btn btn-outline" style="width: 100%; max-width: 300px; justify-content: center; padding: 0.8rem;">
-                            <i class="ph ph-arrow-left"></i> Voltar para Visão Geral
+                            <i class="ph ph-arrow-left"></i> Voltar para Entrega de documentação
                         </button>
                     </div>
                     
@@ -127,13 +154,18 @@
                         <div class="flex-between flex-wrap gap-4">
                             <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
                                 <h2 style="font-size: 1.25rem;">Gestão de Pastas: <span id="current-project-name" style="color:var(--primary)"></span></h2>
-                                <div style="display:flex; gap:0.5rem; align-items:center;">
-                                    <button id="btn-delete-project" class="btn btn-danger btn-sm" style="display:none;" title="Excluir Empreendimento Atual - Cuidado!"><i class="ph ph-trash"></i> Excluir</button>
-                                </div>
                             </div>
-                            <div id="due-date-container" style="display: flex; flex-direction: column; align-items: flex-end;">
-                                <label style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">Prazo Geral da Entrega</label>
-                                <input type="date" id="project-due-date" class="input-modern" style="max-width: 180px; padding: 0.4rem 0.75rem; font-size: 0.85rem;">
+                            <div style="display: flex; gap: 1rem; align-items: flex-end;">
+                                <div id="due-date-container" style="display: flex; flex-direction: column; align-items: flex-end;">
+                                    <label style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">Prazo Geral da Entrega</label>
+                                    <input type="date" id="project-due-date" class="input-modern" style="max-width: 180px; padding: 0.4rem 0.75rem; font-size: 0.85rem;">
+                                </div>
+                                <button id="btn-rename-project" class="btn btn-outline btn-sm" style="display:none; padding: 0.5rem;" title="Renomear Empreendimento">
+                                    <i class="ph ph-pencil-simple" style="font-size: 1.15rem; margin: 0;"></i>
+                                </button>
+                                <button id="btn-delete-project" class="btn btn-danger btn-sm" style="display:none; padding: 0.5rem;" title="Excluir Empreendimento Atual - Cuidado!">
+                                    <i class="ph ph-trash" style="font-size: 1.15rem; margin: 0;"></i>
+                                </button>
                             </div>
                         </div>
                         <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">Estrutura de arquivos e validação para este empreendimento.</p>
@@ -147,8 +179,49 @@
                             <button id="btn-toggle-eng" class="btn btn-outline" title="Sinalizar abertura de análise de engenharia">
                                 <i class="ph ph-magnifying-glass"></i> Abrir Engenharia
                             </button>
+                            <button id="btn-toggle-pendencias" class="btn btn-outline" title="Iniciar resolução de PENDÊNCIAS CAIXA">
+                                <i class="ph ph-warning-diamond"></i> Resolução de pendências
+                            </button>
                         </div>
                         <button id="btn-export-zip" class="btn btn-outline" title="Exportar todas as pastas e arquivos deste projeto em ZIP"><i class="ph ph-file-zip"></i> Exportar Tudo (ZIP)</button>
+                    </div>
+
+                    <div id="pendencias-mgmt-panel" class="glass-panel mb-4 hidden" style="padding: 1.5rem; border-color: var(--danger) !important; background: rgba(239, 68, 68, 0.05);">
+                        <div class="flex-between mb-3">
+                            <h3 style="color: var(--danger); font-size: 1.1rem;"><i class="ph ph-warning-diamond"></i> Configurar pendências</h3>
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                                    <label style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.2rem;">Data de Início da Resolução</label>
+                                    <input type="date" id="pendencia-start-date" class="input-modern" style="max-width: 150px; padding: 0.3rem 0.6rem; font-size: 0.8rem; border-color: var(--danger);">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 1rem; align-items: flex-end; margin-bottom: 1.5rem; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 0.5rem;">
+                            <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                                <label style="font-size: 0.75rem; color: var(--text-muted);">Nome do Documento</label>
+                                <input type="text" id="new-pendencia-name" class="input-modern" style="width: 100%; border-color: var(--danger);" placeholder="Ex: Habite-se">
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                                <label style="font-size: 0.75rem; color: var(--text-muted);">Setor Responsável</label>
+                                <select id="new-pendencia-sector" class="input-modern" style="width: 100%; border-color: var(--danger); appearance: auto;">
+                                    <option value="">Selecione o setor...</option>
+                                    <option value="other">Outra...</option>
+                                </select>
+                                <input type="text" id="new-pendencia-sector-other" class="input-modern hidden" style="width: 100%; border-color: var(--danger); margin-top: 0.3rem;" placeholder="Especifique o setor">
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                                <label style="font-size: 0.75rem; color: var(--text-muted);">Especificação da pendência</label>
+                                <input type="text" id="new-pendencia-spec" class="input-modern" style="width: 100%; border-color: var(--danger);" placeholder="Ex: Falta folha 02">
+                            </div>
+                            <button id="btn-add-pendencia" class="btn btn-danger" style="padding: 0.6rem 1rem;">
+                                <i class="ph ph-plus"></i> Adicionar
+                            </button>
+                        </div>
+
+                        <div id="pendencias-list-mgmt" style="display: flex; flex-direction: column; gap: 1rem;">
+                            <!-- Listado via JS -->
+                        </div>
                     </div>
                     <div id="management-render-area" class="tree-container management-mode">
                         <!-- Tree rendered via JS -->
@@ -175,6 +248,68 @@
         </div>
     </div>
 
-    <script type="module" src="/script.js"></script>
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal-backdrop hidden">
+        <div class="modal glass-panel" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3><i class="ph ph-gear"></i> Configurações</h3>
+                <button id="btn-close-settings" class="icon-btn"><i class="ph ph-x"></i></button>
+            </div>
+            <div id="settings-body-scroll" class="modal-body" style="padding: 1.5rem; display: block; overflow-y: auto; max-height: 60vh;">
+                <div class="mb-4">
+                    <label class="label-modern">
+                        <i class="ph ph-robot text-primary"></i> Modelo Gemini
+                    </label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" id="settings-gemini-model" class="input-modern" style="flex: 1;" placeholder="Ex: gemini-2.5-flash">
+                        <button id="btn-reset-model" class="icon-btn" title="Restaurar Recomendado">
+                            <i class="ph ph-arrow-counter-clockwise"></i>
+                        </button>
+                    </div>
+                    <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">Nome técnico do modelo (Recomendado: gemini-2.5-flash).</p>
+                </div>
+
+                <div class="mb-4">
+                    <label class="label-modern">
+                        <i class="ph ph-brain text-primary"></i> Google Gemini API Key
+                    </label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="password" id="settings-gemini-key" class="input-modern" style="flex: 1;" placeholder="Cole sua chave aqui...">
+                        <button id="btn-toggle-key-visibility" class="icon-btn" title="Mostrar/Ocultar Chave">
+                            <i class="ph ph-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="label-modern">
+                        <i class="ph ph-dropbox-logo text-primary"></i> Dropbox App Key
+                    </label>
+                    <input type="text" id="settings-dropbox-key" class="input-modern" style="width: 100%; max-width: none;" placeholder="Ex: 7uwxmlb4hz0im4x">
+                    <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">Chave do seu App registrado no Console do Dropbox.</p>
+                </div>
+
+                <div class="mb-4">
+                    <label class="label-modern">
+                        <i class="ph ph-password text-primary"></i> Senha de Acesso APF
+                    </label>
+                    <input type="password" id="settings-apf-password" class="input-modern" style="width: 100%; max-width: none;" placeholder="Defina a senha da aba APF">
+                    <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">Senha de segurança apenas para a aba de gestão.</p>
+                </div>
+
+                <hr style="border: 0; border-top: 1px solid var(--panel-border); margin: 1.5rem 0;">
+                <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5;">
+                    Configurações salvas localmente. Para maior segurança, limpe o cache do navegador após o uso em máquinas públicas.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-save-settings" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                    <i class="ph ph-check"></i> Salvar Tudo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
 </body>
 </html>
