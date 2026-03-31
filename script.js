@@ -135,7 +135,7 @@ function initDOMElements() {
     btnDeleteProject = document.getElementById('btn-delete-project');
     btnRenameProject = document.getElementById('btn-rename-project');
     btnOpenTemplate = document.getElementById('btn-open-template');
-    btnAddRoot = document.getElementById('btn-add-root-folder');
+    btnAddRoot = document.getElementById('btn-add-root');
     
     // Containers
     checklistContainer = document.getElementById('checklist-render-area');
