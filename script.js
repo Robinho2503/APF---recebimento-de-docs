@@ -1,4 +1,5 @@
 // Data Models & State Initialization
+
 let dbx = null;
 
 const DEFAULT_ITEMS = [
@@ -174,7 +175,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
     }
-
     initDropbox();
     await loadState(); // Now re-renders everything internally
     initAIEngine();
@@ -182,7 +182,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 const btnDbx = document.getElementById('btn-connect-dropbox');
-
 // Authentication - Dropbox
 function initDropbox() {
     const hash = window.location.hash;
@@ -221,7 +220,6 @@ function initDropbox() {
                     alert("Configuração Pendente: Por favor, insira sua 'Dropbox App Key' nas Configurações (ícone ⚙️) para habilitar a conexão.");
                     return;
                 }
-
                 let cleanPath = window.location.pathname.replace(/\/index\.html$/, '/');
                 if (!cleanPath.endsWith('/')) cleanPath += '/';
                 const redirectUri = window.location.origin + cleanPath;
@@ -1465,7 +1463,6 @@ function createNode(item, isMgmt) {
                 btnAi.title = "Extrair leitura do doc com IA";
                 btnAi.innerHTML = '<i class="ph ph-magic-wand text-primary"></i>';
                 btnAi.onclick = () => window.analyzeDocumentAI(att);
-
                 const btnDown = document.createElement('a');
                 btnDown.className = 'icon-btn';
                 btnDown.title = 'Baixar';
