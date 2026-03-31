@@ -120,10 +120,12 @@ function saveState() {
 }
 
 // DOM Elements
-let btnNewProject, btnExportZip, btnToggleEng, btnDeleteProject, btnRenameProject, btnOpenTemplate;
+let btnNewProject, btnExportZip, btnToggleEng, btnDeleteProject, btnRenameProject, btnOpenTemplate, btnAddRoot;
 let checklistContainer, sidebarApf, btnToggleSidebar, managementContainer, trackingContainer, btnLogout;
 let tabs, tabContents, btnUnlock, btnBackToMain, inputPassword, passwordError, passwordLock, managementContent;
 let btnSettings, btnSaveSettings, btnResetModel, geminiModelInp, geminiKeyInp, btnToggleKey, dbxKeyInp, apfPassInp;
+let btnTogglePendencias, pendenciasMgmtPanel, btnAddPendencia, pendenciaStartDateInp, modalOverlay, btnCloseModal;
+let projectDueDateInp, currentProjectName, projectGlobalCountdown;
 
 function initDOMElements() {
     // Buttons
@@ -133,6 +135,7 @@ function initDOMElements() {
     btnDeleteProject = document.getElementById('btn-delete-project');
     btnRenameProject = document.getElementById('btn-rename-project');
     btnOpenTemplate = document.getElementById('btn-open-template');
+    btnAddRoot = document.getElementById('btn-add-root-folder');
     
     // Containers
     checklistContainer = document.getElementById('checklist-render-area');
@@ -151,6 +154,19 @@ function initDOMElements() {
     passwordError = document.getElementById('password-error');
     passwordLock = document.getElementById('password-lock');
     managementContent = document.getElementById('management-content');
+
+    // Pendencias & Modals
+    btnTogglePendencias = document.getElementById('btn-toggle-pendencias');
+    pendenciasMgmtPanel = document.getElementById('pendencias-mgmt-panel');
+    btnAddPendencia = document.getElementById('btn-add-pendencia');
+    pendenciaStartDateInp = document.getElementById('pendencia-start-date');
+    modalOverlay = document.getElementById('modal-overlay');
+    btnCloseModal = document.getElementById('btn-close-modal');
+
+    // Inputs
+    projectDueDateInp = document.getElementById('project-due-date');
+    currentProjectName = document.getElementById('current-project-name');
+    projectGlobalCountdown = document.getElementById('project-global-countdown');
 }
 
 // Init
@@ -164,6 +180,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (themeBtn) themeBtn.innerHTML = '<i class="ph ph-moon"></i>';
     }
 
+    initEventListeners();
+    initDropbox();
+    await loadState(); 
+    initAIEngine();
+    initSettings();
+});
+
+function initEventListeners() {
     const btnThemeToggle = document.getElementById('btn-theme-toggle');
     if (btnThemeToggle) {
         btnThemeToggle.addEventListener('click', () => {
@@ -260,11 +284,257 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    initDropbox();
-    await loadState(); 
-    initAIEngine();
-    initSettings();
-});
+    // Sidebar & Project Management Listeners
+    if (projectDueDateInp) {
+        projectDueDateInp.addEventListener('change', (e) => {
+            const curr = getCurrentProject();
+            if(curr && curr.id !== 'p_default') {
+                curr.dueDate = e.target.value;
+                saveState();
+                updateGlobalDateUI();
+                renderTracking();
+            }
+        });
+    }
+
+    if (btnNewProject) {
+        btnNewProject.addEventListener('click', () => {
+            const name = prompt('Nome do novo empreendimento (que herdará as pastas do Modelo de Entrega):');
+            if(name && name.trim()){
+                const baseProj = state.projects.find(p => p.id === 'p_default') || state.projects[0];
+                const duplicatedItems = JSON.parse(JSON.stringify(baseProj.items)).map(item => {
+                    item.attachments = [];
+                    item.validationStatus = 'Em Análise';
+                    item.observation = '';
+                    item.expanded = false;
+                    return item;
+                });
+                const newProj = {
+                    id: 'p_' + generateId(),
+                    name: name.trim(),
+                    dueDate: '',
+                    engAnalysisOpened: false,
+                    createdAt: new Date().toISOString().split('T')[0],
+                    pendenciaActive: false,
+                    pendencias: [],
+                    items: duplicatedItems
+                };
+                state.projects.push(newProj);
+                state.currentProjectId = newProj.id;
+                saveState();
+                updateGlobalDateUI();
+                renderTree();
+                renderTracking();
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                document.querySelector('[data-tab="management"]').classList.add('active');
+                document.getElementById('tab-management').classList.add('active');
+                applyAuthState();
+            }
+        });
+    }
+
+    if (btnExportZip) {
+        btnExportZip.addEventListener('click', async () => {
+            const curr = getCurrentProject();
+            if (!curr || curr.id === 'none') {
+                alert('Selecione um empreendimento primeiro.');
+                return;
+            }
+            const originalBtnContent = btnExportZip.innerHTML;
+            btnExportZip.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Gerando ZIP...';
+            btnExportZip.disabled = true;
+            try {
+                const zip = new JSZip();
+                const rootFolder = zip.folder(curr.name);
+                async function processItem(item, folder) {
+                    const children = getItems().filter(i => i.parentId === item.id);
+                    const itemFolder = folder.folder(item.name);
+                    if (item.attachments && item.attachments.length > 0) {
+                        for (const att of item.attachments) {
+                            try {
+                                const response = await fetch(att.objectUrl);
+                                const blob = await response.blob();
+                                itemFolder.file(att.name, blob);
+                            } catch (e) { console.error(`Erro ao baixar arquivo ${att.name}:`, e); }
+                        }
+                    }
+                    for (const child of children) { await processItem(child, itemFolder); }
+                }
+                const roots = getChildItems(null);
+                if (roots.length === 0) {
+                    alert('Não há itens para exportar.');
+                    btnExportZip.innerHTML = originalBtnContent;
+                    btnExportZip.disabled = false;
+                    return;
+                }
+                for (const root of roots) { await processItem(root, rootFolder); }
+                const content = await zip.generateAsync({ type: 'blob' });
+                const zipUrl = URL.createObjectURL(content);
+                const link = document.createElement('a');
+                link.href = zipUrl;
+                link.download = `${curr.name}_Export.zip`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(zipUrl);
+            } catch (error) {
+                console.error('Erro na exportação ZIP:', error);
+                alert('Ocorreu um erro ao gerar o arquivo ZIP.');
+            } finally {
+                btnExportZip.innerHTML = originalBtnContent;
+                btnExportZip.disabled = false;
+            }
+        });
+    }
+
+    if (btnToggleEng) {
+        btnToggleEng.addEventListener('click', () => {
+            const curr = getCurrentProject();
+            if (curr && curr.id !== 'p_default') {
+                curr.engAnalysisOpened = !curr.engAnalysisOpened;
+                saveState();
+                updateGlobalDateUI();
+                renderTracking();
+            }
+        });
+    }
+
+    if (btnDeleteProject) {
+        btnDeleteProject.addEventListener('click', () => {
+            if (state.currentProjectId === 'p_default') {
+                alert('O Modelo de Entrega não pode ser excluído.');
+                return;
+            }
+            const curr = getCurrentProject();
+            if(confirm(`Atenção: Tem certeza que deseja excluir o empreendimento "${curr.name}" completamente?`)){
+                state.projects = state.projects.filter(p => p.id !== state.currentProjectId);
+                const nextProj = state.projects.find(p => p.id !== 'p_default') || state.projects[0];
+                state.currentProjectId = nextProj.id;
+                saveState();
+                updateGlobalDateUI();
+                renderTree();
+                renderTracking();
+            }
+        });
+    }
+
+    if (btnRenameProject) {
+        btnRenameProject.addEventListener('click', () => {
+            const curr = getCurrentProject();
+            if (curr.id === 'p_default') return;
+            const newName = prompt('Novo nome para o empreendimento:', curr.name);
+            if (newName && newName.trim() && newName.trim() !== curr.name) {
+                curr.name = newName.trim();
+                saveState();
+                updateGlobalDateUI();
+                renderTree();
+                renderTracking();
+            }
+        });
+    }
+
+    if (btnOpenTemplate) {
+        btnOpenTemplate.addEventListener('click', () => {
+            if(state.currentProjectId === 'p_default') return;
+            state.currentProjectId = 'p_default';
+            saveState();
+            updateGlobalDateUI();
+            renderTree();
+            renderTracking();
+            triggerPanelAnimation();
+        });
+    }
+
+    if (btnAddRoot) {
+        btnAddRoot.addEventListener('click', () => handleAddFolder(null));
+    }
+
+    if (btnTogglePendencias) {
+        btnTogglePendencias.onclick = () => {
+            const curr = getCurrentProject();
+            if (!curr || curr.id === 'p_default') {
+                alert('Selecione um empreendimento para gerenciar pendências.');
+                return;
+            }
+            curr.pendenciaActive = !curr.pendenciaActive;
+            saveState();
+            renderTree();
+            renderTracking();
+        };
+    }
+
+    if (pendenciaStartDateInp) {
+        pendenciaStartDateInp.onchange = (e) => {
+            const curr = getCurrentProject();
+            if (curr) {
+                curr.pendenciaStartDate = e.target.value;
+                saveState();
+                renderTracking();
+            }
+        };
+    }
+
+    if (btnAddPendencia) {
+        btnAddPendencia.onclick = () => {
+            const nameInp = document.getElementById('new-pendencia-name');
+            const sectorSel = document.getElementById('new-pendencia-sector');
+            const sectorOtherInp = document.getElementById('new-pendencia-sector-other');
+            const specInp = document.getElementById('new-pendencia-spec');
+            const name = nameInp.value.trim();
+            const specValue = sectorSel.value;
+            const sector = specValue === 'other' ? sectorOtherInp.value.trim() : specValue;
+            const specification = specInp.value.trim();
+            if (!name || !sector) {
+                alert('Preencha o nome do documento e selecione o setor.');
+                return;
+            }
+            const curr = getCurrentProject();
+            if (curr) {
+                if (!curr.pendencias) curr.pendencias = [];
+                if (editingPendenciaId) {
+                    const pend = curr.pendencias.find(p => p.id === editingPendenciaId);
+                    if (pend) {
+                        pend.docName = name;
+                        pend.sector = sector;
+                        pend.specification = specification;
+                    }
+                    editingPendenciaId = null;
+                    btnAddPendencia.innerHTML = '<i class="ph ph-plus"></i> Adicionar';
+                    btnAddPendencia.classList.remove('btn-warning');
+                    btnAddPendencia.classList.add('btn-danger');
+                } else {
+                    curr.pendencias.push({
+                        id: generateId(), docName: name, sector: sector, specification: specification, attachments: [], observation: ''
+                    });
+                }
+                nameInp.value = '';
+                sectorSel.value = '';
+                sectorOtherInp.value = '';
+                sectorOtherInp.classList.add('hidden');
+                specInp.value = '';
+                saveState();
+                renderPendenciasMgmt();
+                renderTree();
+            }
+        };
+    }
+
+    const pendenciaSectorSel = document.getElementById('new-pendencia-sector');
+    if (pendenciaSectorSel) {
+        pendenciaSectorSel.onchange = (e) => {
+            const other = document.getElementById('new-pendencia-sector-other');
+            if (e.target.value === 'other') { other.classList.remove('hidden'); } else { other.classList.add('hidden'); }
+        };
+    }
+
+    if (btnCloseModal) {
+        btnCloseModal.addEventListener('click', () => modalOverlay.classList.add('hidden'));
+    }
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) modalOverlay.classList.add('hidden'); });
+    }
+}
 
 const btnDbx = document.getElementById('btn-connect-dropbox');
 // Authentication - Dropbox
@@ -385,27 +655,6 @@ function updateGlobalDateUI() {
     
     // Badge unificado no subtitle agora
 
-    projectDueDateInp.value = curr.dueDate || '';
-    
-    const dueDateContainer = document.getElementById('due-date-container');
-    if (dueDateContainer) {
-        dueDateContainer.style.display = (curr.id === 'p_default') ? 'none' : 'flex';
-    }
-
-    if (btnToggleEng) {
-        btnToggleEng.style.display = (curr.id === 'p_default') ? 'none' : 'inline-flex';
-        btnToggleEng.className = curr.engAnalysisOpened ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm';
-        btnToggleEng.innerHTML = curr.engAnalysisOpened ? '<i class="ph ph-check-circle"></i> Engenharia Aberta' : '<i class="ph ph-file-search"></i> Abrir Engenharia';
-    }
-
-    if (btnTogglePendencias) {
-        btnTogglePendencias.style.display = (curr.id === 'p_default') ? 'none' : 'inline-flex';
-    }
-
-    if (btnDeleteProject) {
-        btnDeleteProject.style.display = (curr.id === 'p_default') ? 'none' : 'inline-flex';
-    }
-    
     if (btnRenameProject) {
         btnRenameProject.style.display = (curr.id === 'p_default') ? 'none' : 'inline-flex';
     }
@@ -456,15 +705,6 @@ function updateGlobalDateUI() {
     }
 }
 
-projectDueDateInp.addEventListener('change', (e) => {
-    const curr = getCurrentProject();
-    if(curr && curr.id !== 'p_default') {
-        curr.dueDate = e.target.value;
-        saveState();
-        updateGlobalDateUI();
-        renderTracking();
-    }
-});
 
 // function updateProjectDropdown() {
 //     const mgmt = isMgmtActive();
@@ -516,175 +756,6 @@ projectDueDateInp.addEventListener('change', (e) => {
 //     renderTracking();
 // });
 
-btnNewProject.addEventListener('click', () => {
-    const name = prompt('Nome do novo empreendimento (que herdará as pastas do Modelo de Entrega):');
-    if(name && name.trim()){
-        const baseProj = state.projects.find(p => p.id === 'p_default') || state.projects[0];
-        
-        const duplicatedItems = JSON.parse(JSON.stringify(baseProj.items)).map(item => {
-            item.attachments = [];
-            item.validationStatus = 'Em Análise';
-            item.observation = '';
-            item.expanded = false;
-            return item;
-        });
-
-        const newProj = {
-            id: 'p_' + generateId(),
-            name: name.trim(),
-            dueDate: '',
-            engAnalysisOpened: false,
-            createdAt: new Date().toISOString().split('T')[0],
-            pendenciaActive: false,
-            pendencias: [],
-            items: duplicatedItems
-        };
-        state.projects.push(newProj);
-        state.currentProjectId = newProj.id;
-        saveState();
-        updateGlobalDateUI();
-        renderTree();
-        renderTracking();
-        
-        // Switch to Management tab to show the new project structure editor
-        tabs.forEach(t => t.classList.remove('active'));
-        tabContents.forEach(c => c.classList.remove('active'));
-        document.querySelector('[data-tab="management"]').classList.add('active');
-        document.getElementById('tab-management').classList.add('active');
-        unlockManagement();
-
-        // projectInp.value = ''; // This variable doesn't exist in the provided context, commenting out.
-    }
-});
-
-btnExportZip.addEventListener('click', async () => {
-    const curr = getCurrentProject();
-    if (!curr || curr.id === 'none') {
-        alert('Selecione um empreendimento primeiro.');
-        return;
-    }
-
-    const originalBtnContent = btnExportZip.innerHTML;
-    btnExportZip.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Gerando ZIP...';
-    btnExportZip.disabled = true;
-
-    try {
-        const zip = new JSZip();
-        const rootFolder = zip.folder(curr.name);
-
-        async function processItem(item, folder) {
-            const children = getItems().filter(i => i.parentId === item.id);
-            const itemFolder = folder.folder(item.name);
-
-            // Add attachments
-            if (item.attachments && item.attachments.length > 0) {
-                for (const att of item.attachments) {
-                    try {
-                        const response = await fetch(att.objectUrl);
-                        const blob = await response.blob();
-                        itemFolder.file(att.name, blob);
-                    } catch (e) {
-                        console.error(`Erro ao baixar arquivo ${att.name}:`, e);
-                    }
-                }
-            }
-
-            // Process children
-            for (const child of children) {
-                await processItem(child, itemFolder);
-            }
-        }
-
-        const roots = getChildItems(null);
-        if (roots.length === 0) {
-            alert('Não há itens para exportar.');
-            btnExportZip.innerHTML = originalBtnContent;
-            btnExportZip.disabled = false;
-            return;
-        }
-
-        for (const root of roots) {
-            await processItem(root, rootFolder);
-        }
-
-        const content = await zip.generateAsync({ type: 'blob' });
-        const zipUrl = URL.createObjectURL(content);
-        const link = document.createElement('a');
-        link.href = zipUrl;
-        link.download = `${curr.name}_Export.zip`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(zipUrl);
-
-    } catch (error) {
-        console.error('Erro na exportação ZIP:', error);
-        alert('Ocorreu um erro ao gerar o arquivo ZIP.');
-    } finally {
-        btnExportZip.innerHTML = originalBtnContent;
-        btnExportZip.disabled = false;
-    }
-});
-
-
-
-if (btnToggleEng) {
-    btnToggleEng.addEventListener('click', () => {
-        const curr = getCurrentProject();
-        if (curr && curr.id !== 'p_default') {
-            curr.engAnalysisOpened = !curr.engAnalysisOpened;
-            saveState();
-            updateGlobalDateUI();
-            renderTracking();
-        }
-    });
-}
-
-btnDeleteProject.addEventListener('click', () => {
-    if (state.currentProjectId === 'p_default') {
-        alert('O Modelo de Entrega não pode ser excluído.');
-        return;
-    }
-    const curr = getCurrentProject();
-    if(confirm(`Atenção: Tem certeza que deseja excluir o empreendimento "${curr.name}" completamente?`)){
-        state.projects = state.projects.filter(p => p.id !== state.currentProjectId);
-        // Fallback to the first project that isn't the template, or the template if none left
-        const nextProj = state.projects.find(p => p.id !== 'p_default') || state.projects[0];
-        state.currentProjectId = nextProj.id;
-        saveState();
-        updateGlobalDateUI();
-        renderTree();
-        renderTracking();
-    }
-});
-
-if (btnRenameProject) {
-    btnRenameProject.addEventListener('click', () => {
-        const curr = getCurrentProject();
-        if (curr.id === 'p_default') return;
-        
-        const newName = prompt('Novo nome para o empreendimento:', curr.name);
-        if (newName && newName.trim() && newName.trim() !== curr.name) {
-            curr.name = newName.trim();
-            saveState();
-            updateGlobalDateUI();
-            renderTree();
-            renderTracking(); // Essential to update sidebar
-        }
-    });
-}
-
-if (btnOpenTemplate) {
-    btnOpenTemplate.addEventListener('click', () => {
-        if(state.currentProjectId === 'p_default') return;
-        state.currentProjectId = 'p_default';
-        saveState();
-        updateGlobalDateUI();
-        renderTree();
-        renderTracking();
-        triggerPanelAnimation();
-    });
-}
 
 function triggerPanelAnimation() {
     const mainCol = document.querySelector('.checklist-main-col');
@@ -1621,8 +1692,6 @@ function createNode(item, isMgmt) {
 }
 
 // Logic implementations
-btnAddRoot.addEventListener('click', () => handleAddFolder(null));
-
 function handleAddFolder(parentId) {
     const parentItem = parentId ? getItems().find(i => i.id === parentId) : null;
     const name = prompt('Nome da nova pasta/item:');
@@ -1674,107 +1743,6 @@ function handleRenameFolder(id) {
 }
 
 // GESTÃO DE PENDÊNCIAS
-const btnTogglePendencias = document.getElementById('btn-toggle-pendencias');
-const pendenciasMgmtPanel = document.getElementById('pendencias-mgmt-panel');
-const btnAddPendencia = document.getElementById('btn-add-pendencia');
-const pendenciaStartDateInp = document.getElementById('pendencia-start-date');
-
-if (btnTogglePendencias) {
-    btnTogglePendencias.onclick = () => {
-        const curr = getCurrentProject();
-        if (!curr || curr.id === 'p_default') {
-            alert('Selecione um empreendimento para gerenciar pendências.');
-            return;
-        }
-        
-        curr.pendenciaActive = !curr.pendenciaActive;
-        saveState();
-        renderTree();
-        renderTracking();
-    };
-}
-
-if (pendenciaStartDateInp) {
-    pendenciaStartDateInp.onchange = (e) => {
-        const curr = getCurrentProject();
-        if (curr) {
-            curr.pendenciaStartDate = e.target.value;
-            saveState();
-            renderTracking();
-        }
-    };
-}
- 
-// State for editing pendencies
-let editingPendenciaId = null;
-
-if (btnAddPendencia) {
-    btnAddPendencia.onclick = () => {
-        const nameInp = document.getElementById('new-pendencia-name');
-        const sectorSel = document.getElementById('new-pendencia-sector');
-        const sectorOtherInp = document.getElementById('new-pendencia-sector-other');
-        const specInp = document.getElementById('new-pendencia-spec');
-        
-        const name = nameInp.value.trim();
-        const specValue = sectorSel.value;
-        const sector = specValue === 'other' ? sectorOtherInp.value.trim() : specValue;
-        const specification = specInp.value.trim();
-        
-        if (!name || !sector) {
-            alert('Preencha o nome do documento e selecione o setor.');
-            return;
-        }
-
-        const curr = getCurrentProject();
-        if (curr) {
-            if (!curr.pendencias) curr.pendencias = [];
-            
-            if (editingPendenciaId) {
-                // Update existing
-                const pend = curr.pendencias.find(p => p.id === editingPendenciaId);
-                if (pend) {
-                    pend.docName = name;
-                    pend.sector = sector;
-                    pend.specification = specification;
-                }
-                editingPendenciaId = null;
-                btnAddPendencia.innerHTML = '<i class="ph ph-plus"></i> Adicionar';
-                btnAddPendencia.classList.remove('btn-warning');
-                btnAddPendencia.classList.add('btn-danger');
-            } else {
-                // Add new
-                curr.pendencias.push({
-                    id: generateId(),
-                    docName: name,
-                    sector: sector,
-                    specification: specification,
-                    attachments: [],
-                    observation: ''
-                });
-            }
-            
-            nameInp.value = '';
-            sectorSel.value = '';
-            sectorOtherInp.value = '';
-            sectorOtherInp.classList.add('hidden');
-            specInp.value = '';
-            saveState();
-            renderPendenciasMgmt();
-            renderTree();
-        }
-    };
-}
-
-if (document.getElementById('new-pendencia-sector')) {
-    document.getElementById('new-pendencia-sector').onchange = (e) => {
-        const other = document.getElementById('new-pendencia-sector-other');
-        if (e.target.value === 'other') {
-            other.classList.remove('hidden');
-        } else {
-            other.classList.add('hidden');
-        }
-    };
-}
 
 function renderPendenciasMgmt() {
     const curr = getCurrentProject();
@@ -2067,8 +2035,6 @@ window.openPreview = function(fileObj) {
     modalOverlay.classList.remove('hidden');
 }
 
-document.getElementById('btn-close-modal').addEventListener('click', () => modalOverlay.classList.add('hidden'));
-modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) modalOverlay.classList.add('hidden'); });
 
 function initAIEngine() {
     const btnRefresh = document.getElementById('btn-refresh-analysis');
