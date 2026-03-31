@@ -135,25 +135,24 @@ const managementContainer = document.getElementById('management-render-area');
 const trackingContainer = document.getElementById('tracking-render-area');
 const btnLogout = document.getElementById('btn-logout');
 
-const tabs = document.querySelectorAll('.tab-btn');
-const tabContents = document.querySelectorAll('.tab-content');
+let tabs, tabContents, btnUnlock, btnBackToMain, inputPassword, passwordError, passwordLock, managementContent, sidebarApf, btnSettings, btnSaveSettings, btnResetModel, geminiModelInp, geminiKeyInp, btnToggleKey, dbxKeyInp, apfPassInp;
 
-const passwordLock = document.getElementById('password-lock');
-const managementContent = document.getElementById('management-content');
-const inputPassword = document.getElementById('apf-password');
-const btnUnlock = document.getElementById('btn-unlock');
-const passwordError = document.getElementById('password-error');
-const btnBackToMain = document.getElementById('btn-back-to-main');
-
-const btnAddRoot = document.getElementById('btn-add-root');
-const currentProjectName = document.getElementById('current-project-name');
-const projectDueDateInp = document.getElementById('project-due-date');
-const projectGlobalCountdown = document.getElementById('project-global-countdown');
-
-const modalOverlay = document.getElementById('preview-modal');
+function initDOMElements() {
+    tabs = document.querySelectorAll('.tab-btn');
+    tabContents = document.querySelectorAll('.tab-content');
+    btnUnlock = document.getElementById('btn-unlock');
+    btnBackToMain = document.getElementById('btn-back-to-main');
+    inputPassword = document.getElementById('apf-password');
+    passwordError = document.getElementById('password-error');
+    passwordLock = document.getElementById('password-lock');
+    managementContent = document.getElementById('management-content');
+    sidebarApf = document.getElementById('sidebar-apf');
+}
 
 // Init
 document.addEventListener('DOMContentLoaded', async () => {
+    initDOMElements();
+    
     // Theme setup
     if (localStorage.getItem('apf_theme') === 'light') {
         document.documentElement.classList.add('light-mode');
@@ -175,8 +174,90 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
     }
+    
+    // Authenticate events
+    if (btnUnlock) {
+        btnUnlock.addEventListener('click', () => {
+            const storedPassword = localStorage.getItem('apf_access_password') || '1234';
+            if(inputPassword.value === storedPassword) {
+                isAuthenticated = true;
+                inputPassword.value = '';
+                passwordError.style.display = 'none';
+                applyAuthState();
+                renderTree();
+            } else {
+                passwordError.style.display = 'block';
+                inputPassword.style.borderColor = 'var(--danger)';
+                setTimeout(() => {
+                    inputPassword.style.borderColor = '';
+                }, 1000);
+            }
+        });
+    }
+
+    if (inputPassword) {
+        inputPassword.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') btnUnlock.click();
+        });
+    }
+
+    if (btnBackToMain) {
+        btnBackToMain.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tabContents.forEach(tc => tc.classList.remove('active'));
+            const checklistSection = document.getElementById('tab-checklist');
+            if (checklistSection) checklistSection.style.display = '';
+            applyAuthState();
+            updateGlobalDateUI();
+            renderTree();
+            renderTracking();
+        });
+    }
+
+    // Tab Navigation initialization
+    if (tabs) {
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const alreadyActive = tab.classList.contains('active');
+
+                if (alreadyActive) {
+                    tab.classList.remove('active');
+                    if (tab.dataset.tab === 'management') {
+                        isAuthenticated = false;
+                        if (inputPassword) inputPassword.value = '';
+                    }
+                    tabContents.forEach(tc => tc.classList.remove('active'));
+                    const checklistSection = document.getElementById('tab-checklist');
+                    if (checklistSection) checklistSection.style.display = '';
+                    applyAuthState();
+                    updateGlobalDateUI();
+                    renderTree();
+                    renderTracking();
+                    return;
+                }
+
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                tabContents.forEach(tc => tc.classList.remove('active'));
+                const targetContent = document.getElementById(`tab-${tab.dataset.tab}`);
+                if (targetContent) targetContent.classList.add('active');
+
+                const checklistSection = document.getElementById('tab-checklist');
+                if (checklistSection) {
+                    checklistSection.style.display = tab.dataset.tab === 'management' ? 'none' : '';
+                }
+
+                applyAuthState();
+                updateGlobalDateUI();
+                renderTree();
+                renderTracking();
+            });
+        });
+    }
+
     initDropbox();
-    await loadState(); // Now re-renders everything internally
+    await loadState(); 
     initAIEngine();
     initSettings();
 });
@@ -239,46 +320,6 @@ function initDropbox() {
     }
 }
 
-// Authentication
-if (btnUnlock) {
-    btnUnlock.addEventListener('click', () => {
-        const storedPassword = localStorage.getItem('apf_access_password') || '1234';
-        if(inputPassword.value === storedPassword) {
-            isAuthenticated = true;
-            inputPassword.value = '';
-            passwordError.style.display = 'none';
-            applyAuthState();
-            renderTree();
-        } else {
-            passwordError.style.display = 'block';
-            inputPassword.style.borderColor = 'var(--danger)';
-            setTimeout(() => {
-                inputPassword.style.borderColor = '';
-            }, 1000);
-        }
-    });
-}
-
-// Allow Enter key to unlock
-if (inputPassword) {
-    inputPassword.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') btnUnlock.click();
-    });
-}
-
-if (btnBackToMain) {
-    btnBackToMain.addEventListener('click', () => {
-        // Fechar aba APF e mostrar checklist novamente
-        tabs.forEach(t => t.classList.remove('active'));
-        tabContents.forEach(tc => tc.classList.remove('active'));
-        const checklistSection = document.getElementById('tab-checklist');
-        if (checklistSection) checklistSection.style.display = '';
-        applyAuthState();
-        updateGlobalDateUI();
-        renderTree();
-        renderTracking();
-    });
-}
 
 function applyAuthState() {
     if(!passwordLock || !managementContent) return;
@@ -329,47 +370,6 @@ function applyAuthState() {
     if (tabsNav) tabsNav.style.display = 'flex';
 }
 
-// Tabs Navigation
-tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-        const alreadyActive = tab.classList.contains('active');
-
-        // Toggle: clicar no tab ativo fecha e volta ao checklist
-        if (alreadyActive) {
-            tab.classList.remove('active');
-            if (tab.dataset.tab === 'management') {
-                isAuthenticated = false; // Logout ao fechar
-                if (inputPassword) inputPassword.value = '';
-            }
-            tabContents.forEach(tc => tc.classList.remove('active'));
-            const checklistSection = document.getElementById('tab-checklist');
-            if (checklistSection) checklistSection.style.display = '';
-            applyAuthState();
-            updateGlobalDateUI();
-            renderTree();
-            renderTracking();
-            return;
-        }
-
-        tabs.forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-
-        tabContents.forEach(tc => tc.classList.remove('active'));
-        const targetContent = document.getElementById(`tab-${tab.dataset.tab}`);
-        if (targetContent) targetContent.classList.add('active');
-
-        // Ocultar/mostrar o checklist fixo quando o APF é aberto
-        const checklistSection = document.getElementById('tab-checklist');
-        if (checklistSection) {
-            checklistSection.style.display = tab.dataset.tab === 'management' ? 'none' : '';
-        }
-
-        applyAuthState();
-        updateGlobalDateUI();
-        renderTree();
-        renderTracking();
-    });
-});
 
 // Project Management & Global UI
 function updateGlobalDateUI() {
@@ -2206,6 +2206,15 @@ function initSettings() {
         geminiKeyInp.type = isPass ? 'text' : 'password';
         btnToggleKey.innerHTML = `<i class="ph ph-eye${isPass ? '-slash' : ''}"></i>`;
     });
+
+    const btnToggleDbxKey = document.getElementById('btn-toggle-dropbox-key-visibility');
+    if (btnToggleDbxKey) {
+        btnToggleDbxKey.addEventListener('click', () => {
+            const isPass = dbxKeyInp.type === 'password';
+            dbxKeyInp.type = isPass ? 'text' : 'password';
+            btnToggleDbxKey.innerHTML = `<i class="ph ph-eye${isPass ? '-slash' : ''}"></i>`;
+        });
+    }
 
     btnSaveSettings.addEventListener('click', () => {
         const gModel = geminiModelInp.value.trim();

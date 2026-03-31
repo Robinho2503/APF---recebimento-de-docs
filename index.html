@@ -6,7 +6,7 @@
     <title>Checklist APF Avançado</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://unpkg.com/@phosphor-icons/web@2.0.3/src/regular/style.css" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dropbox.js/10.34.0/Dropbox-sdk.min.js"></script>
 </head>
@@ -285,7 +285,12 @@
                     <label class="label-modern">
                         <i class="ph ph-dropbox-logo text-primary"></i> Dropbox App Key
                     </label>
-                    <input type="text" id="settings-dropbox-key" class="input-modern" style="width: 100%; max-width: none;" placeholder="Ex: 7uwxmlb4hz0im4x">
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="password" id="settings-dropbox-key" class="input-modern" style="flex: 1;" placeholder="Ex: 7uwxmlb4hz0im4x">
+                        <button id="btn-toggle-dropbox-key-visibility" class="icon-btn" title="Mostrar/Ocultar Chave">
+                            <i class="ph ph-eye"></i>
+                        </button>
+                    </div>
                     <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">Chave do seu App registrado no Console do Dropbox.</p>
                 </div>
 
@@ -309,6 +314,6 @@
             </div>
         </div>
     </div>
-    <script src="script.js?v=2"></script>
+    <script type="module" src="/script.js"></script>
 </body>
 </html>
