@@ -231,7 +231,8 @@ function initDropbox() {
 
                 alert("COPIE ESTE ENDEREÇO EXACTO:\n\n" + redirectUri + "\n\nCole lá no painel do Dropbox (OAuth 2 Redirect URIs) na aba Settings do seu App, ou o Dropbox vai negar o acesso com 'pedido inválido'.");
 
-                const authUrl = `https://www.dropbox.com/oauth2/authorize?client_id=${dropboxAppKey}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}`;
+                const scopes = "files.content.write files.content.read sharing.write";
+                const authUrl = `https://www.dropbox.com/oauth2/authorize?client_id=${dropboxAppKey}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`;
                 window.location.href = authUrl;
             };
         }
@@ -286,6 +287,22 @@ function applyAuthState() {
     const isMgmt = isMgmtActive();
     const apfSubmenu = document.getElementById('apf-submenu');
     const btnDetailedAi = document.getElementById('btn-detailed-ai');
+    const apfBtn = document.querySelector('.apf-access-btn');
+
+    // Update APF access button label
+    if (apfBtn) {
+        if (isMgmt) {
+            apfBtn.innerHTML = '<i class="ph ph-sign-out"></i> SAIR';
+            apfBtn.style.borderColor = 'var(--danger)';
+            apfBtn.style.color = 'var(--danger)';
+            apfBtn.title = 'Sair do Acesso APF';
+        } else {
+            apfBtn.innerHTML = 'APF';
+            apfBtn.style.borderColor = '';
+            apfBtn.style.color = '';
+            apfBtn.title = 'Acesso Administrativo APF';
+        }
+    }
 
     // Show APF tools only when in APF tab and authenticated
     if (apfSubmenu) apfSubmenu.style.display = (isMgmt && isAuthenticated) ? 'flex' : 'none';
@@ -320,6 +337,10 @@ tabs.forEach(tab => {
         // Toggle: clicar no tab ativo fecha e volta ao checklist
         if (alreadyActive) {
             tab.classList.remove('active');
+            if (tab.dataset.tab === 'management') {
+                isAuthenticated = false; // Logout ao fechar
+                if (inputPassword) inputPassword.value = '';
+            }
             tabContents.forEach(tc => tc.classList.remove('active'));
             const checklistSection = document.getElementById('tab-checklist');
             if (checklistSection) checklistSection.style.display = '';
@@ -728,6 +749,12 @@ function renderTracking() {
         const isPendencia = p.pendenciaActive ? 'pendencia-active' : '';
         card.className = `tracking-card glass-panel ${isActive} ${isEng} ${isPendencia}`;
         
+        // Define color for the status indicator pseudo-element
+        let statusColor = 'var(--primary)';
+        if(p.pendenciaActive) statusColor = 'var(--danger)';
+        else if(p.engAnalysisOpened) statusColor = 'var(--warning)';
+        card.style.setProperty('--indicator-color', statusColor);
+        
         card.addEventListener('click', () => {
             if(state.currentProjectId === p.id) return;
             state.currentProjectId = p.id;
@@ -815,10 +842,20 @@ function renderTracking() {
             `;
         }
 
+        // Contagem de apontamentos de APF
+        const projApontamentos = p.items.filter(i => i.validationStatus === 'Apontamento').length;
+
         card.innerHTML = `
             <div class="tracking-body">
                 <div class="mb-1 flex-between" style="align-items: center; gap: 0.5rem;">
                     <h3 style="font-weight:700; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; margin: 0;" title="${p.name}"><i class="ph ph-buildings text-primary"></i> ${p.name}</h3>
+                    <div style="display: flex; gap: 0.35rem;">
+                        ${p.pendencias?.length > 0 ? `
+                            <div style="background:rgba(239, 68, 68, 0.15); color:var(--danger); font-size: 0.65rem; padding: 0.15rem 0.4rem; border-radius: 0.35rem; font-weight: 700; display: flex; align-items: center; gap: 0.2rem;" title="Pendências ativas">
+                                <i class="ph ph-warning-circle"></i> ${p.pendencias.length}
+                            </div>
+                        ` : ''}
+                    </div>
                 </div>
                 <div class="mb-1" style="font-size: 0.75rem; width: 100%; margin-top: 0.25rem;">
                     ${trackingLine}
@@ -846,13 +883,19 @@ function getNodeStats(itemId) {
     let pendente = 0;
     let apontamento = 0;
     
+    const children = getChildItems(itemId);
     const item = getItems().find(i => i.id === itemId);
-    if(item && item.parentId !== null) {
-        if(!item.attachments || item.attachments.length === 0) pendente++;
-        if(item.validationStatus === 'Apontamento') apontamento++;
+    
+    // Only count as an actual item if it has no children (is a leaf/document)
+    if(item && item.parentId !== null && children.length === 0) {
+        if(!item.attachments || item.attachments.length === 0) {
+            pendente++;
+        }
+        if(item.validationStatus === 'Apontamento') {
+            apontamento++;
+        }
     }
     
-    const children = getChildItems(itemId);
     children.forEach(child => {
         const childStats = getNodeStats(child.id);
         pendente += childStats.pendente;
@@ -1067,12 +1110,26 @@ function updateProjectProgressUI(curr) {
         return;
     }
     
-    // Count items that are subfolders/items, ignoring top-level folders.
-    const leafItems = curr.items.filter(i => i.parentId !== null);
     let progressPct = 0;
-    if (leafItems.length > 0) {
-        const deliveredCount = leafItems.filter(i => i.attachments && i.attachments.length > 0).length;
-        progressPct = Math.round((deliveredCount / leafItems.length) * 100);
+    let label = "Progresso de entrega";
+    let sublabel = "Documentação indexada no Checklist";
+
+    if (curr.pendenciaActive) {
+        label = "Progresso de resolução de pendências";
+        sublabel = "Documentação enviada para o painel de Pendências CAIXA";
+        const pendencias = curr.pendencias || [];
+        if (pendencias.length > 0) {
+            const resolvedCount = pendencias.filter(p => p.attachments && p.attachments.length > 0).length;
+            progressPct = Math.round((resolvedCount / pendencias.length) * 100);
+        }
+    } else {
+        // Count items that are subfolders/items, ignoring top-level folders.
+        const leafItems = curr.items.filter(i => i.parentId !== null);
+        if (leafItems.length > 0) {
+            // Documentos com status "Apontamento" não contam para o progresso de entrega, mesmo com anexos.
+            const deliveredCount = leafItems.filter(i => i.attachments && i.attachments.length > 0 && i.validationStatus !== 'Apontamento').length;
+            progressPct = Math.round((deliveredCount / leafItems.length) * 100);
+        }
     }
     
     container.style.display = 'block';
@@ -1083,8 +1140,8 @@ function updateProjectProgressUI(curr) {
                 <span class="progress-text">${progressPct}%</span>
             </div>
             <div style="display: flex; flex-direction: column; gap: 0.2rem;">
-                <span style="font-size: 0.95rem; font-weight: 600; color: var(--text-main);">Progresso de entrega</span>
-                <span style="font-size: 0.8rem; color: var(--text-muted);">Documentação indexada no Checklist</span>
+                <span style="font-size: 0.95rem; font-weight: 600; color: var(--text-main);">${label}</span>
+                <span style="font-size: 0.8rem; color: var(--text-muted);">${sublabel}</span>
             </div>
         </div>
     `;
@@ -1181,19 +1238,53 @@ function createNode(item, isMgmt) {
     const titleText = document.createTextNode(' ' + item.name);
     nameSpan.appendChild(titleText);
 
-    // PENDING CIRCLE for ROOT FOLDERS
+    // INDICATORS for ROOT FOLDERS
     if(isRootFolder && state.currentProjectId !== 'p_default') {
         const stats = getNodeStats(item.id);
+        const indicatorsCont = document.createElement('div');
+        indicatorsCont.className = 'sector-indicators';
+        let hasIndicators = false;
+
         if (stats.pendente > 0) {
             const circle = document.createElement('span');
             circle.className = 'pending-circle';
             circle.textContent = stats.pendente;
             circle.title = `${stats.pendente} item(s) pendente(s)`;
-            itemLeft.prepend(circle);
+            indicatorsCont.appendChild(circle);
+            hasIndicators = true;
+        }
+
+        if (stats.apontamento > 0) {
+            const circleA = document.createElement('span');
+            circleA.className = 'apontamento-circle';
+            circleA.textContent = stats.apontamento;
+            circleA.title = `${stats.apontamento} item(s) com apontamentos de APF`;
+            indicatorsCont.appendChild(circleA);
+            hasIndicators = true;
+        }
+
+        if (hasIndicators) {
+            itemLeft.prepend(indicatorsCont);
+        } else {
+            // Se não houver indicadores, adicionamos um espaçador fixo para manter o alinhamento
+            const spacer = document.createElement('div');
+            spacer.style.width = '60px'; 
+            spacer.style.flexShrink = '0';
+            spacer.style.marginRight = '0.75rem';
+            itemLeft.prepend(spacer);
         }
     }
 
     itemLeft.appendChild(nameSpan);
+    
+    // APF Check symbol for validated leaf documents
+    if(!isMgmt && !isRootFolder && item.validationStatus === 'Validado') {
+        const apfCheck = document.createElement('span');
+        apfCheck.className = 'apf-check-symbol';
+        apfCheck.title = 'Documentação Validada pela APF';
+        apfCheck.innerHTML = '<i class="ph ph-seal-check-fill"></i> APF CHECK';
+        itemLeft.appendChild(apfCheck);
+    }
 
     const itemRight = document.createElement('div');
     itemRight.className = 'item-right';
@@ -1264,12 +1355,6 @@ function createNode(item, isMgmt) {
                     nameTxt.title = att.name;
                     nameTxt.textContent = att.name;
 
-                    const btnAi = document.createElement('button');
-                    btnAi.className = 'icon-btn';
-                    btnAi.title = 'Extrair leitura do doc com IA';
-                    btnAi.innerHTML = '<i class="ph ph-magic-wand text-primary"></i>';
-                    btnAi.onclick = () => window.analyzeDocumentAI(att);
-
                     const btnView = document.createElement('button');
                     btnView.className = 'icon-btn';
                     btnView.title = 'Visualizar';
@@ -1290,7 +1375,18 @@ function createNode(item, isMgmt) {
                     btnDel.onclick = () => window.handleDeleteFile(item.id, att.id);
 
                     attBadge.appendChild(nameTxt);
-                    attBadge.appendChild(btnAi);
+                    
+                    // IA Check subtle icon
+                    if (att.aiCheckResult) {
+                        const aiStatusIcon = document.createElement('i');
+                        const isSuccess = att.aiCheckResult.toLowerCase().includes('sim') && !att.aiCheckResult.toLowerCase().includes('não');
+                        aiStatusIcon.className = isSuccess ? 'ph ph-shield-check text-accent' : 'ph ph-shield-warning text-warning';
+                        aiStatusIcon.style.fontSize = '0.9rem';
+                        aiStatusIcon.style.cursor = 'help';
+                        aiStatusIcon.title = `[IA Check]: ${att.aiCheckResult}`;
+                        attBadge.appendChild(aiStatusIcon);
+                    }
+
                     attBadge.appendChild(btnView);
                     attBadge.appendChild(btnDown);
                     attBadge.appendChild(btnDel);
@@ -1488,7 +1584,24 @@ function createNode(item, isMgmt) {
     if(!isMgmt && !isRootFolder && item.validationStatus === 'Apontamento' && item.observation) {
         const obsBox = document.createElement('div');
         obsBox.className = 'observation-box';
-        obsBox.innerHTML = `<strong><i class="ph ph-warning-circle"></i> Observação do Analista:</strong> ${item.observation}`;
+        obsBox.innerHTML = `<strong><i class="ph ph-warning-circle"></i> Apontamento de APF:</strong> ${item.observation}`;
+        
+        // Área de Resposta
+        const respArea = document.createElement('div');
+        respArea.className = 'response-area';
+        respArea.innerHTML = `<label class="response-label"><i class="ph ph-chat-text"></i> Resposta ao Apontamento</label>`;
+        
+        const respInput = document.createElement('textarea');
+        respInput.className = 'response-input';
+        respInput.placeholder = 'Escreva aqui a sua resposta ou justificativa...';
+        respInput.value = item.response || '';
+        respInput.onchange = (e) => {
+            item.response = e.target.value;
+            saveState();
+        };
+        
+        respArea.appendChild(respInput);
+        obsBox.appendChild(respArea);
         nodeWrapper.appendChild(obsBox);
     }
 
@@ -1812,17 +1925,36 @@ window.handleFileUpload = async function(files, itemId, isPendencia = false) {
             if(!targetItem.attachments) targetItem.attachments = [];
             for (const file of Array.from(files)) {
                 const id = generateId();
-                const sanitizedFileName = file.name.trim();
+                const sanitizedFileName = sanitizePathSegment(file.name);
                 const dbxPath = `/APF-Recebimento/${sanitizedProjName}/${folderPath}/${sanitizedFileName}`.replace(/\/+/g, '/');
                 
                 try {
                     // Upload to Dropbox
-                    const response = await dbx.filesUpload({ path: dbxPath, contents: file, mode: 'add', autorename: true });
+                    const response = await dbx.filesUpload({ path: dbxPath, contents: file, autorename: true });
                     const uploadedPath = response.result.path_display;
                     
                     // Create Shared Link
-                    const linkRes = await dbx.sharingCreateSharedLinkWithSettings({ path: uploadedPath });
-                    let sharedUrl = linkRes.result.url;
+                    let sharedUrl = "";
+                    try {
+                        const linkRes = await dbx.sharingCreateSharedLinkWithSettings({ path: uploadedPath });
+                        sharedUrl = linkRes.result.url;
+                    } catch (linkErr) {
+                        // Se o link já existir, tentamos listar os links existentes para este caminho
+                        const errorSummary = linkErr?.error?.error_summary || "";
+                        if (errorSummary.includes("shared_link_already_exists")) {
+                            const listRes = await dbx.sharingListSharedLinks({ path: uploadedPath, direct_only: true });
+                            if (listRes.result.links && listRes.result.links.length > 0) {
+                                sharedUrl = listRes.result.links[0].url;
+                            } else {
+                                throw linkErr; // Se não encontrar, repassa o erro original
+                            }
+                        } else {
+                            throw linkErr; // Outro erro de compartilhamento
+                        }
+                    }
+                    
+                    // Ajusta para visualização direta se necessário (opcional, mantendo padrão original por enquanto)
+                    const directUrl = sharedUrl.replace('?dl=0', '?raw=1');
                     
                     targetItem.attachments.push({
                         id: id,
@@ -1830,16 +1962,46 @@ window.handleFileUpload = async function(files, itemId, isPendencia = false) {
                         type: file.type,
                         dropboxPath: uploadedPath,
                         dropboxUrl: sharedUrl,
-                        objectUrl: sharedUrl 
+                        objectUrl: directUrl 
                     });
                 } catch (err) {
                     console.error("Erro no upload para o Dropbox", err);
-                    const errorDetail = err?.error?.error?.summary || err?.status || 'Erro desconhecido';
+                    
+                    // Melhora o detalhe do erro do Dropbox para diagnstico: tenta capturar o summary ou o status code
+                    let errorDetail = err?.status || 'Erro desconhecido';
+                    
+                    if (err?.status === 401) {
+                        localStorage.removeItem('apf_dropbox_token');
+                        alert("Sua conexão com o Dropbox expirou. Por favor, clique no ícone do Dropbox (topo direito) para reconectar.");
+                        location.reload();
+                        return;
+                    }
+
+                    if (typeof err?.error === 'string') {
+                        errorDetail = `[SDK] ${err.error}`;
+                    } else if (err?.error?.error_summary) {
+                        errorDetail = err.error.error_summary;
+                    } else if (err?.error?.error?.summary) {
+                        errorDetail = err.error.error.summary;
+                    } else if (err) {
+                        try { errorDetail += ' | ' + JSON.stringify(err); } catch(e){}
+                    }
+
                     alert(`Falha ao enviar '${file.name}' ao Dropbox. Motivo: ${errorDetail}. Verifique sua conexão ou espaço livre.`);
                 }
             }
             saveState();
             renderTree();
+            
+            // Auto AI Analysis for new attachments
+            if (targetItem.attachments.length > 0) {
+                const latest = targetItem.attachments[targetItem.attachments.length - 1]; // Analyzing last one if multiple?
+                // User logic: "cada documento que for anexado". If multiple, analyze all.
+                // For simplicity and API safety, let's analyze the ones just added.
+                const addedCount = files.length;
+                const newAttachments = targetItem.attachments.slice(-addedCount);
+                newAttachments.forEach(att => window.autoAnalyzeDocumentAI(att, itemId));
+            }
         } finally {
             document.body.style.cursor = 'default';
         }
@@ -2157,5 +2319,80 @@ window.analyzeDocumentAI = async function(att) {
             <p>${e.message}</p>
             <p style="font-size: 0.8rem; margin-top: 1rem; opacity: 0.7;">Nota: Se o erro persistir com arquivos no Dropbox, tente recarregar a página ou reconectar o Dropbox.</p>
         </div>`;
+    }
+}
+
+window.autoAnalyzeDocumentAI = async function(att, itemId) {
+    const { objectUrl: url, type: mimeType, name, dropboxPath } = att;
+    const currProject = getCurrentProject();
+    if (!currProject) return;
+
+    try {
+        let fileDataBase64 = '';
+        if (dropboxPath && dbx) {
+            try {
+                const response = await dbx.filesDownload({ path: dropboxPath });
+                const blob = response.result.fileBlob;
+                fileDataBase64 = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                    reader.readAsDataURL(blob);
+                });
+            } catch (e) {}
+        }
+
+        if (!fileDataBase64) {
+            let fetchUrl = url;
+            if (url.includes('dropbox.com')) fetchUrl = url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace(/\?dl=[01]$/, '');
+            const response = await fetch(fetchUrl);
+            const blob = await response.blob();
+            fileDataBase64 = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        const apiKey = localStorage.getItem('apf_gemini_key');
+        const modelName = localStorage.getItem('apf_gemini_model') || 'gemini-2.0-flash'; // Flash is faster/cheaper for auto-checks
+        if (!apiKey) return;
+
+        const aiUrl = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${apiKey}`;
+        if (!['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'].includes(mimeType)) return;
+
+        const projectName = currProject.name;
+        const payload = {
+            contents: [{
+                parts: [
+                    { text: `O nome do empreendimento "${projectName}" consta explicitamente neste documento? Responda apenas Sim ou Não, seguido de uma breve explicação do local onde o nome foi encontrado ou por que não foi encontrado. Seja extremamente objetivo.` },
+                    { inline_data: { mime_type: mimeType, data: fileDataBase64 } }
+                ]
+            }]
+        };
+
+        const aiRes = await fetch(aiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (aiRes.ok) {
+            const data = await aiRes.json();
+            const textOut = data.candidates[0].content.parts[0].text;
+            
+            // Localizamos o item e o anexo novamente para garantir que estamos no estado atualizado
+            const items = getItems();
+            const item = items.find(i => i.id === itemId);
+            if (item && item.attachments) {
+                const attachment = item.attachments.find(a => a.id === att.id);
+                if (attachment) {
+                    attachment.aiCheckResult = textOut.trim();
+                    saveState();
+                    renderTree();
+                }
+            }
+        }
+    } catch (e) {
+        console.error("Auto AI Error:", e);
     }
 }
