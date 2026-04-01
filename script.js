@@ -788,38 +788,55 @@ function updateGlobalDateUI() {
             subtitleEl.innerHTML = '<i class="ph ph-file-search"></i> Engenharia Aberta';
             subtitleEl.className = 'badge-eng-subtitle';
         }
-        projectGlobalCountdown.style.display = 'none';
-    } else if(curr.dueDate) {
-        let totalD = 0;
-        let elapsedD = 0;
-        if (curr.createdAt) {
-            const tStart = new Date(curr.createdAt).getTime();
-            const tEnd = new Date(curr.dueDate).getTime();
-            const tNow = new Date().getTime();
-            if (tEnd > tStart) {
-                totalD = Math.ceil((tEnd - tStart) / (1000 * 60 * 60 * 24));
-                elapsedD = Math.floor((tNow - tStart) / (1000 * 60 * 60 * 24));
-                if (elapsedD < 0) elapsedD = 0;
-            }
+        if (btnToggleEng) {
+            btnToggleEng.innerHTML = '<i class="ph ph-magnifying-glass"></i> Engenharia aberta';
+            btnToggleEng.className = 'btn';
+            btnToggleEng.style.backgroundColor = 'rgba(96, 165, 250, 0.1)';
+            btnToggleEng.style.color = 'var(--info)';
+            btnToggleEng.style.borderColor = 'var(--info)';
         }
-        const diff = calculateDays(curr.dueDate);
-        let diffStr = '';
-        let bizDaysStr = ` (${calculateBusinessDays(curr.dueDate)} dias úteis)`;
-        
-        if (diff === 0) {
-            diffStr = "Entrega Hoje";
-            bizDaysStr = '';
-        } else if (diff > 0) {
-            diffStr = `Faltam ${diff} dia(s)`;
-        } else {
-            diffStr = `Atrasado ${Math.abs(diff)} dia(s)`;
-            bizDaysStr = '';
-        }
-        
-        if (subtitleEl) subtitleEl.textContent = `Prazo: ${formatDateToPT(curr.dueDate)} ┃ ${diffStr}${bizDaysStr}`;
         projectGlobalCountdown.style.display = 'none';
     } else {
-        projectGlobalCountdown.style.display = 'none';
+        if (btnToggleEng) {
+            btnToggleEng.innerHTML = '<i class="ph ph-magnifying-glass"></i> Abrir Engenharia';
+            btnToggleEng.className = 'btn btn-outline';
+            btnToggleEng.style.backgroundColor = '';
+            btnToggleEng.style.color = '';
+            btnToggleEng.style.borderColor = '';
+        }
+
+        if(curr.dueDate) {
+            let totalD = 0;
+            let elapsedD = 0;
+            if (curr.createdAt) {
+                const tStart = new Date(curr.createdAt).getTime();
+                const tEnd = new Date(curr.dueDate).getTime();
+                const tNow = new Date().getTime();
+                if (tEnd > tStart) {
+                    totalD = Math.ceil((tEnd - tStart) / (1000 * 60 * 60 * 24));
+                    elapsedD = Math.floor((tNow - tStart) / (1000 * 60 * 60 * 24));
+                    if (elapsedD < 0) elapsedD = 0;
+                }
+            }
+            const diff = calculateDays(curr.dueDate);
+            let diffStr = '';
+            let bizDaysStr = ` (${calculateBusinessDays(curr.dueDate)} dias úteis)`;
+            
+            if (diff === 0) {
+                diffStr = "Entrega Hoje";
+                bizDaysStr = '';
+            } else if (diff > 0) {
+                diffStr = `Faltam ${diff} dia(s)`;
+            } else {
+                diffStr = `Atrasado ${Math.abs(diff)} dia(s)`;
+                bizDaysStr = '';
+            }
+            
+            if (subtitleEl) subtitleEl.textContent = `Prazo: ${formatDateToPT(curr.dueDate)} ┃ ${diffStr}${bizDaysStr}`;
+            projectGlobalCountdown.style.display = 'none';
+        } else {
+            projectGlobalCountdown.style.display = 'none';
+        }
     }
 }
 
@@ -945,7 +962,7 @@ function renderTracking() {
         // Define color for the status indicator pseudo-element
         let statusColor = 'var(--primary)';
         if(p.pendenciaActive) statusColor = 'var(--danger)';
-        else if(p.engAnalysisOpened) statusColor = 'var(--warning)';
+        else if(p.engAnalysisOpened) statusColor = 'var(--info)';
         card.style.setProperty('--indicator-color', statusColor);
         
         card.addEventListener('click', () => {
@@ -1016,7 +1033,7 @@ function renderTracking() {
             
             trackingLine = `<span style="color: var(--danger); font-weight: 700; display:flex; align-items:center; gap:0.25rem;"><i class="ph ph-warning-diamond"></i> Resolução de pendências │ ${displayDays} dias</span>`;
         } else if (p.engAnalysisOpened) {
-            trackingLine = `<span style="color: #713f12; font-weight: 700; display:flex; align-items:center; gap:0.25rem;"><i class="ph ph-file-search"></i> Engenharia Aberta</span>`;
+            trackingLine = `<span style="color: var(--info); font-weight: 700; display:flex; align-items:center; gap:0.25rem;"><i class="ph ph-file-search"></i> Engenharia Aberta</span>`;
         } else if (!p.dueDate) {
             trackingLine = `<span style="color: var(--text-muted); font-weight: 500;">Sem prazo</span>`;
         } else {
