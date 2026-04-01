@@ -1553,12 +1553,6 @@ function createNode(item, isMgmt) {
                     btnView.title = 'Visualizar';
                     btnView.innerHTML = '<i class="ph ph-eye"></i>';
                     btnView.onclick = () => window.openPreview(att);
-                    
-                    const btnAi = document.createElement('button');
-                    btnAi.className = 'icon-btn';
-                    btnAi.title = 'Extrair leitura do doc com IA';
-                    btnAi.innerHTML = '<i class="ph ph-magic-wand text-primary"></i>';
-                    btnAi.onclick = () => window.analyzeDocumentAI(att);
 
                     const btnDown = document.createElement('a');
                     btnDown.className = 'icon-btn';
@@ -1586,7 +1580,6 @@ function createNode(item, isMgmt) {
                         attBadge.appendChild(aiStatusIcon);
                     }
 
-                    attBadge.appendChild(btnAi);
                     attBadge.appendChild(btnView);
                     attBadge.appendChild(btnDown);
                     attBadge.appendChild(btnDel);
@@ -2099,30 +2092,10 @@ window.handleDeleteFile = async function(itemId, fileId, isPendencia = false) {
 
 // Global modal helpers
 window.openPreview = function(fileObj) {
-    // Caso 1: Dropbox (Legado)
-    if (fileObj.dropboxUrl && !fileObj.source) {
-        window.open(fileObj.dropboxUrl, '_blank');
-        return;
+    const url = fileObj.downloadUrl || fileObj.dropboxUrl || fileObj.objectUrl;
+    if (url) {
+        window.open(url, '_blank');
     }
-
-    // Caso 2: Firebase Storage ou Local
-    document.getElementById('preview-title').textContent = fileObj.name;
-    document.getElementById('preview-download-btn').style.display = 'inline-flex';
-    document.getElementById('preview-download-btn').href = fileObj.downloadUrl || fileObj.objectUrl;
-    document.getElementById('preview-download-btn').download = fileObj.name;
-    const body = document.getElementById('preview-body');
-    body.innerHTML = '';
-
-    const url = fileObj.downloadUrl || fileObj.objectUrl;
-
-    if(fileObj.type.startsWith('image/')){
-        body.innerHTML = `<img src="${url}" class="preview-content">`;
-    } else if(fileObj.type === 'application/pdf') {
-        body.innerHTML = `<iframe src="${url}" class="preview-content"></iframe>`;
-    } else {
-        body.innerHTML = `<p style="color:var(--text-muted)">Pré-visualização não disponível diretamente no navegador para este formato. Por favor, baixe o arquivo para visualizar.</p>`;
-    }
-    modalOverlay.classList.remove('hidden');
 }
 
 
