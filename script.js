@@ -121,7 +121,7 @@ function saveState() {
 
 // DOM Elements
 let btnNewProject, btnExportZip, btnToggleEng, btnDeleteProject, btnRenameProject, btnOpenTemplate, btnAddRoot;
-let checklistContainer, sidebarApf, btnToggleSidebar, managementContainer, trackingContainer, btnLogout, btnDetailedAi;
+let checklistContainer, sidebarApf, btnToggleSidebar, managementContainer, trackingContainer, btnDetailedAi;
 let tabs, tabContents, btnUnlock, btnBackToMain, inputPassword, passwordError, passwordLock, managementContent;
 let btnSettings, btnSaveSettings, btnResetModel, geminiModelInp, geminiKeyInp, btnToggleKey, dbxKeyInp, apfPassInp;
 let btnTogglePendencias, pendenciasMgmtPanel, btnAddPendencia, pendenciaStartDateInp, modalOverlay, btnCloseModal;
@@ -143,7 +143,6 @@ function initDOMElements() {
     btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
     managementContainer = document.getElementById('management-render-area');
     trackingContainer = document.getElementById('tracking-render-area');
-    btnLogout = document.getElementById('btn-logout');
     btnDetailedAi = document.getElementById('btn-detailed-ai');
 
     // Tabs & Management
@@ -536,16 +535,6 @@ function initEventListeners() {
         modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) modalOverlay.classList.add('hidden'); });
     }
 
-    if (btnLogout) {
-        btnLogout.addEventListener('click', () => {
-            if (confirm('Deseja sair da área administrativa da APF?')) {
-                isAuthenticated = false;
-                applyAuthState();
-                renderTree();
-            }
-        });
-    }
-
     if (btnDetailedAi) {
         btnDetailedAi.onclick = () => {
             const curr = getCurrentProject();
@@ -557,25 +546,74 @@ function initEventListeners() {
 
 const btnDbx = document.getElementById('btn-connect-dropbox');
 // Authentication - Dropbox
-function initDropbox() {
+async function initDropbox() {
     const hash = window.location.hash;
-    let token = localStorage.getItem('apf_dropbox_token');
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
     const dropboxAppKey = localStorage.getItem('apf_dropbox_app_key');
     
+    let token = localStorage.getItem('apf_dropbox_token');
+    let refreshToken = localStorage.getItem('apf_dropbox_refresh_token');
+
+    // NEW: Handle authorization code from redirect (Offline flow)
+    if (code) {
+        const codeVerifier = localStorage.getItem('apf_dropbox_verifier');
+        if (codeVerifier && dropboxAppKey) {
+            try {
+                let cleanPath = window.location.pathname.replace(/\/index\.html$/, '/');
+                if (!cleanPath.endsWith('/')) cleanPath += '/';
+                const redirectUri = window.location.origin + cleanPath;
+
+                const response = await fetch('https://api.dropboxapi.com/oauth2/token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        code: code,
+                        grant_type: 'authorization_code',
+                        client_id: dropboxAppKey,
+                        code_verifier: codeVerifier,
+                        redirect_uri: redirectUri
+                    })
+                });
+
+                const data = await response.json();
+                if (data.access_token) {
+                    token = data.access_token;
+                    refreshToken = data.refresh_token; 
+                    localStorage.setItem('apf_dropbox_token', token);
+                    if (refreshToken) localStorage.setItem('apf_dropbox_refresh_token', refreshToken);
+                    
+                    // Cleanup URL and verifier
+                    localStorage.removeItem('apf_dropbox_verifier');
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+            } catch (err) {
+                console.error("Erro na troca do token Dropbox:", err);
+            }
+        }
+    }
+
+    // Support access_token in hash (previous implicit flow)
     if (hash && hash.includes('access_token')) {
         const params = new URLSearchParams(hash.substring(1));
         token = params.get('access_token');
         if (token) {
             localStorage.setItem('apf_dropbox_token', token);
-            window.location.hash = ''; // Clear hash for clean URL
+            window.location.hash = ''; 
         }
     }
     
-    if (token) {
-        dbx = new window.Dropbox.Dropbox({ accessToken: token });
+    if (token || refreshToken) {
+        // Initialize with refreshToken to allow automatic renewal
+        dbx = new window.Dropbox.Dropbox({ 
+            accessToken: token,
+            refreshToken: refreshToken,
+            clientId: dropboxAppKey
+        });
+        
         if(btnDbx) {
-            btnDbx.innerHTML = '<i class="ph ph-check-circle"></i>'; // Apenas ícone
-            btnDbx.title = 'Dropbox Conectado';
+            btnDbx.innerHTML = '<i class="ph ph-check-circle"></i>';
+            btnDbx.title = 'Dropbox Conectado (Permanente)';
             btnDbx.classList.remove('btn-outline');
             btnDbx.classList.add('glass-panel');
             btnDbx.style.color = 'var(--accent)';
@@ -583,30 +621,43 @@ function initDropbox() {
             btnDbx.onclick = () => {
                 if(confirm('Deseja desconectar sua conta do Dropbox?')) {
                     localStorage.removeItem('apf_dropbox_token');
+                    localStorage.removeItem('apf_dropbox_refresh_token');
                     location.reload();
                 }
             };
         }
     } else {
         if(btnDbx) {
-            btnDbx.onclick = () => {
+            btnDbx.onclick = async () => {
                 if (!dropboxAppKey) {
                     alert("Configuração Pendente: Por favor, insira sua 'Dropbox App Key' nas Configurações (ícone ⚙️) para habilitar a conexão.");
                     return;
                 }
-                let cleanPath = window.location.pathname.replace(/\/index\.html$/, '/');
-                if (!cleanPath.endsWith('/')) cleanPath += '/';
-                const redirectUri = window.location.origin + cleanPath;
-                
+
                 if (window.location.protocol === 'file:') {
-                    alert("AVISO CRÍTICO:\n\nVocê está abrindo o projeto como um simples arquivo (file://).\nO Dropbox NÃO aceita esse tipo de endereço para realizar o login por segurança.\n\nPor favor, utilize o arquivo 'abrir_projeto.ps1' que eu criei na pasta do projeto para rodar o sistema no endereço http://localhost:8000 que é aceito pelo Dropbox.");
+                    alert("O Dropbox não permite login de arquivos locais (file://). Use o servidor local.");
                     return;
                 }
 
-                alert("COPIE ESTE ENDEREÇO EXACTO:\n\n" + redirectUri + "\n\nCole lá no painel do Dropbox (OAuth 2 Redirect URIs) na aba Settings do seu App, ou o Dropbox vai negar o acesso com 'pedido inválido'.");
+                // PKCE Flow
+                const array = new Uint8Array(32);
+                window.crypto.getRandomValues(array);
+                const verifier = Array.from(array, b => ("00" + b.toString(16)).slice(-2)).join('');
+                localStorage.setItem('apf_dropbox_verifier', verifier);
 
-                const scopes = "files.content.write files.content.read sharing.write";
-                const authUrl = `https://www.dropbox.com/oauth2/authorize?client_id=${dropboxAppKey}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`;
+                // Generate challenge using Web Crypto
+                const encoder = new TextEncoder();
+                const data = encoder.encode(verifier);
+                const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
+                const challenge = btoa(String.fromCharCode(...new Uint8Array(hashBuffer)))
+                    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+
+                let cleanPath = window.location.pathname.replace(/\/index\.html$/, '/');
+                if (!cleanPath.endsWith('/')) cleanPath += '/';
+                const redirectUri = window.location.origin + cleanPath;
+                const scopes = 'files.content.write files.content.read sharing.write sharing.read';
+                
+                const authUrl = `https://www.dropbox.com/oauth2/authorize?client_id=${dropboxAppKey}&response_type=code&token_access_type=offline&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&code_challenge=${challenge}&code_challenge_method=S256`;
                 window.location.href = authUrl;
             };
         }
