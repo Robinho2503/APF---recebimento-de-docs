@@ -121,7 +121,7 @@ function saveState() {
 
 // DOM Elements
 let btnNewProject, btnExportZip, btnToggleEng, btnDeleteProject, btnRenameProject, btnOpenTemplate, btnAddRoot;
-let checklistContainer, sidebarApf, btnToggleSidebar, managementContainer, trackingContainer, btnLogout;
+let checklistContainer, sidebarApf, btnToggleSidebar, managementContainer, trackingContainer, btnLogout, btnDetailedAi;
 let tabs, tabContents, btnUnlock, btnBackToMain, inputPassword, passwordError, passwordLock, managementContent;
 let btnSettings, btnSaveSettings, btnResetModel, geminiModelInp, geminiKeyInp, btnToggleKey, dbxKeyInp, apfPassInp;
 let btnTogglePendencias, pendenciasMgmtPanel, btnAddPendencia, pendenciaStartDateInp, modalOverlay, btnCloseModal;
@@ -144,6 +144,7 @@ function initDOMElements() {
     managementContainer = document.getElementById('management-render-area');
     trackingContainer = document.getElementById('tracking-render-area');
     btnLogout = document.getElementById('btn-logout');
+    btnDetailedAi = document.getElementById('btn-detailed-ai');
 
     // Tabs & Management
     tabs = document.querySelectorAll('.tab-btn');
@@ -534,6 +535,24 @@ function initEventListeners() {
     if (modalOverlay) {
         modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) modalOverlay.classList.add('hidden'); });
     }
+
+    if (btnLogout) {
+        btnLogout.addEventListener('click', () => {
+            if (confirm('Deseja sair da área administrativa da APF?')) {
+                isAuthenticated = false;
+                applyAuthState();
+                renderTree();
+            }
+        });
+    }
+
+    if (btnDetailedAi) {
+        btnDetailedAi.onclick = () => {
+            const curr = getCurrentProject();
+            if (!curr || curr.id === 'p_default') return;
+            analyzeProjectDetailedAI(curr);
+        };
+    }
 }
 
 const btnDbx = document.getElementById('btn-connect-dropbox');
@@ -601,7 +620,6 @@ function applyAuthState() {
     const tabsNav = document.querySelector('.tabs');
     const isMgmt = isMgmtActive();
     const apfSubmenu = document.getElementById('apf-submenu');
-    const btnDetailedAi = document.getElementById('btn-detailed-ai');
     const apfBtn = document.querySelector('.apf-access-btn');
 
     // Update APF access button label
@@ -657,6 +675,9 @@ function updateGlobalDateUI() {
 
     if (btnRenameProject) {
         btnRenameProject.style.display = (curr.id === 'p_default') ? 'none' : 'inline-flex';
+    }
+    if (btnDeleteProject) {
+        btnDeleteProject.style.display = (curr.id === 'p_default') ? 'none' : 'inline-flex';
     }
     
     const subtitleEl = document.getElementById('checklist-subtitle');
@@ -2373,5 +2394,79 @@ window.autoAnalyzeDocumentAI = async function(att, itemId) {
         }
     } catch (e) {
         console.error("Auto AI Error:", e);
+    }
+}
+
+async function analyzeProjectDetailedAI(project) {
+    const apiKey = localStorage.getItem('apf_gemini_key');
+    const modelName = localStorage.getItem('apf_gemini_model') || 'gemini-2.0-flash';
+    if (!apiKey) {
+        alert("API Key não configurada. Por favor, acesse as Configurações.");
+        return;
+    }
+
+    document.getElementById('preview-title').textContent = `Análise Estratégica (IA): ${project.name}`;
+    document.getElementById('preview-download-btn').style.display = 'none';
+    const body = document.getElementById('preview-body');
+    body.innerHTML = `
+        <div style="text-align:center; padding:3rem; color:var(--primary);">
+            <i class="ph ph-robot ph-spin" style="font-size: 2.5rem; display:inline-block; animation-duration: 2s;"></i>
+            <p style="margin-top:1rem;">O cérebro digital está consolidando os dados deste empreendimento...</p>
+        </div>
+    `;
+    modalOverlay.classList.remove('hidden');
+
+    try {
+        // Collect metrics for the AI
+        const roots = project.items.filter(i => i.parentId === null);
+        const sectorMetrics = roots.map(root => {
+            let total = 0, delivered = 0, apontamentos = 0;
+            const countItems = (itemId) => {
+                project.items.filter(i => i.parentId === itemId).forEach(child => {
+                    const hasChildren = project.items.some(i => i.parentId === child.id);
+                    if (!hasChildren) {
+                        total++;
+                        if (child.attachments && child.attachments.length > 0) {
+                            delivered++;
+                            if (child.validationStatus === 'Apontamento') apontamentos++;
+                        }
+                    }
+                    countItems(child.id);
+                });
+            };
+            countItems(root.id);
+            return { name: root.name, delivered, total, apontamentos };
+        });
+
+        const prompt = `Analise os seguintes dados de entrega de documentação do empreendimento "${project.name}" e forneça um resumo executivo muito curto e profissional (máximo 4 parágrafos) focado em gargalos e próximos passos:
+        
+        Dados por Setor:
+        ${sectorMetrics.map(m => `- ${m.name}: ${m.delivered}/${m.total} entregues, ${m.apontamentos} apontamentos pendentes.`).join('\n')}
+        
+        Prazo final: ${project.dueDate || 'Não definido'}
+        Status Engenharia: ${project.engAnalysisOpened ? 'Aberta' : 'Fechada'}
+        Status Pendências Caixa: ${project.pendenciaActive ? 'Em resolução' : 'Normal'}
+        
+        Use um tom consultivo e direto.`;
+
+        const aiUrl = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${apiKey}`;
+        const payload = {
+            contents: [{ parts: [{ text: prompt }] }]
+        };
+
+        const res = await fetch(aiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error("Erro na comunicação com a IA.");
+        const data = await res.json();
+        const textOut = data.candidates[0].content.parts[0].text;
+        const formattedHtml = textOut.replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--accent);">$1</strong>').replace(/\n/g, '<br>');
+
+        body.innerHTML = `<div style="text-align:left; color:white; font-size:0.95rem; line-height:1.6; padding: 1rem; width: 100%; white-space: break-spaces;">${formattedHtml}</div>`;
+    } catch (e) {
+        body.innerHTML = `<div style="padding:2rem; text-align:center; color:var(--danger)"><p>${e.message}</p></div>`;
     }
 }

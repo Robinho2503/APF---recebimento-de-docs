@@ -47,11 +47,17 @@
                             APF
                         </button>
                         <div id="apf-submenu" class="apf-submenu" style="display:none;">
+                            <button id="btn-detailed-ai" class="icon-btn" title="Análise Detalhada (IA)" style="display:none;">
+                                <i class="ph ph-chart-line-up"></i>
+                            </button>
                             <button id="btn-settings" class="icon-btn" title="Configurações Gerais">
                                 <i class="ph ph-gear"></i>
                             </button>
                             <button id="btn-connect-dropbox" class="icon-btn" title="Conectar Dropbox">
                                 <i class="ph ph-dropbox-logo"></i>
+                            </button>
+                            <button id="btn-logout" class="icon-btn" title="Sair do Acesso APF">
+                                <i class="ph ph-sign-out"></i>
                             </button>
                         </div>
                     </div>
@@ -160,10 +166,10 @@
                                     <label style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">Prazo Geral da Entrega</label>
                                     <input type="date" id="project-due-date" class="input-modern" style="max-width: 180px; padding: 0.4rem 0.75rem; font-size: 0.85rem;">
                                 </div>
-                                <button id="btn-rename-project" class="btn btn-outline btn-sm" style="display:none; padding: 0.5rem;" title="Renomear Empreendimento">
+                                <button id="btn-rename-project" class="btn btn-outline btn-sm" style="padding: 0.5rem;" title="Renomear Empreendimento">
                                     <i class="ph ph-pencil-simple" style="font-size: 1.15rem; margin: 0;"></i>
                                 </button>
-                                <button id="btn-delete-project" class="btn btn-danger btn-sm" style="display:none; padding: 0.5rem;" title="Excluir Empreendimento Atual - Cuidado!">
+                                <button id="btn-delete-project" class="btn btn-danger btn-sm" style="padding: 0.5rem;" title="Excluir Empreendimento Atual - Cuidado!">
                                     <i class="ph ph-trash" style="font-size: 1.15rem; margin: 0;"></i>
                                 </button>
                             </div>
