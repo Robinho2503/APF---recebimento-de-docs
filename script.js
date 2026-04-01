@@ -765,9 +765,16 @@ function updateGlobalDateUI() {
     const curr = getCurrentProject();
     if(!curr) return;
     
-    document.getElementById('checklist-proj-name').textContent = curr.name;
-    if (currentProjectName) currentProjectName.textContent = curr.name;
-    
+    const checklistProjNameEl = document.getElementById('checklist-proj-name');
+    if (checklistProjNameEl) {
+        checklistProjNameEl.textContent = curr.name;
+        checklistProjNameEl.style.color = curr.engAnalysisOpened ? 'var(--info)' : 'var(--text-main)';
+    }
+
+    if (currentProjectName) {
+        currentProjectName.textContent = curr.name;
+        currentProjectName.style.color = curr.engAnalysisOpened ? 'var(--info)' : 'var(--primary)';
+    }
     // Badge unificado no subtitle agora
 
     if (btnRenameProject) {
