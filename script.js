@@ -1,6 +1,7 @@
 // Firebase Imports
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, onSnapshot, getDoc } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 
 // Firebase Configuration & Initialization
 const firebaseConfig = {
@@ -15,6 +16,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const storage = getStorage(app);
 const GLOBAL_DOC_PATH = "apf_data/v2_global_state";
 
 // Data Models & State Initialization
@@ -1983,17 +1985,9 @@ function getItemPath(itemId, sanitize = false) {
     return path.join('/');
 }
 
-window.handleFileUpload = async function(files, itemId, isPendencia = false) {
-    if(!files || files.length === 0) return;
-    
-    // Dropbox enforcement
-    if(!dbx) {
-        alert("Atenção: Por favor, conecte a sua conta do Dropbox no painel para anexar documentações ao APF.");
-        return;
-    }
-
+window.handleFileUpload = async function(itemId, files, isPendencia = false) {
     const currProject = getCurrentProject();
-    if (!currProject) return;
+    if (!currProject || !files || files.length === 0) return;
 
     let targetItem;
     if (isPendencia) {
@@ -2004,86 +1998,46 @@ window.handleFileUpload = async function(files, itemId, isPendencia = false) {
     
     if(targetItem && currProject) {
         const sanitizedProjName = sanitizePathSegment(currProject.name);
-        const folderPath = isPendencia ? 'PENDENCIAS' : getItemPath(itemId, true); // Folder for pendencias
+        const folderPath = isPendencia ? 'PENDENCIAS' : getItemPath(itemId, true);
         document.body.style.cursor = 'wait';
         
         try {
             if(!targetItem.attachments) targetItem.attachments = [];
+            
             for (const file of Array.from(files)) {
                 const id = generateId();
                 const sanitizedFileName = sanitizePathSegment(file.name);
-                const dbxPath = `/APF-Recebimento/${sanitizedProjName}/${folderPath}/${sanitizedFileName}`.replace(/\/+/g, '/');
+                
+                // Nova estrutura de caminho unificada no Firebase Storage
+                // storage_path: APF_Projetos/[Projeto_ID]/[Setor]/[ID_Arquivo]-[Nome]
+                const fbStoragePath = `APF_Projetos/${currProject.id}/${folderPath}/${id}-${sanitizedFileName}`;
                 
                 try {
-                    // Upload to Dropbox
-                    const response = await dbx.filesUpload({ path: dbxPath, contents: file, autorename: true });
-                    const uploadedPath = response.result.path_display;
+                    // 1. Upload para Firebase Storage
+                    const storageRef = ref(storage, fbStoragePath);
+                    await uploadBytes(storageRef, file);
                     
-                    // Create Shared Link
-                    let sharedUrl = "";
-                    try {
-                        const linkRes = await dbx.sharingCreateSharedLinkWithSettings({ path: uploadedPath });
-                        sharedUrl = linkRes.result.url;
-                    } catch (linkErr) {
-                        // Se o link já existir, tentamos listar os links existentes para este caminho
-                        const errorSummary = linkErr?.error?.error_summary || "";
-                        if (errorSummary.includes("shared_link_already_exists")) {
-                            const listRes = await dbx.sharingListSharedLinks({ path: uploadedPath, direct_only: true });
-                            if (listRes.result.links && listRes.result.links.length > 0) {
-                                sharedUrl = listRes.result.links[0].url;
-                            } else {
-                                throw linkErr; // Se não encontrar, repassa o erro original
-                            }
-                        } else {
-                            throw linkErr; // Outro erro de compartilhamento
-                        }
-                    }
-                    
-                    // Ajusta para visualização direta se necessário (opcional, mantendo padrão original por enquanto)
-                    const directUrl = sharedUrl.replace('?dl=0', '?raw=1');
+                    // 2. Obter URL de Download pública
+                    const downloadUrl = await getDownloadURL(storageRef);
                     
                     targetItem.attachments.push({
                         id: id,
-                        name: response.result.name,
+                        name: file.name,
                         type: file.type,
-                        dropboxPath: uploadedPath,
-                        dropboxUrl: sharedUrl,
-                        objectUrl: directUrl 
+                        storagePath: fbStoragePath, // Caminho no Firebase
+                        downloadUrl: downloadUrl,    // URL direta do Firebase
+                        objectUrl: downloadUrl,      // Compatibilidade legada
+                        source: 'firebase'           // Marcador de nova origem
                     });
                 } catch (err) {
-                    console.error("Erro no upload para o Dropbox", err);
-                    
-                    // Melhora o detalhe do erro do Dropbox para diagnstico: tenta capturar o summary ou o status code
-                    let errorDetail = err?.status || 'Erro desconhecido';
-                    
-                    if (err?.status === 401) {
-                        localStorage.removeItem('apf_dropbox_token');
-                        alert("Sua conexão com o Dropbox expirou. Por favor, clique no ícone do Dropbox (topo direito) para reconectar.");
-                        location.reload();
-                        return;
-                    }
-
-                    if (typeof err?.error === 'string') {
-                        errorDetail = `[SDK] ${err.error}`;
-                    } else if (err?.error?.error_summary) {
-                        errorDetail = err.error.error_summary;
-                    } else if (err?.error?.error?.summary) {
-                        errorDetail = err.error.error.summary;
-                    } else if (err) {
-                        try { errorDetail += ' | ' + JSON.stringify(err); } catch(e){}
-                    }
-
-                    alert(`Falha ao enviar '${file.name}' ao Dropbox. Motivo: ${errorDetail}. Verifique sua conexão ou espaço livre.`);
+                    console.error("Erro no upload para o Firebase Storage", err);
+                    alert(`Falha ao enviar '${file.name}' ao Firebase. Verifique se o Storage está ativado e as permissões (Rules) estão liberadas.`);
                 }
             }
             saveState();
             renderTree();
             
-            // Auto AI Analysis for new attachments
             if (targetItem.attachments.length > 0) {
-                const latest = targetItem.attachments[targetItem.attachments.length - 1]; // Analyzing last one if multiple?
-                // User logic: "cada documento que for anexado". If multiple, analyze all.
-                // For simplicity and API safety, let's analyze the ones just added.
                 const addedCount = files.length;
                 const newAttachments = targetItem.attachments.slice(-addedCount);
                 newAttachments.forEach(att => window.autoAnalyzeDocumentAI(att, itemId));
@@ -2107,14 +2061,22 @@ window.handleDeleteFile = async function(itemId, fileId, isPendencia = false) {
 
     if(targetItem && targetItem.attachments){
         const att = targetItem.attachments.find(a => a.id === fileId);
-        
-        if (att && att.dropboxPath && dbx) {
-            try {
-                // Delete from Dropbox
-                await dbx.filesDeleteV2({ path: att.dropboxPath });
-            } catch (err) {
-                console.warn("Aviso: Arquivo já ausente no Dropbox ou token expirado.", err);
+        if (!att) return;
+
+        try {
+            // Caso 1: Arquivo Novo (Firebase Storage)
+            if (att.storagePath) {
+                const storageRef = ref(storage, att.storagePath);
+                await deleteObject(storageRef);
+                console.log("Arquivo removido do Firebase Storage.");
             }
+            // Caso 2: Arquivo Legado (Dropbox)
+            else if (att.dropboxPath && dbx) {
+                await dbx.filesDeleteV2({ path: att.dropboxPath });
+                console.log("Arquivo removido do Dropbox (Legado).");
+            }
+        } catch (err) {
+            console.warn("Aviso: Falha ao remover arquivo físico da nuvem. Ele pode já ter sido excluído.", err);
         }
         
         targetItem.attachments = targetItem.attachments.filter(a => a.id !== fileId);
@@ -2125,24 +2087,26 @@ window.handleDeleteFile = async function(itemId, fileId, isPendencia = false) {
 
 // Global modal helpers
 window.openPreview = function(fileObj) {
-    if (fileObj.dropboxUrl) {
-        // Redirect to DBX shared link (which has native file viewing)
+    // Caso 1: Dropbox (Legado)
+    if (fileObj.dropboxUrl && !fileObj.source) {
         window.open(fileObj.dropboxUrl, '_blank');
         return;
     }
 
-    // Legacy fallback for local files
+    // Caso 2: Firebase Storage ou Local
     document.getElementById('preview-title').textContent = fileObj.name;
     document.getElementById('preview-download-btn').style.display = 'inline-flex';
-    document.getElementById('preview-download-btn').href = fileObj.objectUrl;
+    document.getElementById('preview-download-btn').href = fileObj.downloadUrl || fileObj.objectUrl;
     document.getElementById('preview-download-btn').download = fileObj.name;
     const body = document.getElementById('preview-body');
     body.innerHTML = '';
 
+    const url = fileObj.downloadUrl || fileObj.objectUrl;
+
     if(fileObj.type.startsWith('image/')){
-        body.innerHTML = `<img src="${fileObj.objectUrl}" class="preview-content">`;
+        body.innerHTML = `<img src="${url}" class="preview-content">`;
     } else if(fileObj.type === 'application/pdf') {
-        body.innerHTML = `<iframe src="${fileObj.objectUrl}" class="preview-content"></iframe>`;
+        body.innerHTML = `<iframe src="${url}" class="preview-content"></iframe>`;
     } else {
         body.innerHTML = `<p style="color:var(--text-muted)">Pré-visualização não disponível diretamente no navegador para este formato. Por favor, baixe o arquivo para visualizar.</p>`;
     }
@@ -2303,17 +2267,14 @@ function initSettings() {
     btnSaveSettings.addEventListener('click', () => {
         const gModel = geminiModelInp.value.trim();
         const gKey = geminiKeyInp.value.trim();
-        const dKey = dbxKeyInp.value.trim();
         const aPass = apfPassInp.value.trim();
 
         if (gModel) localStorage.setItem('apf_gemini_model', gModel);
         if (gKey) localStorage.setItem('apf_gemini_key', gKey); else localStorage.removeItem('apf_gemini_key');
-        if (dKey) localStorage.setItem('apf_dropbox_app_key', dKey); else localStorage.removeItem('apf_dropbox_app_key');
         if (aPass) localStorage.setItem('apf_access_password', aPass); else localStorage.removeItem('apf_access_password');
 
-        alert('Configurações salvas com sucesso! Algumas alterações podem exigir o recarregamento da página.');
+        alert('Configurações salvas com sucesso!');
         settingsModal.classList.add('hidden');
-        if (dKey) location.reload(); // Refresh to re-init dropbox with new key
     });
 }
 
@@ -2350,12 +2311,8 @@ window.analyzeDocumentAI = async function(att) {
         }
 
         if (!fileDataBase64) {
-            // Fallback to fetch (works for local blobs or direct links)
-            let fetchUrl = url;
-            if (url.includes('dropbox.com')) {
-                fetchUrl = url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace(/\?dl=0$/, '').replace(/\?dl=1$/, '');
-            }
-            
+            // URL direta (Firebase ou Dropbox validado)
+            const fetchUrl = att.downloadUrl || url;
             const response = await fetch(fetchUrl);
             const blob = await response.blob();
             fileDataBase64 = await new Promise((resolve) => {
@@ -2435,8 +2392,7 @@ window.autoAnalyzeDocumentAI = async function(att, itemId) {
         }
 
         if (!fileDataBase64) {
-            let fetchUrl = url;
-            if (url.includes('dropbox.com')) fetchUrl = url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace(/\?dl=[01]$/, '');
+            const fetchUrl = att.downloadUrl || url;
             const response = await fetch(fetchUrl);
             const blob = await response.blob();
             fileDataBase64 = await new Promise((resolve) => {

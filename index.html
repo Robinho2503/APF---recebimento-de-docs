@@ -52,7 +52,8 @@
                             <button id="btn-settings" class="icon-btn" title="Configurações Gerais">
                                 <i class="ph ph-gear"></i>
                             </button>
-                            <button id="btn-connect-dropbox" class="icon-btn" title="Conectar Dropbox">
+                            <!-- Dropbox connection hidden as we migrated to Firebase Storage -->
+                            <button id="btn-connect-dropbox" class="icon-btn" title="Conectar Dropbox" style="display: none;">
                                 <i class="ph ph-dropbox-logo"></i>
                             </button>
                         </div>
@@ -283,7 +284,8 @@
                     </div>
                 </div>
 
-                <div class="mb-4">
+                <!-- Dropbox settings hidden as we migrated to Firebase Storage -->
+                <div class="mb-4" style="display: none;">
                     <label class="label-modern">
                         <i class="ph ph-dropbox-logo text-primary"></i> Dropbox App Key
                     </label>
@@ -293,7 +295,6 @@
                             <i class="ph ph-eye"></i>
                         </button>
                     </div>
-                    <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">Chave do seu App registrado no Console do Dropbox.</p>
                 </div>
 
                 <div class="mb-4">
