@@ -127,9 +127,7 @@ function saveState() {
                     sector: pend.sector,
                     specification: pend.specification || '',
                     attachments: (pend.attachments || []).map(att => ({
-                        id: att.id,
-                        name: att.name,
-                        type: att.type,
+                        ...att,
                         dropboxPath: att.dropboxPath || '',
                         dropboxUrl: att.dropboxUrl || '',
                         storagePath: att.storagePath || '',
@@ -144,9 +142,7 @@ function saveState() {
                 items: p.items.map(item => ({
                     ...item,
                     attachments: (item.attachments || []).map(att => ({
-                        id: att.id,
-                        name: att.name,
-                        type: att.type,
+                        ...att,
                         dropboxPath: att.dropboxPath || '',
                         dropboxUrl: att.dropboxUrl || '',
                         storagePath: att.storagePath || '',
@@ -1558,6 +1554,12 @@ function createNode(item, isMgmt) {
                     btnView.innerHTML = '<i class="ph ph-eye"></i>';
                     btnView.onclick = () => window.openPreview(att);
                     
+                    const btnAi = document.createElement('button');
+                    btnAi.className = 'icon-btn';
+                    btnAi.title = 'Extrair leitura do doc com IA';
+                    btnAi.innerHTML = '<i class="ph ph-magic-wand text-primary"></i>';
+                    btnAi.onclick = () => window.analyzeDocumentAI(att);
+
                     const btnDown = document.createElement('a');
                     btnDown.className = 'icon-btn';
                     btnDown.title = 'Baixar';
@@ -1580,10 +1582,11 @@ function createNode(item, isMgmt) {
                         aiStatusIcon.className = isSuccess ? 'ph ph-shield-check text-accent' : 'ph ph-shield-warning text-warning';
                         aiStatusIcon.style.fontSize = '0.9rem';
                         aiStatusIcon.style.cursor = 'help';
-                        aiStatusIcon.title = `[IA Check]: ${att.aiCheckResult}`;
+                        aiStatusIcon.title = `[IA Check autom.]: ${att.aiCheckResult.replace(/<br>/g, ' ')}`;
                         attBadge.appendChild(aiStatusIcon);
                     }
 
+                    attBadge.appendChild(btnAi);
                     attBadge.appendChild(btnView);
                     attBadge.appendChild(btnDown);
                     attBadge.appendChild(btnDel);
