@@ -130,9 +130,12 @@ function saveState() {
                         id: att.id,
                         name: att.name,
                         type: att.type,
-                        dropboxPath: att.dropboxPath,
-                        dropboxUrl: att.dropboxUrl,
-                        objectUrl: att.dropboxUrl
+                        dropboxPath: att.dropboxPath || '',
+                        dropboxUrl: att.dropboxUrl || '',
+                        storagePath: att.storagePath || '',
+                        downloadUrl: att.downloadUrl || '',
+                        objectUrl: att.downloadUrl || att.dropboxUrl || att.objectUrl || '',
+                        source: att.source || ''
                     })),
                     observation: pend.observation || ''
                 })),
@@ -144,9 +147,12 @@ function saveState() {
                         id: att.id,
                         name: att.name,
                         type: att.type,
-                        dropboxPath: att.dropboxPath,
-                        dropboxUrl: att.dropboxUrl,
-                        objectUrl: att.dropboxUrl
+                        dropboxPath: att.dropboxPath || '',
+                        dropboxUrl: att.dropboxUrl || '',
+                        storagePath: att.storagePath || '',
+                        downloadUrl: att.downloadUrl || '',
+                        objectUrl: att.downloadUrl || att.dropboxUrl || att.objectUrl || '',
+                        source: att.source || ''
                     }))
                 }))
             })),
@@ -1230,7 +1236,7 @@ function renderPendenciasChecklist(curr) {
         fileInput.type = 'file';
         fileInput.className = 'hidden';
         fileInput.multiple = true;
-        fileInput.onchange = (e) => window.handleFileUpload(e.target.files, p.id, true);
+        fileInput.onchange = (e) => window.handleFileUpload(p.id, e.target.files, true);
         btnAttach.onclick = () => fileInput.click();
         
         statusRow.appendChild(btnAttach);
@@ -1490,7 +1496,7 @@ function createNode(item, isMgmt) {
             fileInput.type = 'file';
             fileInput.className = 'file-input-hidden';
             fileInput.multiple = true;
-            fileInput.onchange = (e) => handleFileUpload(e.target.files, item.id);
+            fileInput.onchange = (e) => window.handleFileUpload(item.id, e.target.files);
             itemRight.appendChild(fileInput);
 
             // --- ROW 1: Status badges + icon-only attach button on the right ---
@@ -1651,7 +1657,7 @@ function createNode(item, isMgmt) {
             itemDiv.addEventListener('dragleave', (e) => { itemDiv.classList.remove('drag-over'); });
             itemDiv.addEventListener('drop', (e) => {
                 e.preventDefault(); itemDiv.classList.remove('drag-over');
-                if(e.dataTransfer.files && e.dataTransfer.files.length > 0) handleFileUpload(e.dataTransfer.files, item.id);
+                if(e.dataTransfer.files && e.dataTransfer.files.length > 0) window.handleFileUpload(item.id, e.dataTransfer.files);
             });
         }
     } else {
@@ -2040,7 +2046,10 @@ window.handleFileUpload = async function(itemId, files, isPendencia = false) {
             if (targetItem.attachments.length > 0) {
                 const addedCount = files.length;
                 const newAttachments = targetItem.attachments.slice(-addedCount);
-                newAttachments.forEach(att => window.autoAnalyzeDocumentAI(att, itemId));
+                newAttachments.forEach((att, index) => {
+                    const originalFile = files[index];
+                    window.autoAnalyzeDocumentAI(att, itemId, originalFile);
+                });
             }
         } finally {
             document.body.style.cursor = 'default';
@@ -2372,14 +2381,25 @@ window.analyzeDocumentAI = async function(att) {
     }
 }
 
-window.autoAnalyzeDocumentAI = async function(att, itemId) {
+window.autoAnalyzeDocumentAI = async function(att, itemId, originalFile = null) {
     const { objectUrl: url, type: mimeType, name, dropboxPath } = att;
     const currProject = getCurrentProject();
     if (!currProject) return;
 
     try {
         let fileDataBase64 = '';
-        if (dropboxPath && dbx) {
+        
+        // Caminho feliz: Temos acesso ao File original do upload (MUITO MAIS RÁPIDO E EVITA CORS)
+        if (originalFile) {
+            fileDataBase64 = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                reader.readAsDataURL(originalFile);
+            });
+            console.log("IA usando arquivo original em memória.");
+        }
+        // Legado: Dropbox
+        else if (dropboxPath && dbx) {
             try {
                 const response = await dbx.filesDownload({ path: dropboxPath });
                 const blob = response.result.fileBlob;
@@ -2388,10 +2408,14 @@ window.autoAnalyzeDocumentAI = async function(att, itemId) {
                     reader.onloadend = () => resolve(reader.result.split(',')[1]);
                     reader.readAsDataURL(blob);
                 });
-            } catch (e) {}
+            } catch (e) {
+                console.warn("Falha ao baixar do Dropbox (auto AI)", e);
+            }
         }
 
+        // Fallback: Tentativa de baixar da URL (pode sofrer CORS dependendo das regras do Storage)
         if (!fileDataBase64) {
+            console.log("IA baixando arquivo da URL (Fallback)...");
             const fetchUrl = att.downloadUrl || url;
             const response = await fetch(fetchUrl);
             const blob = await response.blob();
