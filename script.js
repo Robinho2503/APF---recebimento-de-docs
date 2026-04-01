@@ -1,7 +1,24 @@
+// Firebase Imports
+import { initializeApp } from "firebase/app";
+import { getFirestore, doc, setDoc, onSnapshot, getDoc } from "firebase/firestore";
+
+// Firebase Configuration & Initialization
+const firebaseConfig = {
+  apiKey: "AIzaSyCUOqjWShuit2xWcwNpSewrsdX2eTBP4UE",
+  authDomain: "p01---entrega-de-docs.firebaseapp.com",
+  projectId: "p01---entrega-de-docs",
+  storageBucket: "p01---entrega-de-docs.firebasestorage.app",
+  messagingSenderId: "633630915261",
+  appId: "1:633630915261:web:77f594fd31eaeefbf595d4",
+  measurementId: "G-008K7RTHVP"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const GLOBAL_DOC_PATH = "apf_data/v2_global_state";
+
 // Data Models & State Initialization
-
 let dbx = null;
-
 const DEFAULT_ITEMS = [
     { id: 'sec1', name: 'Legalização', parentId: null, protected: true, expanded: false, attachments: [] },
     { id: 'sec2', name: 'Arquitetura e Urbanismo', parentId: null, protected: true, expanded: false, attachments: [] },
@@ -16,6 +33,7 @@ let state = {
     currentProjectId: 'p_default'
 };
 let isAuthenticated = false;
+let isInitialCloudLoad = true;
 
 
 
@@ -30,93 +48,127 @@ function isMgmtActive() {
 
 // Persistence
 async function loadState() {
-    const saved = localStorage.getItem('apf_checklist_v2.2');
-    if (saved) {
-        try {
-            const parsed = JSON.parse(saved);
+    // 1. First, check if there's local data for migration
+    const localSaved = localStorage.getItem('apf_checklist_v2.2');
+    
+    // 2. Setup Real-time Listener from Firebase
+    const docRef = doc(db, GLOBAL_DOC_PATH);
+    
+    onSnapshot(docRef, (snapshot) => {
+        if (snapshot.exists()) {
+            const cloudData = snapshot.data();
+            console.log("Cloud update received:", cloudData);
             
-            for (const p of parsed.projects) {
+            // Apply migrations to cloud data if needed
+            for (const p of cloudData.projects) {
                 if (!p.createdAt) p.createdAt = new Date().toISOString().split('T')[0];
                 if (p.engAnalysisOpened === undefined) p.engAnalysisOpened = false;
-                if (p.pendenciaActive === undefined) p.pendenciaActive = false;
                 if (!p.pendencias) p.pendencias = [];
-                if (p.pendenciaStartDate === undefined) p.pendenciaStartDate = '';
-                for (const item of p.items) {
-                    if (item.attachments && item.attachments.length > 0) {
-                        for (const att of item.attachments) {
-                            if (att.dropboxUrl && !att.objectUrl) {
-                                att.objectUrl = att.dropboxUrl;
-                            }
-                        }
-                    }
+                // ... other migrations if needed
+            }
+            
+            state = cloudData;
+            
+            if (isInitialCloudLoad) {
+                isInitialCloudLoad = false;
+                // Only on first load, maybe use local currentProject if available
+                const lastLocalId = localStorage.getItem('apf_last_project_id');
+                if (lastLocalId && state.projects.find(p => p.id === lastLocalId)) {
+                    state.currentProjectId = lastLocalId;
                 }
             }
 
-            state = parsed;
-            
-            // Migration: Update old status labels
-            state.projects.forEach(p => {
-                p.items.forEach(item => {
-                    if (item.validationStatus === 'Em Análise') item.validationStatus = 'Em Análise de APF';
-                });
-            });
-
-            const defP = state.projects.find(p => p.id === 'p_default');
-            if(defP && defP.name === 'Empreendimento Base') defP.name = 'Modelo de Entrega';
-
-            if(!state.projects.find(p => p.id === state.currentProjectId)) {
-                state.currentProjectId = state.projects[0].id;
-            }
-            if (parsed.showFullChecklistDuringPendencia === undefined) parsed.showFullChecklistDuringPendencia = false;
-            state.showFullChecklistDuringPendencia = parsed.showFullChecklistDuringPendencia;
-            
-            // Re-render after loading files
-            updateGlobalDateUI();
-            renderTree();
-            renderTracking();
-        } catch(e) { console.error('Error loading state', e); }
-    }
+            renderAfterUpdate();
+        } else if (localSaved && isInitialCloudLoad) {
+            // 3. Migration: Cloud is empty but we have local data
+            console.log("Empty cloud. Migrating local data to Firebase...");
+            try {
+                const parsed = JSON.parse(localSaved);
+                state = parsed;
+                isInitialCloudLoad = false;
+                saveState(); // This will push local data to Firestore
+            } catch(e) { console.error("Migration error", e); }
+        } else if (isInitialCloudLoad) {
+            // 4. Everything empty
+            console.log("Starting with default state.");
+            isInitialCloudLoad = false;
+            saveState();
+        }
+    });
 }
 
+function renderAfterUpdate() {
+    updateGlobalDateUI();
+    renderTree();
+    renderTracking();
+    updateThemeIcon();
+}
+
+let saveTimeout = null;
 function saveState() {
-    // We save the structure to localStorage, but files are already in IndexedDB
-    const saveableState = {
-        projects: state.projects.map(p => ({
-            ...p,
-            engAnalysisOpened: p.engAnalysisOpened || false,
-            pendenciaActive: p.pendenciaActive || false,
-            pendencias: (p.pendencias || []).map(pend => ({
-                id: pend.id,
-                docName: pend.docName,
-                sector: pend.sector,
-                specification: pend.specification || '',
-                attachments: (pend.attachments || []).map(att => ({
-                    id: att.id,
-                    name: att.name,
-                    type: att.type,
-                    dropboxPath: att.dropboxPath,
-                    dropboxUrl: att.dropboxUrl,
-                    objectUrl: att.dropboxUrl
+    // Save currentProjectId locally just for UX (persists across sessions per-device)
+    localStorage.setItem('apf_last_project_id', state.currentProjectId);
+    
+    // Save structure to Firestore (Debounced to avoid rapid writes)
+    if (saveTimeout) clearTimeout(saveTimeout);
+    
+    saveTimeout = setTimeout(async () => {
+        const docRef = doc(db, GLOBAL_DOC_PATH);
+        const saveableState = {
+            projects: state.projects.map(p => ({
+                ...p,
+                engAnalysisOpened: p.engAnalysisOpened || false,
+                pendenciaActive: p.pendenciaActive || false,
+                pendencias: (p.pendencias || []).map(pend => ({
+                    id: pend.id,
+                    docName: pend.docName,
+                    sector: pend.sector,
+                    specification: pend.specification || '',
+                    attachments: (pend.attachments || []).map(att => ({
+                        id: att.id,
+                        name: att.name,
+                        type: att.type,
+                        dropboxPath: att.dropboxPath,
+                        dropboxUrl: att.dropboxUrl,
+                        objectUrl: att.dropboxUrl
+                    })),
+                    observation: pend.observation || ''
                 })),
-                observation: pend.observation || ''
-            })),
-            pendenciaStartDate: p.pendenciaStartDate || '',
-            showFullChecklistDuringPendencia: p.showFullChecklistDuringPendencia || false,
-            items: p.items.map(item => ({
-                ...item,
-                attachments: (item.attachments || []).map(att => ({
-                    id: att.id,
-                    name: att.name,
-                    type: att.type,
-                    dropboxPath: att.dropboxPath,
-                    dropboxUrl: att.dropboxUrl,
-                    objectUrl: att.dropboxUrl
+                pendenciaStartDate: p.pendenciaStartDate || '',
+                showFullChecklistDuringPendencia: p.showFullChecklistDuringPendencia || false,
+                items: p.items.map(item => ({
+                    ...item,
+                    attachments: (item.attachments || []).map(att => ({
+                        id: att.id,
+                        name: att.name,
+                        type: att.type,
+                        dropboxPath: att.dropboxPath,
+                        dropboxUrl: att.dropboxUrl,
+                        objectUrl: att.dropboxUrl
+                    }))
                 }))
-            }))
-        })),
-        currentProjectId: state.currentProjectId
-    };
-    localStorage.setItem('apf_checklist_v2.2', JSON.stringify(saveableState));
+            })),
+            currentProjectId: state.currentProjectId
+        };
+        
+        try {
+            await setDoc(docRef, saveableState);
+            console.log("State synced to cloud.");
+        } catch (e) {
+            console.error("Error syncing to cloud:", e);
+        }
+    }, 1000); // 1s debounce
+}
+
+function updateThemeIcon() {
+    const themeBtn = document.getElementById('btn-theme-toggle');
+    if (themeBtn) {
+        if (document.documentElement.classList.contains('light-mode')) {
+            themeBtn.innerHTML = '<i class="ph ph-moon"></i>';
+        } else {
+            themeBtn.innerHTML = '<i class="ph ph-sun"></i>';
+        }
+    }
 }
 
 // DOM Elements
