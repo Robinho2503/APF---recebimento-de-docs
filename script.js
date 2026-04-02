@@ -37,6 +37,7 @@ let state = {
 };
 let isAuthenticated = false;
 let isInitialCloudLoad = true;
+let editingPendenciaId = null;
 
 
 
@@ -154,7 +155,8 @@ function saveState() {
                     }))
                 }))
             })),
-            currentProjectId: state.currentProjectId
+            currentProjectId: state.currentProjectId,
+            showFullChecklistDuringPendencia: state.showFullChecklistDuringPendencia || false
         };
         
         try {
@@ -163,7 +165,7 @@ function saveState() {
         } catch (e) {
             console.error("Error syncing to cloud:", e);
         }
-    }, 1000); // 1s debounce
+    }, 300); // 300ms debounce
 }
 
 function updateThemeIcon() {
