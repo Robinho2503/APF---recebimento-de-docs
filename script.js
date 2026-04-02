@@ -1504,7 +1504,7 @@ function createNode(item, isMgmt) {
     itemLeft.appendChild(nameSpan);
     
     // APF Check symbol for validated leaf documents
-    if(!isMgmt && !isRootFolder && item.validationStatus === 'APF check') {
+    if(!isMgmt && !isRootFolder && (item.validationStatus === 'APF check' || item.validationStatus === 'Validado')) {
         const apfCheck = document.createElement('span');
         apfCheck.className = 'apf-check-symbol';
         apfCheck.title = 'Documentação Validada pela APF';
@@ -1548,7 +1548,7 @@ function createNode(item, isMgmt) {
             // Validation badge ONLY if there is an attachment
             if(hasAtt && item.validationStatus) {
                 const valBadge = document.createElement('span');
-                if(item.validationStatus === 'APF check') valBadge.className = 'badge badge-validado badge-sm';
+                if(item.validationStatus === 'APF check' || item.validationStatus === 'Validado') valBadge.className = 'badge badge-validado badge-sm';
                 else if(item.validationStatus === 'Apontamento') valBadge.className = 'badge badge-apontamento badge-sm';
                 else valBadge.className = 'badge badge-analise badge-sm';
                 valBadge.textContent = item.validationStatus;
@@ -1706,7 +1706,7 @@ function createNode(item, isMgmt) {
                 ['Em Análise de APF', 'APF check', 'Apontamento'].forEach(opt => {
                     const o = document.createElement('option');
                     o.value = opt; o.textContent = opt;
-                    if(item.validationStatus === opt) o.selected = true;
+                    if(item.validationStatus === opt || (opt === 'APF check' && item.validationStatus === 'Validado')) o.selected = true;
                     valSelect.appendChild(o);
                 });
                 valSelect.onchange = (e) => { item.validationStatus = e.target.value; saveState(); renderTree(); };
@@ -1802,11 +1802,12 @@ function createNode(item, isMgmt) {
             });
             itemRight.appendChild(inlineAttachments);
         }
+
+        // Append actionsDiv last in management mode to keep it on the right
+        itemRight.appendChild(actionsDiv);
     }
 
     itemDiv.appendChild(itemLeft);
-    // Append actionsDiv last in management mode to keep it on the right
-    if (isMgmt) itemRight.appendChild(actionsDiv);
     itemDiv.appendChild(itemRight);
     nodeWrapper.appendChild(itemDiv);
 
