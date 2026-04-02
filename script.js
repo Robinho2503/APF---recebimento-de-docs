@@ -960,12 +960,42 @@ function updateGlobalDateUI() {
             
             if (subtitleEl_old) subtitleEl_old.textContent = `Prazo: ${formatDateToPT(curr.dueDate)} ┃ ${diffStr}${bizDaysStr}`;
             projectGlobalCountdown.style.display = 'none';
-        } else {
-            projectGlobalCountdown.style.display = 'none';
         }
     }
 }
 
+function updateManagementStatsUI() {
+    const p = getCurrentProject();
+    const dash = document.getElementById('management-dashboard');
+    if(!p || p.id === 'p_default' || !dash) {
+        if(dash) dash.style.display = 'none';
+        return;
+    }
+
+    const allItems = p.items.filter(i => {
+        const children = p.items.some(child => child.parentId === i.id);
+        return !children;
+    });
+
+    const totalPending = allItems.filter(i => !i.attachments || i.attachments.length === 0).length;
+    const awaitingValidation = allItems.filter(i => {
+        const hasAtt = i.attachments && i.attachments.length > 0;
+        const isValidated = i.validationStatus === 'APF check' || i.validationStatus === 'Validado';
+        return hasAtt && !isValidated;
+    }).length;
+
+    dash.style.display = 'grid';
+    dash.innerHTML = `
+        <div class="dashboard-card warning">
+            <span class="card-value">${totalPending}</span>
+            <span class="card-label">Documentos Pendentes</span>
+        </div>
+        <div class="dashboard-card accent">
+            <span class="card-value">${awaitingValidation}</span>
+            <span class="card-label">Aguardando Validação APF</span>
+        </div>
+    `;
+}
 
 // function updateProjectDropdown() {
 //     const mgmt = isMgmtActive();
@@ -1566,6 +1596,7 @@ function renderTree() {
     }
 
     if (!mgmt) updateProjectProgressUI(currProj);
+    else updateManagementStatsUI();
     renderAnalysisPanels();
 }
 
