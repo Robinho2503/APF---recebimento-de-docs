@@ -32,7 +32,8 @@ let state = {
     projects: [
         { id: 'p_default', name: 'Modelo de Entrega', items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)), dueDate: '', createdAt: new Date().toISOString().split('T')[0], engAnalysisOpened: false, pendencias: [], pendenciaStartDate: '' }
     ],
-    currentProjectId: 'p_default'
+    currentProjectId: 'p_default',
+    showFullChecklistDuringPendencia: false
 };
 let isAuthenticated = false;
 let isInitialCloudLoad = true;
@@ -68,6 +69,7 @@ async function loadState() {
                 if (!p.pendencias) p.pendencias = [];
                 // ... other migrations if needed
             }
+            if (cloudData.showFullChecklistDuringPendencia === undefined) cloudData.showFullChecklistDuringPendencia = false;
             
             state = cloudData;
             
@@ -516,6 +518,13 @@ function initEventListeners() {
             saveState();
             renderTree();
             renderTracking();
+            
+            if (curr.pendenciaActive) {
+                setTimeout(() => {
+                    const panel = document.getElementById('pendencias-mgmt-panel');
+                    if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 150);
+            }
         };
     }
 
@@ -1899,6 +1908,9 @@ function renderPendenciasMgmt() {
     const sectorSel = document.getElementById('new-pendencia-sector');
     if (!curr || !listCont) return;
 
+    // Preserve current selection to avoid reset during auto-renders
+    const savedSector = sectorSel ? sectorSel.value : '';
+
     // Populate sector dropdown
     if (sectorSel) {
         // Keep "Selecione" and "Outra"
@@ -1911,6 +1923,9 @@ function renderPendenciasMgmt() {
         
         const optionsHtml = uniqueSectors.map(s => `<option value="${s}">${s}</option>`);
         sectorSel.innerHTML = [defaultOptions[0], ...optionsHtml, defaultOptions[1]].join('');
+        
+        // Restore selection if it still exists
+        if (savedSector) sectorSel.value = savedSector;
     }
 
     pendenciaStartDateInp.value = curr.pendenciaStartDate || '';
