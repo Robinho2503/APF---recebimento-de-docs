@@ -1503,14 +1503,7 @@ function createNode(item, isMgmt) {
 
     itemLeft.appendChild(nameSpan);
     
-    // APF Check symbol for validated leaf documents
-    if(!isMgmt && !isRootFolder && (item.validationStatus === 'APF check' || item.validationStatus === 'Validado')) {
-        const apfCheck = document.createElement('span');
-        apfCheck.className = 'apf-check-symbol';
-        apfCheck.title = 'Documentação Validada pela APF';
-        apfCheck.innerHTML = '<i class="ph ph-seal-check-fill"></i> APF CHECK';
-        itemLeft.appendChild(apfCheck);
-    }
+    // Note: APF Check symbol removed as per user request to declutter name area.
 
     const itemRight = document.createElement('div');
     itemRight.className = 'item-right';
@@ -2258,7 +2251,7 @@ function initSettings() {
     if (!btnSettings) return;
 
     btnSettings.addEventListener('click', () => {
-        geminiModelInp.value = localStorage.getItem('apf_gemini_model') || 'gemini-2.5-flash';
+        geminiModelInp.value = localStorage.getItem('apf_gemini_model') || 'gemini-1.5-flash';
         geminiKeyInp.value = localStorage.getItem('apf_gemini_key') || '';
         dbxKeyInp.value = localStorage.getItem('apf_dropbox_app_key') || '';
         apfPassInp.value = localStorage.getItem('apf_access_password') || '';
@@ -2269,7 +2262,7 @@ function initSettings() {
     settingsModal.addEventListener('click', (e) => { if(e.target === settingsModal) settingsModal.classList.add('hidden'); });
 
     btnResetModel.addEventListener('click', () => {
-        geminiModelInp.value = 'gemini-2.5-flash';
+        geminiModelInp.value = 'gemini-1.5-flash';
         geminiModelInp.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
         setTimeout(() => geminiModelInp.style.backgroundColor = '', 500);
     });
@@ -2348,7 +2341,7 @@ window.analyzeDocumentAI = async function(att) {
         }
 
         const apiKey = localStorage.getItem('apf_gemini_key');
-        const modelName = localStorage.getItem('apf_gemini_model') || 'gemini-2.5-flash';
+        const modelName = localStorage.getItem('apf_gemini_model') || 'gemini-1.5-flash';
         if(!apiKey) {
             throw new Error("API Key não configurada. Por favor, acesse as Configurações (ícone ⚙️).");
         }
@@ -2443,7 +2436,7 @@ window.autoAnalyzeDocumentAI = async function(att, itemId, originalFile = null) 
         }
 
         const apiKey = localStorage.getItem('apf_gemini_key');
-        const modelName = localStorage.getItem('apf_gemini_model') || 'gemini-2.0-flash'; // Flash is faster/cheaper for auto-checks
+        const modelName = localStorage.getItem('apf_gemini_model') || 'gemini-1.5-flash'; // Standard model for auto-checks
         if (!apiKey) return;
 
         const aiUrl = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${apiKey}`;
