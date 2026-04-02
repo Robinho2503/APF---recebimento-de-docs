@@ -43,6 +43,8 @@ let localUI = {
     showFullChecklistDuringPendencia: false,
     currentProjectId: 'p_default'
 };
+let treeSearchQuery = '';
+let treeSearchFilter = 'all'; // all, pendente, apontamento
 
 function loadLocalUI() {
     try {
@@ -625,6 +627,37 @@ function initEventListeners() {
     if (modalOverlay) {
         modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) modalOverlay.classList.add('hidden'); });
     }
+
+    // Global Search Events
+    const searchInp = document.getElementById('global-tree-search');
+    const btnClearSearch = document.getElementById('btn-clear-search');
+
+    if (searchInp) {
+        searchInp.addEventListener('input', (e) => {
+            treeSearchQuery = e.target.value.toLowerCase();
+            if (btnClearSearch) btnClearSearch.style.display = treeSearchQuery.length > 0 ? 'flex' : 'none';
+            renderTree();
+        });
+    }
+
+    if (btnClearSearch) {
+        btnClearSearch.onclick = () => {
+            searchInp.value = '';
+            treeSearchQuery = '';
+            btnClearSearch.style.display = 'none';
+            renderTree();
+        };
+    }
+
+    const filterChips = document.querySelectorAll('.filter-chip');
+    filterChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+            filterChips.forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            treeSearchFilter = chip.dataset.filter;
+            renderTree();
+        });
+    });
 }
 
 const btnDbx = document.getElementById('btn-connect-dropbox');
@@ -798,6 +831,62 @@ function applyAuthState() {
 
 // Project Management & Global UI
 function updateGlobalDateUI() {
+    const p = getCurrentProject();
+    const dash = document.getElementById('project-dashboard');
+    const nameEl = document.getElementById('checklist-proj-name');
+    const subtitleEl = document.getElementById('checklist-subtitle');
+    
+    if(!p || p.id === 'p_default') {
+        if(dash) dash.style.display = 'none';
+        if(nameEl) nameEl.textContent = 'APF Checklist';
+        if(subtitleEl) subtitleEl.textContent = 'Selecione um empreendimento no painel lateral';
+        return;
+    }
+
+    if(nameEl) nameEl.textContent = p.name;
+    if(subtitleEl) subtitleEl.textContent = 'Entrega de documentação';
+
+    // Calculate Dashboard Stats
+    const allItems = p.items.filter(i => {
+        const hasChildren = p.items.some(child => child.parentId === i.id);
+        return !hasChildren; // Only count leaf items (actual documents)
+    });
+
+    const total = allItems.length;
+    const delivered = allItems.filter(i => i.attachments && i.attachments.length > 0).length;
+    const validated = allItems.filter(i => (i.validationStatus === 'APF check' || i.validationStatus === 'Validado') && i.attachments?.length > 0).length;
+    const withPoints = allItems.filter(i => i.validationStatus === 'Apontamento' && i.attachments?.length > 0).length;
+    const pending = total - delivered;
+
+    const progressPct = total > 0 ? Math.round((delivered / total) * 100) : 0;
+
+    if(dash) {
+        dash.style.display = 'grid';
+        dash.innerHTML = `
+            <div class="dashboard-card info">
+                <span class="card-value">${progressPct}%</span>
+                <span class="card-label">Conclusão</span>
+            </div>
+            <div class="dashboard-card">
+                <span class="card-value">${total}</span>
+                <span class="card-label">Total GERAL</span>
+            </div>
+            <div class="dashboard-card accent">
+                <span class="card-value">${validated}</span>
+                <span class="card-label">Validados</span>
+            </div>
+            <div class="dashboard-card warning">
+                <span class="card-value">${pending}</span>
+                <span class="card-label">Pendentes</span>
+            </div>
+            <div class="dashboard-card danger">
+                <span class="card-value">${withPoints}</span>
+                <span class="card-label">Apontamentos</span>
+            </div>
+        `;
+    }
+
+    // Update the classic deadline UI if it exists
     const curr = getCurrentProject();
     if(!curr) return;
     
@@ -818,16 +907,16 @@ function updateGlobalDateUI() {
         btnDeleteProject.style.display = (curr.id === 'p_default') ? 'none' : 'inline-flex';
     }
     
-    const subtitleEl = document.getElementById('checklist-subtitle');
-    if (subtitleEl) {
-        subtitleEl.textContent = 'Entrega da documentação';
-        subtitleEl.className = 'default-subtitle';
+    const subtitleEl_old = document.getElementById('checklist-subtitle');
+    if (subtitleEl_old) {
+        subtitleEl_old.textContent = 'Entrega da documentação';
+        subtitleEl_old.className = 'default-subtitle';
     }
 
     if(curr.engAnalysisOpened) {
-        if (subtitleEl) {
-            subtitleEl.innerHTML = '<i class="ph ph-file-search"></i> Engenharia Aberta';
-            subtitleEl.className = 'badge-eng-subtitle';
+        if (subtitleEl_old) {
+            subtitleEl_old.innerHTML = '<i class="ph ph-file-search"></i> Engenharia Aberta';
+            subtitleEl_old.className = 'badge-eng-subtitle';
         }
         if (btnToggleEng) {
             btnToggleEng.innerHTML = '<i class="ph ph-magnifying-glass"></i> Engenharia aberta';
@@ -873,7 +962,7 @@ function updateGlobalDateUI() {
                 bizDaysStr = '';
             }
             
-            if (subtitleEl) subtitleEl.textContent = `Prazo: ${formatDateToPT(curr.dueDate)} ┃ ${diffStr}${bizDaysStr}`;
+            if (subtitleEl_old) subtitleEl_old.textContent = `Prazo: ${formatDateToPT(curr.dueDate)} ┃ ${diffStr}${bizDaysStr}`;
             projectGlobalCountdown.style.display = 'none';
         } else {
             projectGlobalCountdown.style.display = 'none';
@@ -1167,81 +1256,6 @@ function getNodeStats(itemId) {
     return { pendente, apontamento };
 }
 
-function renderTree() {
-    checklistContainer.innerHTML = '';
-    managementContainer.innerHTML = '';
-    
-    const currProj = getCurrentProject();
-    const mgmt = isMgmtActive();
-    
-    // Always sync panel references
-    const pMgmtPanel = document.getElementById('pendencias-mgmt-panel');
-    const pToggleBtn = document.getElementById('btn-toggle-pendencias');
-
-    if (!mgmt && (!currProj || currProj.id === 'none' || currProj.id === 'p_default')) {
-        let msg = '<i class="ph ph-warning"></i> Selecione um Empreendimento acima para visualizar a documentação.';
-        if(state.projects.length <= 1) msg = '<i class="ph ph-warning"></i> Você precisa criar um Empreendimento novo na aba "Acesso APF" para manipular os checklists.';
-        checklistContainer.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding: 3rem 1rem; border: 1px dashed var(--panel-border); border-radius: 0.5rem;">${msg}</div>`;
-        return;
-    }
-
-    // Sync panel visibility with proj state
-    if (pMgmtPanel && pToggleBtn) {
-        const shouldShow = mgmt && currProj && currProj.id !== 'p_default' && currProj.pendenciaActive;
-        if (shouldShow) {
-            pMgmtPanel.classList.remove('hidden');
-            pToggleBtn.classList.add('btn-danger');
-            pToggleBtn.classList.remove('btn-outline');
-            pToggleBtn.innerHTML = '<i class="ph ph-warning-diamond"></i> Pendências Ativas';
-            renderPendenciasMgmt();
-        } else {
-            pMgmtPanel.classList.add('hidden');
-            pToggleBtn.classList.add('btn-outline');
-            pToggleBtn.classList.remove('btn-danger');
-            pToggleBtn.innerHTML = '<i class="ph ph-warning-diamond"></i> Resolução de pendências';
-        }
-    }
-
-    renderPendenciasChecklist(currProj);
-
-    const rootItems = getChildItems(null);
-    
-    // Logic to hide sectors when Pendências is active (Local UI)
-    let showItems = true;
-    if (currProj && currProj.pendenciaActive) {
-        if (!localUI.showFullChecklistDuringPendencia) showItems = false;
-        
-        const toggleDiv = document.createElement('div');
-        toggleDiv.style.margin = '1.5rem 0 1rem';
-        toggleDiv.style.textAlign = 'center';
-        
-        const btnToggleFull = document.createElement('button');
-        btnToggleFull.className = 'btn btn-outline btn-sm';
-        btnToggleFull.innerHTML = localUI.showFullChecklistDuringPendencia 
-            ? '<i class="ph ph-eye-slash"></i> Ocultar Documentação dos Setores' 
-            : '<i class="ph ph-eye"></i> Exibir Documentação dos Setores';
-        
-        btnToggleFull.onclick = () => {
-            localUI.showFullChecklistDuringPendencia = !localUI.showFullChecklistDuringPendencia;
-            saveLocalUI();
-            renderTree();
-        };
-        
-        toggleDiv.appendChild(btnToggleFull);
-        checklistContainer.appendChild(toggleDiv);
-    }
-
-    rootItems.forEach((item) => {
-        const c1 = createNode(item, false);
-        const c2 = createNode(item, true);
-        if (showItems) checklistContainer.appendChild(c1);
-        managementContainer.appendChild(c2);
-    });
-
-    updateProjectProgressUI(currProj);
-    renderAnalysisPanels();
-}
-
 function renderPendenciasChecklist(curr) {
     if (!curr || !curr.pendenciaActive || !curr.pendencias || curr.pendencias.length === 0) return;
 
@@ -1297,10 +1311,13 @@ function renderPendenciasChecklist(curr) {
         // Validation badge for pendencies
         if(hasAtt && p.validationStatus) {
             const valBadge = document.createElement('span');
-            if(p.validationStatus === 'APF check' || p.validationStatus === 'Validado') valBadge.className = 'badge badge-validado badge-sm';
+            if(p.validationStatus === 'APF check' || p.validationStatus === 'Validado') {
+                valBadge.className = 'badge badge-validado badge-sm';
+                valBadge.textContent = 'Validado';
+            }
             else if(p.validationStatus === 'Apontamento') valBadge.className = 'badge badge-apontamento badge-sm';
             else valBadge.className = 'badge badge-analise badge-sm';
-            valBadge.textContent = p.validationStatus;
+            if(p.validationStatus !== 'APF check' && p.validationStatus !== 'Validado') valBadge.textContent = p.validationStatus;
             statusRow.appendChild(valBadge);
         }
 
@@ -1463,13 +1480,138 @@ function formatDateToPT(isoStr) {
     return `${parts[2]}/${parts[1]}/${parts[0]}`;
 }
 
-function createNode(item, isMgmt) {
-    const isExpanded = localUI.expandedIds.has(item.id);
+function renderTree() {
+    if(!checklistContainer || !managementContainer) return;
+    
+    // Clear
+    checklistContainer.innerHTML = '';
+    managementContainer.innerHTML = '';
+    
+    const currProj = getCurrentProject();
+    const mgmt = isMgmtActive();
+    
+    if (!currProj) return;
+
+    // Sync panel references
+    const pMgmtPanel = document.getElementById('pendencias-mgmt-panel');
+    const pToggleBtn = document.getElementById('btn-toggle-pendencias');
+
+    if (!mgmt && (currProj.id === 'none' || currProj.id === 'p_default')) {
+        let msg = '<i class="ph ph-warning"></i> Selecione um Empreendimento acima para visualizar a documentação.';
+        if(state.projects.length <= 1) msg = '<i class="ph ph-warning"></i> Você precisa criar um Empreendimento novo na aba "Acesso APF" para manipular os checklists.';
+        checklistContainer.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding: 3rem 1rem; border: 1px dashed var(--panel-border); border-radius: 0.5rem;">${msg}</div>`;
+        return;
+    }
+
+    // Sync panel visibility with proj state
+    if (pMgmtPanel && pToggleBtn) {
+        const shouldShow = mgmt && currProj.id !== 'p_default' && currProj.pendenciaActive;
+        if (shouldShow) {
+            pMgmtPanel.classList.remove('hidden');
+            pToggleBtn.classList.add('btn-danger');
+            pToggleBtn.classList.remove('btn-outline');
+            pToggleBtn.innerHTML = '<i class="ph ph-warning-diamond"></i> Pendências Ativas';
+            renderPendenciasMgmt();
+        } else {
+            pMgmtPanel.classList.add('hidden');
+            pToggleBtn.classList.add('btn-outline');
+            pToggleBtn.classList.remove('btn-danger');
+            pToggleBtn.innerHTML = '<i class="ph ph-warning-diamond"></i> Resolução de pendências';
+        }
+    }
+
+    // Render Pendências Checklist if active
+    if (!mgmt) renderPendenciasChecklist(currProj);
+
+    const rootItems = getChildItems(null);
+    const isSearching = treeSearchQuery.length > 0 || treeSearchFilter !== 'all';
+
+    // Logic to hide sectors when Pendências is active (Local UI)
+    let showItems = true;
+    if (currProj.pendenciaActive && !mgmt) {
+        if (!localUI.showFullChecklistDuringPendencia) showItems = false;
+        
+        const toggleDiv = document.createElement('div');
+        toggleDiv.style.margin = '1.5rem 0 1rem';
+        toggleDiv.style.textAlign = 'center';
+        
+        const btnToggleFull = document.createElement('button');
+        btnToggleFull.className = 'btn btn-outline btn-sm';
+        btnToggleFull.innerHTML = localUI.showFullChecklistDuringPendencia 
+            ? '<i class="ph ph-eye-slash"></i> Ocultar Documentação dos Setores' 
+            : '<i class="ph ph-eye"></i> Exibir Documentação dos Setores';
+        
+        btnToggleFull.onclick = () => {
+            localUI.showFullChecklistDuringPendencia = !localUI.showFullChecklistDuringPendencia;
+            saveLocalUI();
+            renderTree();
+        };
+        
+        toggleDiv.appendChild(btnToggleFull);
+        checklistContainer.appendChild(toggleDiv);
+    }
+
+    rootItems.forEach((item) => {
+        const node = createNode(item, 0); // Level 0
+        if (node) {
+            if (mgmt) managementContainer.appendChild(node);
+            else if (showItems) checklistContainer.appendChild(node);
+        }
+    });
+
+    if (isSearching) {
+        const activeContainer = mgmt ? managementContainer : checklistContainer;
+        if (activeContainer.children.length === 0 || (activeContainer.children.length === 1 && activeContainer.querySelector('button'))) {
+            activeContainer.innerHTML += `<div style="text-align:center; padding:3rem; color:var(--text-muted);">
+                <i class="ph ph-magnifying-glass" style="font-size:2rem; opacity:0.3;"></i>
+                <p style="margin-top:1rem;">Nenhum documento encontrado para "${treeSearchQuery}"</p>
+            </div>`;
+        }
+    }
+
+    if (!mgmt) updateProjectProgressUI(currProj);
+    renderAnalysisPanels();
+}
+
+function createNode(item, level) {
+    const children = getChildItems(item.id);
+    const isRootFolder = item.parentId === null;
+    const isMgmt = isMgmtActive();
+
+    // SEARCH & FILTER LOGIC
+    if (treeSearchQuery || treeSearchFilter !== 'all') {
+        const matchesQuery = item.name.toLowerCase().includes(treeSearchQuery);
+        const hasAtt = item.attachments && item.attachments.length > 0;
+        
+        let matchesFilter = true;
+        if (treeSearchFilter === 'pendente') matchesFilter = !hasAtt;
+        else if (treeSearchFilter === 'apontamento') matchesFilter = hasAtt && item.validationStatus === 'Apontamento';
+
+        // An item should be shown if it matches OR if any of its children match
+        const anyChildMatches = (nodeId) => {
+            const nodeChildren = getItems().filter(i => i.parentId === nodeId);
+            return nodeChildren.some(c => {
+                const cMatches = c.name.toLowerCase().includes(treeSearchQuery);
+                const cHasAtt = c.attachments && c.attachments.length > 0;
+                let cMatchesFilter = true;
+                if (treeSearchFilter === 'pendente') cMatchesFilter = !cHasAtt;
+                else if (treeSearchFilter === 'apontamento') cMatchesFilter = cHasAtt && c.validationStatus === 'Apontamento';
+                
+                return (cMatches && cMatchesFilter) || anyChildMatches(c.id);
+            });
+        };
+
+        if (!(matchesQuery && matchesFilter) && !anyChildMatches(item.id)) {
+            return null; // Skip this node
+        }
+    }
+
     const nodeWrapper = document.createElement('div');
+    const isExpanded = localUI.expandedIds.has(item.id);
     nodeWrapper.className = `tree-node ${isExpanded ? '' : 'collapsed'}`;
 
-    const hasChildren = getChildItems(item.id).length > 0;
-    const isRootFolder = item.parentId === null;
+    const nodeChildren = getChildItems(item.id);
+    const hasChildren = nodeChildren.length > 0;
 
     // The Item div
     const itemDiv = document.createElement('div');
@@ -1546,7 +1688,6 @@ function createNode(item, isMgmt) {
         if (hasIndicators) {
             itemLeft.prepend(indicatorsCont);
         } else {
-            // Se não houver indicadores, adicionamos um espaçador fixo para manter o alinhamento
             const spacer = document.createElement('div');
             spacer.style.width = '60px'; 
             spacer.style.flexShrink = '0';
@@ -1557,17 +1698,12 @@ function createNode(item, isMgmt) {
 
     itemLeft.appendChild(nameSpan);
     
-    // Note: APF Check symbol removed as per user request to declutter name area.
-
     const itemRight = document.createElement('div');
     itemRight.className = 'item-right';
 
     if(!isMgmt) {
-        // --- VISÃO GERAL ---
         if(!isRootFolder) {
             const hasAtt = item.attachments && item.attachments.length > 0;
-
-            // FILE INPUT (hidden) - created once for this item
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
             fileInput.className = 'file-input-hidden';
@@ -1575,30 +1711,34 @@ function createNode(item, isMgmt) {
             fileInput.onchange = (e) => window.handleFileUpload(item.id, e.target.files);
             itemRight.appendChild(fileInput);
 
-            // --- ROW 1: Status badges + icon-only attach button on the right ---
             const statusRow = document.createElement('div');
             statusRow.className = 'item-status-row';
 
-            // Badges wrap (left side)
             const badgesWrap = document.createElement('div');
             badgesWrap.style.display = 'flex';
             badgesWrap.style.gap = '0.3rem';
             badgesWrap.style.flexWrap = 'wrap';
             badgesWrap.style.alignItems = 'center';
 
-            // Delivery status badge (always shown)
             const statusBadge = document.createElement('span');
             statusBadge.className = hasAtt ? 'badge badge-entregue badge-sm' : 'badge badge-pendente badge-sm';
             statusBadge.textContent = hasAtt ? 'Entregue' : 'Pendente';
             badgesWrap.appendChild(statusBadge);
 
-            // Validation badge ONLY if there is an attachment
             if(hasAtt && item.validationStatus) {
                 const valBadge = document.createElement('span');
-                if(item.validationStatus === 'APF check' || item.validationStatus === 'Validado') valBadge.className = 'badge badge-validado badge-sm';
-                else if(item.validationStatus === 'Apontamento') valBadge.className = 'badge badge-apontamento badge-sm';
-                else valBadge.className = 'badge badge-analise badge-sm';
-                valBadge.textContent = item.validationStatus;
+                if(item.validationStatus === 'APF check' || item.validationStatus === 'Validado') {
+                    valBadge.className = 'badge badge-validado badge-sm';
+                    valBadge.textContent = 'Validado';
+                }
+                else if(item.validationStatus === 'Apontamento') {
+                    valBadge.className = 'badge badge-apontamento badge-sm';
+                    valBadge.textContent = 'Apontamento';
+                }
+                else {
+                    valBadge.className = 'badge badge-analise badge-sm';
+                    valBadge.textContent = item.validationStatus || 'Em Análise';
+                }
                 badgesWrap.appendChild(valBadge);
             }
 
@@ -1615,15 +1755,12 @@ function createNode(item, isMgmt) {
             }
             itemRight.appendChild(statusRow);
 
-            // --- ROW 2: Inline attachments (only when files exist) ---
             if(hasAtt) {
                 const inlineAttachments = document.createElement('div');
                 inlineAttachments.className = 'inline-attachments-row';
-                
                 item.attachments.forEach(att => {
                     const attBadge = document.createElement('div');
                     attBadge.className = 'inline-attachment';
-                    
                     const nameTxt = document.createElement('span');
                     nameTxt.className = 'text-truncate';
                     nameTxt.style.maxWidth = '150px';
@@ -1632,77 +1769,55 @@ function createNode(item, isMgmt) {
 
                     const btnView = document.createElement('button');
                     btnView.className = 'icon-btn';
-                    btnView.title = 'Visualizar';
                     btnView.innerHTML = '<i class="ph ph-eye"></i>';
                     btnView.onclick = () => window.openPreview(att);
                     
                     const btnDel = document.createElement('button');
                     btnDel.className = 'icon-btn delete';
-                    btnDel.title = 'Remover';
                     btnDel.innerHTML = '<i class="ph ph-x"></i>';
                     btnDel.onclick = () => window.handleDeleteFile(item.id, att.id);
 
                     attBadge.appendChild(nameTxt);
-                    
-                    // IA Check subtle icon
                     if (att.aiCheckResult) {
                         const aiStatusIcon = document.createElement('i');
                         const isSuccess = att.aiCheckResult.toLowerCase().includes('sim') && !att.aiCheckResult.toLowerCase().includes('não');
                         aiStatusIcon.className = isSuccess ? 'ph ph-shield-check text-accent' : 'ph ph-shield-warning text-warning';
-                        aiStatusIcon.style.fontSize = '0.9rem';
-                        aiStatusIcon.style.cursor = 'help';
-                        aiStatusIcon.title = `[IA Check autom.]: ${att.aiCheckResult.replace(/<br>/g, ' ')}`;
+                        aiStatusIcon.title = `[IA Check autom.]: ${att.aiCheckResult}`;
                         attBadge.appendChild(aiStatusIcon);
                     }
-
                     attBadge.appendChild(btnView);
                     attBadge.appendChild(btnDel);
                     inlineAttachments.appendChild(attBadge);
                 });
                 itemRight.appendChild(inlineAttachments);
             } else {
-                // --- PENDING FIELDS (Horizontal) ---
                 const pendingBar = document.createElement('div');
                 pendingBar.className = 'pending-action-bar';
-
-                // Previsão Input
                 const forecastGroup = document.createElement('div');
                 forecastGroup.style.display = 'flex';
                 forecastGroup.style.alignItems = 'center';
                 forecastGroup.style.gap = '0.3rem';
 
-                const forecastLabel = document.createElement('label');
-                forecastLabel.style.fontSize = '0.75rem';
-                forecastLabel.style.color = 'var(--text-muted)';
-                forecastLabel.textContent = 'Prev:';
-
                 const forecastInput = document.createElement('input');
                 forecastInput.type = 'date';
                 forecastInput.className = 'input-modern';
-                forecastInput.style.padding = '0.2rem 0.4rem';
-                forecastInput.style.fontSize = '0.75rem';
                 forecastInput.style.maxWidth = '105px';
                 if(item.forecastDate) forecastInput.value = item.forecastDate;
                 forecastInput.onchange = (e) => { item.forecastDate = e.target.value; saveState(); };
 
-                forecastGroup.appendChild(forecastLabel);
+                forecastGroup.innerHTML = '<label style="font-size:0.75rem; color:var(--text-muted);">Prev:</label>';
                 forecastGroup.appendChild(forecastInput);
 
-                // Justification Toggle
                 const btnJustify = document.createElement('button');
                 btnJustify.className = 'btn btn-outline btn-sm';
-                btnJustify.style.padding = '0.2rem 0.5rem';
-                btnJustify.style.fontSize = '0.7rem';
                 btnJustify.innerHTML = '<i class="ph ph-chat-text"></i> Justif.';
                 
-                // Justification Text Box (Keep it toggleable but smaller)
                 const justBox = document.createElement('div');
                 justBox.className = 'justification-box';
                 const justInput = document.createElement('textarea');
                 justInput.className = 'input-modern';
                 justInput.style.width = '100%';
                 justInput.style.height = '60px';
-                justInput.style.fontSize = '0.75rem';
                 justInput.placeholder = 'Justificativa...';
                 if(item.justification) justInput.value = item.justification;
                 justInput.onchange = (e) => { item.justification = e.target.value; saveState(); };
@@ -1716,13 +1831,12 @@ function createNode(item, isMgmt) {
 
                 pendingBar.appendChild(forecastGroup);
                 pendingBar.appendChild(btnJustify);
-                pendingBar.appendChild(btnAttach); // Use the same btnAttach defined above
+                pendingBar.appendChild(btnAttach);
 
                 itemRight.appendChild(pendingBar);
                 itemRight.appendChild(justBox); 
             }
             
-            // File Drop Handlers (Drag & Drop)
             itemDiv.addEventListener('dragover', (e) => { e.preventDefault(); itemDiv.classList.add('drag-over'); });
             itemDiv.addEventListener('dragleave', (e) => { itemDiv.classList.remove('drag-over'); });
             itemDiv.addEventListener('drop', (e) => {
@@ -1731,21 +1845,17 @@ function createNode(item, isMgmt) {
             });
         }
     } else {
-        // --- ACESSO APF (MGMT) ---
         if(!isRootFolder) {
             const mgmtFields = document.createElement('div');
             mgmtFields.className = 'management-fields';
-            
-            // Requisito: Mostrar menu apenas se houver anexo
             if (item.attachments && item.attachments.length > 0) {
                 const valSelect = document.createElement('select');
                 valSelect.className = 'input-modern btn-sm';
-                valSelect.title = 'Status de Validação';
-                valSelect.style.maxWidth = '160px';
-                ['Em Análise de APF', 'APF check', 'Apontamento'].forEach(opt => {
+                ['Em Análise de APF', 'Validado', 'Apontamento'].forEach(opt => {
                     const o = document.createElement('option');
-                    o.value = opt; o.textContent = opt;
-                    if(item.validationStatus === opt || (opt === 'APF check' && item.validationStatus === 'Validado')) o.selected = true;
+                    o.value = opt === 'Validado' ? 'APF check' : opt;
+                    o.textContent = opt;
+                    if(item.validationStatus === o.value || (opt === 'Validado' && item.validationStatus === 'Validado')) o.selected = true;
                     valSelect.appendChild(o);
                 });
                 valSelect.onchange = (e) => { item.validationStatus = e.target.value; saveState(); renderTree(); };
@@ -1774,75 +1884,52 @@ function createNode(item, isMgmt) {
 
         const btnAddSub = document.createElement('button');
         btnAddSub.className = 'btn btn-outline btn-sm';
-        btnAddSub.title = 'Nova Subpasta';
         btnAddSub.innerHTML = '<i class="ph ph-folder-plus"></i> <span style="margin-left:5px">Subpasta</span>';
         btnAddSub.onclick = () => handleAddFolder(item.id);
         actionsDiv.appendChild(btnAddSub);
 
-        // Rename button (icon only) — shown for all items
         const btnRename = document.createElement('button');
         btnRename.className = 'icon-btn';
-        btnRename.title = 'Renomear';
         btnRename.innerHTML = '<i class="ph ph-pencil-simple"></i>';
         btnRename.onclick = () => handleRenameFolder(item.id);
         actionsDiv.appendChild(btnRename);
 
         const btnDel = document.createElement('button');
         btnDel.className = 'icon-btn delete';
-        btnDel.title = 'Excluir';
         btnDel.innerHTML = '<i class="ph ph-trash"></i>';
         btnDel.onclick = () => handleDeleteFolder(item.id);
         actionsDiv.appendChild(btnDel);
 
-        // Actions removed from here and moved to the end to keep them on the right
-
         if(!isRootFolder && item.attachments && item.attachments.length > 0) {
             const inlineAttachments = document.createElement('div');
-            inlineAttachments.style.display = 'flex';
-            inlineAttachments.style.gap = '0.5rem';
-            inlineAttachments.style.flexWrap = 'wrap';
-            inlineAttachments.style.marginTop = '0.5rem';
+            inlineAttachments.className = 'inline-attachments-row';
             inlineAttachments.style.justifyContent = 'flex-end';
-            inlineAttachments.style.flexShrink = '0';
             
             item.attachments.forEach(att => {
                 const attBadge = document.createElement('div');
                 attBadge.className = 'inline-attachment';
-                
                 const nameTxt = document.createElement('span');
                 nameTxt.className = 'text-truncate';
                 nameTxt.style.maxWidth = '150px';
-                nameTxt.title = att.name;
                 nameTxt.textContent = att.name;
 
                 const btnView = document.createElement('button');
                 btnView.className = 'icon-btn';
-                btnView.title = 'Visualizar';
                 btnView.innerHTML = '<i class="ph ph-eye"></i>';
                 btnView.onclick = () => window.openPreview(att);
                 
                 const btnAi = document.createElement('button');
                 btnAi.className = 'icon-btn';
-                btnAi.title = "Extrair leitura do doc com IA";
                 btnAi.innerHTML = '<i class="ph ph-magic-wand text-primary"></i>';
                 btnAi.onclick = () => window.analyzeDocumentAI(att);
-                const btnDown = document.createElement('a');
-                btnDown.className = 'icon-btn';
-                btnDown.title = 'Baixar';
-                btnDown.download = att.name;
-                btnDown.href = att.objectUrl;
-                btnDown.innerHTML = '<i class="ph ph-download-simple"></i>';
                 
                 attBadge.appendChild(nameTxt);
                 attBadge.appendChild(btnAi);
                 attBadge.appendChild(btnView);
-                attBadge.appendChild(btnDown);
                 inlineAttachments.appendChild(attBadge);
             });
             itemRight.appendChild(inlineAttachments);
         }
-
-        // Append actionsDiv last in management mode to keep it on the right
         itemRight.appendChild(actionsDiv);
     }
 
@@ -1850,36 +1937,30 @@ function createNode(item, isMgmt) {
     itemDiv.appendChild(itemRight);
     nodeWrapper.appendChild(itemDiv);
 
-    // Apontamento Observation Layout (below tree item)
-    if(!isMgmt && !isRootFolder && item.validationStatus === 'Apontamento' && item.observation) {
+    if(!isMgmt && !isRootFolder && item.validationStatus === 'Apontamento' && item.observation && item.attachments?.length > 0) {
         const obsBox = document.createElement('div');
         obsBox.className = 'observation-box';
         obsBox.innerHTML = `<strong><i class="ph ph-warning-circle"></i> Apontamento de APF:</strong> ${item.observation}`;
-        
-        // Área de Resposta
         const respArea = document.createElement('div');
         respArea.className = 'response-area';
         respArea.innerHTML = `<label class="response-label"><i class="ph ph-chat-text"></i> Resposta ao Apontamento</label>`;
-        
         const respInput = document.createElement('textarea');
         respInput.className = 'response-input';
-        respInput.placeholder = 'Escreva aqui a sua resposta ou justificativa...';
+        respInput.placeholder = 'Escreva aqui a sua resposta...';
         respInput.value = item.response || '';
-        respInput.onchange = (e) => {
-            item.response = e.target.value;
-            saveState();
-        };
-        
+        respInput.onchange = (e) => { item.response = e.target.value; saveState(); };
         respArea.appendChild(respInput);
         obsBox.appendChild(respArea);
         nodeWrapper.appendChild(obsBox);
     }
 
-    const children = getChildItems(item.id);
-    if(children.length > 0) {
+    if(nodeChildren.length > 0) {
         const childCont = document.createElement('div');
         childCont.className = 'children-container';
-        children.forEach(c => childCont.appendChild(createNode(c, isMgmt)));
+        nodeChildren.forEach(c => {
+            const childNode = createNode(c, level + 1);
+            if(childNode) childCont.appendChild(childNode);
+        });
         nodeWrapper.appendChild(childCont);
     }
 

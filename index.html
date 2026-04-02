@@ -79,6 +79,25 @@
                         </div>
                         <!-- Progress Line -->
                         <div id="project-progress-container" style="margin-bottom: 1rem; display: none;"></div>
+                        <!-- Layout intuitivo: Barra de Busca Global -->
+                        <div class="global-search-wrapper">
+                            <i class="ph ph-magnifying-glass search-icon"></i>
+                            <input type="text" id="global-tree-search" placeholder="Pesquisar documento, setor ou pendência por nome..." class="input-modern" style="width: 100%; padding-left: 2.75rem; font-size: 0.95rem; height: 3.2rem; border-radius: 1rem; border-color: rgba(255,255,255,0.1) !important;">
+                            <button id="btn-clear-search" title="Limpar busca" style="display: none;">
+                                <i class="ph ph-x-circle"></i>
+                            </button>
+                            <div class="search-filters-group">
+                                <button class="filter-chip active" data-filter="all">Tudo</button>
+                                <button class="filter-chip" data-filter="pendente">Pendentes</button>
+                                <button class="filter-chip" data-filter="apontamento">Apontamentos</button>
+                            </div>
+                        </div>
+
+                        <!-- Layout intuitivo: Dashboard de Status do Projeto -->
+                        <div id="project-dashboard" class="dashboard-grid mb-4" style="display: none;">
+                            <!-- Injetado por JS (Contadores de progresso, vencidos, validados) -->
+                        </div>
+
                         <!-- Drag Info Map -->
                         <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem;"><i class="ph ph-info"></i> Dica: Você pode anexar arquivos clicando em "Anexar" ou arrastando os arquivos diretamente para cima da subpasta desejada.</p>
                         <div id="checklist-render-area" class="tree-container">
@@ -244,9 +263,7 @@
             </div>
             <div class="modal-body" id="preview-body"></div>
             <div class="modal-footer">
-                <a id="preview-download-btn" href="#" download class="btn btn-primary">
-                    <i class="ph ph-download-simple"></i> Baixar Arquivo
-                </a>
+                <!-- Botão de Download removido por solicitação do usuário -->
             </div>
         </div>
     </div>
