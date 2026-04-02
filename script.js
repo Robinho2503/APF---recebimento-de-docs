@@ -1993,11 +1993,10 @@ function renderPendenciasMgmt() {
                             <option value="APF check" ${p.validationStatus === 'APF check' || p.validationStatus === 'Validado' ? 'selected' : ''}>APF check</option>
                             <option value="Apontamento" ${p.validationStatus === 'Apontamento' ? 'selected' : ''}>Apontamento</option>
                         </select>
+                        ${p.validationStatus === 'Apontamento' ? `
+                            <input type="text" class="input-modern btn-sm pendencia-obs-inp" style="max-width: 150px; padding: 0.2rem 0.4rem; font-size: 0.75rem;" placeholder="Qual apontamento?" value="${p.observation || ''}">
+                        ` : ''}
                     ` : '<span style="font-size: 0.7rem; color: var(--text-muted); font-style: italic;">Sem anexo</span>'}
-
-                    ${p.validationStatus === 'Apontamento' ? `
-                        <input type="text" class="input-modern btn-sm pendencia-obs-inp" style="max-width: 150px; padding: 0.2rem 0.4rem; font-size: 0.75rem;" placeholder="Qual apontamento?" value="${p.observation || ''}">
-                    ` : ''}
                 </div>
 
                 <div style="display: flex; gap: 0.3rem;">
