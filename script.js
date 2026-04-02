@@ -847,10 +847,15 @@ function updateGlobalDateUI() {
     if(subtitleEl) subtitleEl.textContent = 'Entrega de documentação';
 
     // Calculate Dashboard Stats
-    const allItems = p.items.filter(i => {
-        const hasChildren = p.items.some(child => child.parentId === i.id);
-        return !hasChildren; // Only count leaf items (actual documents)
-    });
+    let allItems;
+    if (p.pendenciaActive && !isMgmtActive()) {
+        allItems = p.pendencias || [];
+    } else {
+        allItems = p.items.filter(i => {
+            const hasChildren = p.items.some(child => child.parentId === i.id);
+            return !hasChildren && i.parentId !== null; // Only count leaf items (actual documents), not root sectors
+        });
+    }
 
     const total = allItems.length;
     const validated = allItems.filter(i => (i.validationStatus === 'APF check' || i.validationStatus === 'Validado') && i.attachments?.length > 0).length;
@@ -976,10 +981,15 @@ function updateManagementStatsUI() {
         return;
     }
 
-    const allItems = p.items.filter(i => {
-        const children = p.items.some(child => child.parentId === i.id);
-        return !children;
-    });
+    let allItems;
+    if (p.pendenciaActive) {
+        allItems = p.pendencias || [];
+    } else {
+        allItems = p.items.filter(i => {
+            const hasChildren = p.items.some(child => child.parentId === i.id);
+            return !hasChildren && i.parentId !== null;
+        });
+    }
 
     const totalPending = allItems.filter(i => !i.attachments || i.attachments.length === 0).length;
     const awaitingValidation = allItems.filter(i => {
