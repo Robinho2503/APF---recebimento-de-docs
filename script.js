@@ -765,16 +765,9 @@ function updateGlobalDateUI() {
     const curr = getCurrentProject();
     if(!curr) return;
     
-    const checklistProjNameEl = document.getElementById('checklist-proj-name');
-    if (checklistProjNameEl) {
-        checklistProjNameEl.textContent = curr.name;
-        checklistProjNameEl.style.color = curr.engAnalysisOpened ? 'var(--info)' : 'var(--text-main)';
-    }
-
-    if (currentProjectName) {
-        currentProjectName.textContent = curr.name;
-        currentProjectName.style.color = curr.engAnalysisOpened ? 'var(--info)' : 'var(--primary)';
-    }
+    document.getElementById('checklist-proj-name').textContent = curr.name;
+    if (currentProjectName) currentProjectName.textContent = curr.name;
+    
     // Badge unificado no subtitle agora
 
     if (btnRenameProject) {
@@ -1556,6 +1549,8 @@ function createNode(item, isMgmt) {
                 valBadge.textContent = item.validationStatus;
                 badgesWrap.appendChild(valBadge);
             }
+
+            statusRow.appendChild(badgesWrap);
 
             const btnAttach = document.createElement('button');
             btnAttach.className = 'icon-btn attach-icon-btn';
