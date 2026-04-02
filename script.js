@@ -863,10 +863,6 @@ function updateGlobalDateUI() {
     if(dash) {
         dash.style.display = 'grid';
         dash.innerHTML = `
-            <div class="dashboard-card info">
-                <span class="card-value">${progressPct}%</span>
-                <span class="card-label">Conclusão</span>
-            </div>
             <div class="dashboard-card">
                 <span class="card-value">${total}</span>
                 <span class="card-label">Total GERAL</span>
@@ -1702,7 +1698,7 @@ function createNode(item, level) {
     itemRight.className = 'item-right';
 
     if(!isMgmt) {
-        if(!isRootFolder) {
+        if(!isRootFolder && !hasChildren) {
             const hasAtt = item.attachments && item.attachments.length > 0;
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
@@ -1937,7 +1933,7 @@ function createNode(item, level) {
     itemDiv.appendChild(itemRight);
     nodeWrapper.appendChild(itemDiv);
 
-    if(!isMgmt && !isRootFolder && item.validationStatus === 'Apontamento' && item.observation && item.attachments?.length > 0) {
+    if(!isMgmt && !isRootFolder && !hasChildren && item.validationStatus === 'Apontamento' && item.observation && item.attachments?.length > 0) {
         const obsBox = document.createElement('div');
         obsBox.className = 'observation-box';
         obsBox.innerHTML = `<strong><i class="ph ph-warning-circle"></i> Apontamento de APF:</strong> ${item.observation}`;
