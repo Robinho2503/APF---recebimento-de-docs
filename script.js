@@ -1264,7 +1264,20 @@ function renderPendenciasChecklist(curr) {
         
         const statusRow = document.createElement('div');
         statusRow.className = 'item-status-row';
+        statusRow.style.display = 'flex';
+        statusRow.style.gap = '0.3rem';
+        statusRow.style.alignItems = 'center';
         statusRow.appendChild(statusBadge);
+
+        // Validation badge for pendencies
+        if(hasAtt && p.validationStatus) {
+            const valBadge = document.createElement('span');
+            if(p.validationStatus === 'APF check' || p.validationStatus === 'Validado') valBadge.className = 'badge badge-validado badge-sm';
+            else if(p.validationStatus === 'Apontamento') valBadge.className = 'badge badge-apontamento badge-sm';
+            else valBadge.className = 'badge badge-analise badge-sm';
+            valBadge.textContent = p.validationStatus;
+            statusRow.appendChild(valBadge);
+        }
 
         // Attach Button
         const btnAttach = document.createElement('button');
@@ -1949,13 +1962,30 @@ function renderPendenciasMgmt() {
                 <span style="font-size: 0.7rem; color: var(--text-muted);">${p.sector}</span>
                 ${p.specification ? `<span style="font-size: 0.7rem; color: var(--primary); font-style: italic;">Obs: ${p.specification}</span>` : ''}
             </div>
-            <div style="display: flex; gap: 0.5rem;">
-                <button class="icon-btn edit" title="Editar Pendência">
-                    <i class="ph ph-pencil-simple"></i>
-                </button>
-                <button class="icon-btn delete" title="Remover Pendência">
-                    <i class="ph ph-trash"></i>
-                </button>
+            
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <div class="mgmt-controls-group" style="display: flex; gap: 0.4rem; align-items: center;">
+                    ${p.attachments && p.attachments.length > 0 ? `
+                        <select class="input-modern btn-sm pendencia-val-select" style="max-width: 150px; padding: 0.2rem 0.4rem; font-size: 0.75rem;">
+                            <option value="Em Análise de APF" ${p.validationStatus === 'Em Análise de APF' ? 'selected' : ''}>Em Análise</option>
+                            <option value="APF check" ${p.validationStatus === 'APF check' || p.validationStatus === 'Validado' ? 'selected' : ''}>APF check</option>
+                            <option value="Apontamento" ${p.validationStatus === 'Apontamento' ? 'selected' : ''}>Apontamento</option>
+                        </select>
+                    ` : '<span style="font-size: 0.7rem; color: var(--text-muted); font-style: italic;">Sem anexo</span>'}
+
+                    ${p.validationStatus === 'Apontamento' ? `
+                        <input type="text" class="input-modern btn-sm pendencia-obs-inp" style="max-width: 150px; padding: 0.2rem 0.4rem; font-size: 0.75rem;" placeholder="Qual apontamento?" value="${p.observation || ''}">
+                    ` : ''}
+                </div>
+
+                <div style="display: flex; gap: 0.3rem;">
+                    <button class="icon-btn edit" title="Editar Pendência">
+                        <i class="ph ph-pencil-simple"></i>
+                    </button>
+                    <button class="icon-btn delete" title="Remover Pendência">
+                        <i class="ph ph-trash"></i>
+                    </button>
+                </div>
             </div>
         `;
         
@@ -2012,6 +2042,23 @@ function renderPendenciasMgmt() {
             }
         };
         listCont.appendChild(row);
+
+        // Bind events for the new validation controls
+        const valSel = row.querySelector('.pendencia-val-select');
+        const obsInp = row.querySelector('.pendencia-obs-inp');
+
+        if (valSel) {
+            valSel.onchange = (e) => {
+                p.validationStatus = e.target.value;
+                saveState();
+                renderPendenciasMgmt();
+                renderTree();
+            };
+        }
+        if (obsInp) {
+            obsInp.oninput = (e) => { p.observation = e.target.value; saveState(); };
+            obsInp.onblur = () => renderTree();
+        }
     });
 }
 
@@ -2079,6 +2126,11 @@ window.handleFileUpload = async function(itemId, files, isPendencia = false) {
                         objectUrl: downloadUrl,      // Compatibilidade legada
                         source: 'firebase'           // Marcador de nova origem
                     });
+
+                    // Nova Sincronização: Se for pendência, inicializar status de validação
+                    if (isPendencia) {
+                        targetItem.validationStatus = targetItem.validationStatus || 'Em Análise de APF';
+                    }
                 } catch (err) {
                     console.error("Erro no upload para o Firebase Storage", err);
                     alert(`Falha ao enviar '${file.name}' ao Firebase. Verifique se o Storage está ativado e as permissões (Rules) estão liberadas.`);
