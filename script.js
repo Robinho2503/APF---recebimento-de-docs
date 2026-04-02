@@ -768,6 +768,11 @@ function updateGlobalDateUI() {
     document.getElementById('checklist-proj-name').textContent = curr.name;
     if (currentProjectName) currentProjectName.textContent = curr.name;
     
+    if (projectDueDateInp) {
+        projectDueDateInp.disabled = (curr.id === 'p_default');
+        projectDueDateInp.value = curr.dueDate || '';
+    }
+    
     // Badge unificado no subtitle agora
 
     if (btnRenameProject) {
@@ -1059,8 +1064,8 @@ function renderTracking() {
             titleStyle = 'color: var(--danger);';
             iconStyle = 'color: var(--danger);';
         } else if (p.engAnalysisOpened) {
-            titleStyle = 'color: var(--info);';
-            iconStyle = 'color: var(--info);';
+            titleStyle = 'color: #1e3a8a;'; // Azul marinho/escuro
+            iconStyle = 'color: #1e3a8a;';
         }
 
         // Contagem de apontamentos de APF
@@ -1499,7 +1504,7 @@ function createNode(item, isMgmt) {
     itemLeft.appendChild(nameSpan);
     
     // APF Check symbol for validated leaf documents
-    if(!isMgmt && !isRootFolder && item.validationStatus === 'Validado') {
+    if(!isMgmt && !isRootFolder && item.validationStatus === 'APF check') {
         const apfCheck = document.createElement('span');
         apfCheck.className = 'apf-check-symbol';
         apfCheck.title = 'Documentação Validada pela APF';
@@ -1543,7 +1548,7 @@ function createNode(item, isMgmt) {
             // Validation badge ONLY if there is an attachment
             if(hasAtt && item.validationStatus) {
                 const valBadge = document.createElement('span');
-                if(item.validationStatus === 'Validado') valBadge.className = 'badge badge-validado badge-sm';
+                if(item.validationStatus === 'APF check') valBadge.className = 'badge badge-validado badge-sm';
                 else if(item.validationStatus === 'Apontamento') valBadge.className = 'badge badge-apontamento badge-sm';
                 else valBadge.className = 'badge badge-analise badge-sm';
                 valBadge.textContent = item.validationStatus;
@@ -1698,7 +1703,7 @@ function createNode(item, isMgmt) {
                 valSelect.className = 'input-modern btn-sm';
                 valSelect.title = 'Status de Validação';
                 valSelect.style.maxWidth = '160px';
-                ['Em Análise de APF', 'Validado', 'Apontamento'].forEach(opt => {
+                ['Em Análise de APF', 'APF check', 'Apontamento'].forEach(opt => {
                     const o = document.createElement('option');
                     o.value = opt; o.textContent = opt;
                     if(item.validationStatus === opt) o.selected = true;
@@ -1750,7 +1755,7 @@ function createNode(item, isMgmt) {
         btnDel.onclick = () => handleDeleteFolder(item.id);
         actionsDiv.appendChild(btnDel);
 
-        itemRight.appendChild(actionsDiv);
+        // Actions removed from here and moved to the end to keep them on the right
 
         if(!isRootFolder && item.attachments && item.attachments.length > 0) {
             const inlineAttachments = document.createElement('div');
@@ -1800,6 +1805,8 @@ function createNode(item, isMgmt) {
     }
 
     itemDiv.appendChild(itemLeft);
+    // Append actionsDiv last in management mode to keep it on the right
+    if (isMgmt) itemRight.appendChild(actionsDiv);
     itemDiv.appendChild(itemRight);
     nodeWrapper.appendChild(itemDiv);
 
@@ -2097,6 +2104,8 @@ window.handleDeleteFile = async function(itemId, fileId, isPendencia = false) {
     if(targetItem && targetItem.attachments){
         const att = targetItem.attachments.find(a => a.id === fileId);
         if (!att) return;
+
+        if (!confirm(`Você tem certeza que deseja excluir o documento "${att.name}"?`)) return;
 
         try {
             // Caso 1: Arquivo Novo (Firebase Storage)
