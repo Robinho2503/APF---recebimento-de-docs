@@ -1038,7 +1038,7 @@ function renderTracking() {
             
             trackingLine = `<span style="color: var(--danger); font-weight: 700; display:flex; align-items:center; gap:0.25rem;"><i class="ph ph-warning-diamond"></i> Resolução de pendências │ ${displayDays} dias</span>`;
         } else if (p.engAnalysisOpened) {
-            trackingLine = `<span style="color: var(--info); font-weight: 700; display:flex; align-items:center; gap:0.25rem;"><i class="ph ph-file-search"></i> Engenharia Aberta</span>`;
+            trackingLine = `<span style="color: #1e3a8a; font-weight: 700; display:flex; align-items:center; gap:0.25rem;"><i class="ph ph-file-search"></i> Engenharia Aberta</span>`;
         } else if (!p.dueDate) {
             trackingLine = `<span style="color: var(--text-muted); font-weight: 500;">Sem prazo</span>`;
         } else {

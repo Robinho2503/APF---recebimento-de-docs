@@ -108,7 +108,7 @@ body {
 
 .sidebar .tracking-card.eng-active h3,
 .sidebar .tracking-card.eng-active h3 i {
-    color: var(--warning) !important;
+    color: #1e3a8a !important;
 }
 
 .sidebar .tracking-card.eng-active .tk-status {
