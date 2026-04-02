@@ -2225,10 +2225,8 @@ window.handleFileUpload = async function(itemId, files, isPendencia = false) {
                         source: 'firebase'           // Marcador de nova origem
                     });
 
-                    // Nova Sincronização: Se for pendência, inicializar status de validação
-                    if (isPendencia) {
-                        targetItem.validationStatus = targetItem.validationStatus || 'Em Análise de APF';
-                    }
+                    // Definir status padrão como 'Em Análise de APF' para qualquer anexo novo
+                    targetItem.validationStatus = 'Em Análise de APF';
                 } catch (err) {
                     console.error("Erro no upload para o Firebase Storage", err);
                     alert(`Falha ao enviar '${file.name}' ao Firebase. Verifique se o Storage está ativado e as permissões (Rules) estão liberadas.`);
