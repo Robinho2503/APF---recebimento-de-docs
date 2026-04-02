@@ -853,12 +853,12 @@ function updateGlobalDateUI() {
     });
 
     const total = allItems.length;
-    const delivered = allItems.filter(i => i.attachments && i.attachments.length > 0).length;
     const validated = allItems.filter(i => (i.validationStatus === 'APF check' || i.validationStatus === 'Validado') && i.attachments?.length > 0).length;
     const withPoints = allItems.filter(i => i.validationStatus === 'Apontamento' && i.attachments?.length > 0).length;
-    const pending = total - delivered;
+    const pending = allItems.filter(i => !i.attachments || i.attachments.length === 0).length;
+    const inAnalysis = total - validated - withPoints - pending;
 
-    const progressPct = total > 0 ? Math.round((delivered / total) * 100) : 0;
+    const progressPct = total > 0 ? Math.round((validated / total) * 100) : 0;
 
     if(dash) {
         dash.style.display = 'grid';
@@ -870,6 +870,10 @@ function updateGlobalDateUI() {
             <div class="dashboard-card accent">
                 <span class="card-value">${validated}</span>
                 <span class="card-label">Validados</span>
+            </div>
+            <div class="dashboard-card info" style="border-color: rgba(96, 165, 250, 0.3); background: rgba(96, 165, 250, 0.04);">
+                <span class="card-value" style="color: #60a5fa">${inAnalysis}</span>
+                <span class="card-label">Em Análise</span>
             </div>
             <div class="dashboard-card warning">
                 <span class="card-value">${pending}</span>
@@ -981,7 +985,8 @@ function updateManagementStatsUI() {
     const awaitingValidation = allItems.filter(i => {
         const hasAtt = i.attachments && i.attachments.length > 0;
         const isValidated = i.validationStatus === 'APF check' || i.validationStatus === 'Validado';
-        return hasAtt && !isValidated;
+        const isPointed = i.validationStatus === 'Apontamento';
+        return hasAtt && !isValidated && !isPointed;
     }).length;
 
     dash.style.display = 'grid';
@@ -990,8 +995,8 @@ function updateManagementStatsUI() {
             <span class="card-value">${totalPending}</span>
             <span class="card-label">Documentos Pendentes</span>
         </div>
-        <div class="dashboard-card accent">
-            <span class="card-value">${awaitingValidation}</span>
+        <div class="dashboard-card info" style="border-color: rgba(96, 165, 250, 0.3); background: rgba(96, 165, 250, 0.04);">
+            <span class="card-value" style="color: #60a5fa">${awaitingValidation}</span>
             <span class="card-label">Aguardando Validação APF</span>
         </div>
     `;
