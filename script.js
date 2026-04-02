@@ -36,8 +36,33 @@ let state = {
     showFullChecklistDuringPendencia: false
 };
 let isAuthenticated = false;
-let isInitialCloudLoad = true;
 let editingPendenciaId = null;
+let isInitialCloudLoad = true;
+
+// UI State (Local-only, per device/browser)
+let localUI = {
+    expandedIds: new Set(),
+    showFullChecklistDuringPendencia: false
+};
+
+function loadLocalUI() {
+    try {
+        const saved = localStorage.getItem('apf_local_ui_v1');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            localUI.expandedIds = new Set(parsed.expandedIds || []);
+            localUI.showFullChecklistDuringPendencia = parsed.showFullChecklistDuringPendencia || false;
+        }
+    } catch (e) { console.warn("Erro ao carregar IU local", e); }
+}
+
+function saveLocalUI() {
+    const toSave = {
+        expandedIds: Array.from(localUI.expandedIds),
+        showFullChecklistDuringPendencia: localUI.showFullChecklistDuringPendencia
+    };
+    localStorage.setItem('apf_local_ui_v1', JSON.stringify(toSave));
+}
 
 
 
@@ -70,7 +95,6 @@ async function loadState() {
                 if (!p.pendencias) p.pendencias = [];
                 // ... other migrations if needed
             }
-            if (cloudData.showFullChecklistDuringPendencia === undefined) cloudData.showFullChecklistDuringPendencia = false;
             
             state = cloudData;
             
@@ -141,22 +165,23 @@ function saveState() {
                     observation: pend.observation || ''
                 })),
                 pendenciaStartDate: p.pendenciaStartDate || '',
-                showFullChecklistDuringPendencia: p.showFullChecklistDuringPendencia || false,
-                items: p.items.map(item => ({
-                    ...item,
-                    attachments: (item.attachments || []).map(att => ({
-                        ...att,
-                        dropboxPath: att.dropboxPath || '',
-                        dropboxUrl: att.dropboxUrl || '',
-                        storagePath: att.storagePath || '',
-                        downloadUrl: att.downloadUrl || '',
-                        objectUrl: att.downloadUrl || att.dropboxUrl || att.objectUrl || '',
-                        source: att.source || ''
-                    }))
-                }))
+                items: p.items.map(item => {
+                    const { expanded, ...rest } = item; // Remove expanded property from global sync
+                    return {
+                        ...rest,
+                        attachments: (item.attachments || []).map(att => ({
+                            ...att,
+                            dropboxPath: att.dropboxPath || '',
+                            dropboxUrl: att.dropboxUrl || '',
+                            storagePath: att.storagePath || '',
+                            downloadUrl: att.downloadUrl || '',
+                            objectUrl: att.downloadUrl || att.dropboxUrl || att.objectUrl || '',
+                            source: att.source || ''
+                        }))
+                    };
+                })
             })),
-            currentProjectId: state.currentProjectId,
-            showFullChecklistDuringPendencia: state.showFullChecklistDuringPendencia || false
+            currentProjectId: state.currentProjectId
         };
         
         try {
@@ -231,6 +256,7 @@ function initDOMElements() {
 // Init
 document.addEventListener('DOMContentLoaded', async () => {
     initDOMElements();
+    loadLocalUI(); // Carrega IU local (pastas abertas, etc)
     
     // Theme setup
     if (localStorage.getItem('apf_theme') === 'light') {
@@ -1181,10 +1207,10 @@ function renderTree() {
 
     const rootItems = getChildItems(null);
     
-    // Logic to hide sectors when Pendências is active
+    // Logic to hide sectors when Pendências is active (Local UI)
     let showItems = true;
     if (currProj && currProj.pendenciaActive) {
-        if (!state.showFullChecklistDuringPendencia) showItems = false;
+        if (!localUI.showFullChecklistDuringPendencia) showItems = false;
         
         const toggleDiv = document.createElement('div');
         toggleDiv.style.margin = '1.5rem 0 1rem';
@@ -1192,13 +1218,13 @@ function renderTree() {
         
         const btnToggleFull = document.createElement('button');
         btnToggleFull.className = 'btn btn-outline btn-sm';
-        btnToggleFull.innerHTML = state.showFullChecklistDuringPendencia 
+        btnToggleFull.innerHTML = localUI.showFullChecklistDuringPendencia 
             ? '<i class="ph ph-eye-slash"></i> Ocultar Documentação dos Setores' 
             : '<i class="ph ph-eye"></i> Exibir Documentação dos Setores';
         
         btnToggleFull.onclick = () => {
-            state.showFullChecklistDuringPendencia = !state.showFullChecklistDuringPendencia;
-            saveState();
+            localUI.showFullChecklistDuringPendencia = !localUI.showFullChecklistDuringPendencia;
+            saveLocalUI();
             renderTree();
         };
         
@@ -1439,8 +1465,9 @@ function formatDateToPT(isoStr) {
 }
 
 function createNode(item, isMgmt) {
+    const isExpanded = localUI.expandedIds.has(item.id);
     const nodeWrapper = document.createElement('div');
-    nodeWrapper.className = `tree-node ${item.expanded ? '' : 'collapsed'}`;
+    nodeWrapper.className = `tree-node ${isExpanded ? '' : 'collapsed'}`;
 
     const hasChildren = getChildItems(item.id).length > 0;
     const isRootFolder = item.parentId === null;
@@ -1479,8 +1506,12 @@ function createNode(item, isMgmt) {
     
     nameSpan.onclick = () => {
         if(hasChildren) {
-            item.expanded = !item.expanded;
-            saveState();
+            if (localUI.expandedIds.has(item.id)) {
+                localUI.expandedIds.delete(item.id);
+            } else {
+                localUI.expandedIds.add(item.id);
+            }
+            saveLocalUI();
             renderTree();
         }
     };
