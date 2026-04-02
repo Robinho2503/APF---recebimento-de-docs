@@ -1635,13 +1635,6 @@ function createNode(item, isMgmt) {
                     btnView.title = 'Visualizar';
                     btnView.innerHTML = '<i class="ph ph-eye"></i>';
                     btnView.onclick = () => window.openPreview(att);
-
-                    const btnDown = document.createElement('a');
-                    btnDown.className = 'icon-btn';
-                    btnDown.title = 'Baixar';
-                    btnDown.download = att.name;
-                    btnDown.href = att.objectUrl;
-                    btnDown.innerHTML = '<i class="ph ph-download-simple"></i>';
                     
                     const btnDel = document.createElement('button');
                     btnDel.className = 'icon-btn delete';
@@ -1663,7 +1656,6 @@ function createNode(item, isMgmt) {
                     }
 
                     attBadge.appendChild(btnView);
-                    attBadge.appendChild(btnDown);
                     attBadge.appendChild(btnDel);
                     inlineAttachments.appendChild(attBadge);
                 });
@@ -2174,7 +2166,7 @@ window.handleFileUpload = async function(itemId, files, isPendencia = false) {
                 const newAttachments = targetItem.attachments.slice(-addedCount);
                 newAttachments.forEach((att, index) => {
                     const originalFile = files[index];
-                    window.autoAnalyzeDocumentAI(att, itemId, originalFile);
+                    window.autoAnalyzeDocumentAI(att, itemId, originalFile, isPendencia);
                 });
             }
         } finally {
@@ -2489,7 +2481,7 @@ window.analyzeDocumentAI = async function(att) {
     }
 }
 
-window.autoAnalyzeDocumentAI = async function(att, itemId, originalFile = null) {
+window.autoAnalyzeDocumentAI = async function(att, itemId, originalFile = null, isPendencia = false) {
     const { objectUrl: url, type: mimeType, name, dropboxPath } = att;
     const currProject = getCurrentProject();
     if (!currProject) return;
@@ -2562,8 +2554,16 @@ window.autoAnalyzeDocumentAI = async function(att, itemId, originalFile = null) 
             const textOut = data.candidates[0].content.parts[0].text;
             
             // Localizamos o item e o anexo novamente para garantir que estamos no estado atualizado
-            const items = getItems();
-            const item = items.find(i => i.id === itemId);
+            const currentProj = getCurrentProject();
+            if (!currentProj) return;
+
+            let item;
+            if (isPendencia) {
+                item = currentProj.pendencias.find(p => p.id === itemId);
+            } else {
+                item = currentProj.items.find(i => i.id === itemId);
+            }
+
             if (item && item.attachments) {
                 const attachment = item.attachments.find(a => a.id === att.id);
                 if (attachment) {
