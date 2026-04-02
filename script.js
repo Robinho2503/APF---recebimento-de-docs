@@ -1843,7 +1843,9 @@ function createNode(item, level) {
                 const forecastInput = document.createElement('input');
                 forecastInput.type = 'date';
                 forecastInput.className = 'input-modern';
-                forecastInput.style.maxWidth = '105px';
+                forecastInput.style.maxWidth = '115px';
+                forecastInput.style.padding = '0.2rem 0.4rem';
+                forecastInput.style.fontSize = '0.75rem';
                 if(item.forecastDate) forecastInput.value = item.forecastDate;
                 forecastInput.onchange = (e) => { item.forecastDate = e.target.value; saveState(); };
 
