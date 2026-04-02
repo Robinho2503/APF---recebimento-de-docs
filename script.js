@@ -31,9 +31,7 @@ const DEFAULT_ITEMS = [
 let state = {
     projects: [
         { id: 'p_default', name: 'Modelo de Entrega', items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)), dueDate: '', createdAt: new Date().toISOString().split('T')[0], engAnalysisOpened: false, pendencias: [], pendenciaStartDate: '' }
-    ],
-    currentProjectId: 'p_default',
-    showFullChecklistDuringPendencia: false
+    ]
 };
 let isAuthenticated = false;
 let editingPendenciaId = null;
@@ -42,7 +40,8 @@ let isInitialCloudLoad = true;
 // UI State (Local-only, per device/browser)
 let localUI = {
     expandedIds: new Set(),
-    showFullChecklistDuringPendencia: false
+    showFullChecklistDuringPendencia: false,
+    currentProjectId: 'p_default'
 };
 
 function loadLocalUI() {
@@ -52,6 +51,7 @@ function loadLocalUI() {
             const parsed = JSON.parse(saved);
             localUI.expandedIds = new Set(parsed.expandedIds || []);
             localUI.showFullChecklistDuringPendencia = parsed.showFullChecklistDuringPendencia || false;
+            localUI.currentProjectId = parsed.currentProjectId || 'p_default';
         }
     } catch (e) { console.warn("Erro ao carregar IU local", e); }
 }
@@ -59,16 +59,18 @@ function loadLocalUI() {
 function saveLocalUI() {
     const toSave = {
         expandedIds: Array.from(localUI.expandedIds),
-        showFullChecklistDuringPendencia: localUI.showFullChecklistDuringPendencia
+        showFullChecklistDuringPendencia: localUI.showFullChecklistDuringPendencia,
+        currentProjectId: localUI.currentProjectId
     };
     localStorage.setItem('apf_local_ui_v1', JSON.stringify(toSave));
+    localStorage.setItem('apf_last_project_id', localUI.currentProjectId); // Backwards compat
 }
 
 
 
 // Helpers
 function generateId() { return Math.random().toString(36).substr(2, 9); }
-function getCurrentProject() { return state.projects.find(p => p.id === state.currentProjectId); }
+function getCurrentProject() { return state.projects.find(p => p.id === localUI.currentProjectId); }
 function getItems() { return getCurrentProject()?.items || []; }
 function isMgmtActive() {
     const activeTabObj = Array.from(tabs).find(t => t.classList.contains('active'));
@@ -100,10 +102,9 @@ async function loadState() {
             
             if (isInitialCloudLoad) {
                 isInitialCloudLoad = false;
-                // Only on first load, maybe use local currentProject if available
-                const lastLocalId = localStorage.getItem('apf_last_project_id');
-                if (lastLocalId && state.projects.find(p => p.id === lastLocalId)) {
-                    state.currentProjectId = lastLocalId;
+                // If local currentProjectId is invalid for current projects, reset it
+                if (!state.projects.find(p => p.id === localUI.currentProjectId)) {
+                    localUI.currentProjectId = state.projects[0]?.id || 'p_default';
                 }
             }
 
@@ -135,9 +136,6 @@ function renderAfterUpdate() {
 
 let saveTimeout = null;
 function saveState() {
-    // Save currentProjectId locally just for UX (persists across sessions per-device)
-    localStorage.setItem('apf_last_project_id', state.currentProjectId);
-    
     // Save structure to Firestore (Debounced to avoid rapid writes)
     if (saveTimeout) clearTimeout(saveTimeout);
     
@@ -180,8 +178,7 @@ function saveState() {
                         }))
                     };
                 })
-            })),
-            currentProjectId: state.currentProjectId
+            }))
         };
         
         try {
@@ -1008,9 +1005,9 @@ function renderTracking() {
         card.style.setProperty('--indicator-color', statusColor);
         
         card.addEventListener('click', () => {
-            if(state.currentProjectId === p.id) return;
-            state.currentProjectId = p.id;
-            saveState();
+            if(localUI.currentProjectId === p.id) return;
+            localUI.currentProjectId = p.id;
+            saveLocalUI();
             updateGlobalDateUI();
             renderTree();
             renderTracking();
