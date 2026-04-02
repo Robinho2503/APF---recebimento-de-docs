@@ -402,7 +402,8 @@ function initEventListeners() {
                     items: duplicatedItems
                 };
                 state.projects.push(newProj);
-                state.currentProjectId = newProj.id;
+                localUI.currentProjectId = newProj.id;
+                saveLocalUI();
                 saveState();
                 updateGlobalDateUI();
                 renderTree();
@@ -484,15 +485,16 @@ function initEventListeners() {
 
     if (btnDeleteProject) {
         btnDeleteProject.addEventListener('click', () => {
-            if (state.currentProjectId === 'p_default') {
-                alert('O Modelo de Entrega não pode ser excluído.');
+            const curr = getCurrentProject();
+            if (localUI.currentProjectId === 'p_default') {
+                alert("Não é possível excluir o Modelo de Entrega.");
                 return;
             }
-            const curr = getCurrentProject();
-            if(confirm(`Atenção: Tem certeza que deseja excluir o empreendimento "${curr.name}" completamente?`)){
-                state.projects = state.projects.filter(p => p.id !== state.currentProjectId);
-                const nextProj = state.projects.find(p => p.id !== 'p_default') || state.projects[0];
-                state.currentProjectId = nextProj.id;
+            if (confirm(`Tem certeza que deseja excluir o empreendimento "${curr.name}"?`)) {
+                const nextProj = state.projects.find(p => p.id !== localUI.currentProjectId) || state.projects[0];
+                state.projects = state.projects.filter(p => p.id !== localUI.currentProjectId);
+                localUI.currentProjectId = nextProj.id;
+                saveLocalUI();
                 saveState();
                 updateGlobalDateUI();
                 renderTree();
@@ -517,15 +519,15 @@ function initEventListeners() {
     }
 
     if (btnOpenTemplate) {
-        btnOpenTemplate.addEventListener('click', () => {
-            if(state.currentProjectId === 'p_default') return;
-            state.currentProjectId = 'p_default';
-            saveState();
+        btnOpenTemplate.onclick = () => {
+            if(localUI.currentProjectId === 'p_default') return;
+            localUI.currentProjectId = 'p_default';
+            saveLocalUI();
             updateGlobalDateUI();
             renderTree();
             renderTracking();
             triggerPanelAnimation();
-        });
+        };
     }
 
     if (btnAddRoot) {
@@ -993,7 +995,7 @@ function renderTracking() {
 
     trackableProjects.forEach((p, i) => {
         const card = document.createElement('div');
-        const isActive = p.id === state.currentProjectId ? 'active' : '';
+        const isActive = p.id === localUI.currentProjectId ? 'active' : '';
         const isEng = p.engAnalysisOpened ? 'eng-active' : '';
         const isPendencia = p.pendenciaActive ? 'pendencia-active' : '';
         card.className = `tracking-card glass-panel ${isActive} ${isEng} ${isPendencia}`;
@@ -1517,7 +1519,7 @@ function createNode(item, isMgmt) {
     nameSpan.appendChild(titleText);
 
     // INDICATORS for ROOT FOLDERS
-    if(isRootFolder && state.currentProjectId !== 'p_default') {
+    if(isRootFolder && localUI.currentProjectId !== 'p_default') {
         const stats = getNodeStats(item.id);
         const indicatorsCont = document.createElement('div');
         indicatorsCont.className = 'sector-indicators';
