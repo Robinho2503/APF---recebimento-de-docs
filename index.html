@@ -187,11 +187,22 @@
                         <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">Estrutura de arquivos e validação para este empreendimento.</p>
                     </div>
                     
-                    <!-- Dashboard Estatístico da Aba APF -->
-                    <div id="management-dashboard" class="dashboard-grid mb-4" style="display: none; margin-top: -1rem;">
-                        <!-- JS injected -->
-                    </div>
+                    <!-- Container Flex: Filtros e Quadros Lado a Lado na Aba APF -->
+                    <div class="search-dashboard-row" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start; margin-bottom: 1.5rem;">
+                        <!-- Layout intuitivo: Filtros de aba APF -->
+                        <div class="global-search-wrapper" style="flex: 1; min-width: 300px; margin-bottom: 0;">
+                            <div class="search-filters-group">
+                                <button class="filter-chip active" data-filter="all">Tudo</button>
+                                <button class="filter-chip" data-filter="pendente">Pendentes</button>
+                                <button class="filter-chip" data-filter="apontamento">Apontamentos</button>
+                            </div>
+                        </div>
 
+                        <!-- Dashboard Estatístico da Aba APF -->
+                        <div id="management-dashboard" class="dashboard-grid" style="display: none; flex: 1.5; min-width: 320px; margin-bottom: 0;">
+                            <!-- JS injected -->
+                        </div>
+                    </div>
                     <div class="mb-4 flex-between">
                         <div style="display:flex; gap:1rem;">
                             <button id="btn-add-root" class="btn btn-primary">
@@ -205,15 +216,6 @@
                             </button>
                         </div>
                         <button id="btn-export-zip" class="btn btn-outline" title="Exportar todas as pastas e arquivos deste projeto em ZIP"><i class="ph ph-file-zip"></i> Exportar Tudo (ZIP)</button>
-                    </div>
-
-                    <!-- Filtros de aba APF -->
-                    <div class="global-search-wrapper" style="margin-bottom: 1rem;">
-                        <div class="search-filters-group">
-                            <button class="filter-chip active" data-filter="all">Tudo</button>
-                            <button class="filter-chip" data-filter="pendente">Pendentes</button>
-                            <button class="filter-chip" data-filter="apontamento">Apontamentos</button>
-                        </div>
                     </div>
 
                     <div id="pendencias-mgmt-panel" class="glass-panel mb-4 hidden" style="padding: 1.5rem; border-color: var(--danger) !important; background: rgba(239, 68, 68, 0.05);">

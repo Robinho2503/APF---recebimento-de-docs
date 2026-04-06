@@ -885,7 +885,7 @@ hr {
 }
 
 /* Dashboard Refinements */
-#project-dashboard {
+#project-dashboard, #management-dashboard {
     display: none; /* Only shown when project selected */
     grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
     gap: 0.4rem;
