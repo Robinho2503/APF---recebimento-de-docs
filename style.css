@@ -14,7 +14,7 @@
 }
 
 :root.light-mode {
-    --bg-dark: #ffffff;
+    --bg-dark: #f4f4f5;
     --panel-bg: rgba(255, 255, 255, 0.95);
     --panel-border: rgba(228, 228, 231, 0.8);
     --primary: #18181b;
