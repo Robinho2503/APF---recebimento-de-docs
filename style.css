@@ -1074,8 +1074,6 @@ hr {
 
 
 .light-mode .sidebar-header h2,
-.light-mode .tab-fixed-label,
-.light-mode #checklist-subtitle,
 .light-mode .analysis-panel-header h3 {
     color: var(--danger) !important;
 }
@@ -1083,9 +1081,7 @@ hr {
 
 
 .light-mode .sidebar-header h2 i,
-.light-mode .tab-fixed-label i,
-.light-mode .analysis-panel-header h3 i,
-.light-mode #checklist-subtitle i {
+.light-mode .analysis-panel-header h3 i {
     color: var(--danger) !important;
 }
 
