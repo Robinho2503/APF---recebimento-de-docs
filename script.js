@@ -881,10 +881,11 @@ function updateGlobalDateUI() {
         });
     }
 
-    const total = allItems.length;
-    const validated = allItems.filter(i => (i.validationStatus === 'APF check' || i.validationStatus === 'Validado') && i.attachments?.length > 0).length;
-    const withPoints = allItems.filter(i => i.validationStatus === 'Apontamento' && i.attachments?.length > 0).length;
-    const pending = allItems.filter(i => !i.attachments || i.attachments.length === 0).length;
+    const applicableItems = allItems.filter(i => !i.isNotApplicable);
+    const total = applicableItems.length;
+    const validated = applicableItems.filter(i => (i.validationStatus === 'APF check' || i.validationStatus === 'Validado') && i.attachments?.length > 0).length;
+    const withPoints = applicableItems.filter(i => i.validationStatus === 'Apontamento' && i.attachments?.length > 0).length;
+    const pending = applicableItems.filter(i => !i.attachments || i.attachments.length === 0).length;
     const inAnalysis = total - validated - withPoints - pending;
 
     const progressPct = total > 0 ? Math.round((validated / total) * 100) : 0;
@@ -1020,8 +1021,10 @@ function updateManagementStatsUI() {
         });
     }
 
-    const totalPending = allItems.filter(i => !i.attachments || i.attachments.length === 0).length;
-    const awaitingValidation = allItems.filter(i => {
+    const applicableItems = allItems.filter(i => !i.isNotApplicable);
+    
+    const totalPending = applicableItems.filter(i => !i.attachments || i.attachments.length === 0).length;
+    const awaitingValidation = applicableItems.filter(i => {
         const hasAtt = i.attachments && i.attachments.length > 0;
         const isValidated = i.validationStatus === 'APF check' || i.validationStatus === 'Validado';
         const isPointed = i.validationStatus === 'Apontamento';
@@ -1309,7 +1312,7 @@ function getNodeStats(itemId) {
     
     // Only count as an actual item if it has no children (is a leaf/document)
     if(item && item.parentId !== null && children.length === 0) {
-        if(!item.attachments || item.attachments.length === 0) {
+        if(!item.isNotApplicable && (!item.attachments || item.attachments.length === 0)) {
             pendente++;
         }
         if(item.validationStatus === 'Apontamento') {
@@ -1792,8 +1795,13 @@ function createNode(item, level) {
             badgesWrap.style.alignItems = 'center';
 
             const statusBadge = document.createElement('span');
-            statusBadge.className = hasAtt ? 'badge badge-entregue badge-sm' : 'badge badge-pendente badge-sm';
-            statusBadge.textContent = hasAtt ? 'Entregue' : 'Pendente';
+            if (item.isNotApplicable) {
+                statusBadge.className = 'badge badge-na badge-sm';
+                statusBadge.textContent = 'Não Necessário';
+            } else {
+                statusBadge.className = hasAtt ? 'badge badge-entregue badge-sm' : 'badge badge-pendente badge-sm';
+                statusBadge.textContent = hasAtt ? 'Entregue' : 'Pendente';
+            }
             badgesWrap.appendChild(statusBadge);
 
             if(hasAtt && item.validationStatus) {
@@ -1820,6 +1828,13 @@ function createNode(item, level) {
             btnAttach.title = 'Anexar documento';
             btnAttach.innerHTML = '<i class="ph ph-paperclip"></i>';
             btnAttach.onclick = () => fileInput.click();
+            
+            if (item.isNotApplicable) {
+                btnAttach.disabled = true;
+                btnAttach.style.opacity = '0.5';
+                btnAttach.title = 'Documento dispensado';
+                fileInput.disabled = true;
+            }
 
             if (hasAtt) {
                 statusRow.appendChild(btnAttach);
@@ -1861,7 +1876,7 @@ function createNode(item, level) {
                     inlineAttachments.appendChild(attBadge);
                 });
                 itemRight.appendChild(inlineAttachments);
-            } else {
+            } else if (!item.isNotApplicable) {
                 const pendingBar = document.createElement('div');
                 pendingBar.className = 'pending-action-bar';
                 const forecastGroup = document.createElement('div');
@@ -1914,7 +1929,7 @@ function createNode(item, level) {
             itemDiv.addEventListener('dragleave', (e) => { itemDiv.classList.remove('drag-over'); });
             itemDiv.addEventListener('drop', (e) => {
                 e.preventDefault(); itemDiv.classList.remove('drag-over');
-                if(e.dataTransfer.files && e.dataTransfer.files.length > 0) window.handleFileUpload(item.id, e.dataTransfer.files);
+                if(!item.isNotApplicable && e.dataTransfer.files && e.dataTransfer.files.length > 0) window.handleFileUpload(item.id, e.dataTransfer.files);
             });
         }
     } else {
@@ -1945,7 +1960,42 @@ function createNode(item, level) {
                     mgmtFields.appendChild(obsInp);
                 }
             } else {
-                mgmtFields.innerHTML = '<span style="font-size: 0.75rem; color: var(--text-muted); font-style: italic;">Aguardando documento...</span>';
+                mgmtFields.style.display = 'flex';
+                mgmtFields.style.alignItems = 'center';
+                mgmtFields.style.gap = '1rem';
+
+                const statusText = document.createElement('span');
+                statusText.style.fontSize = '0.75rem';
+                statusText.style.color = 'var(--text-muted)';
+                statusText.style.fontStyle = 'italic';
+                statusText.textContent = item.isNotApplicable ? 'Documento dispensado' : 'Aguardando documento...';
+
+                const naLabel = document.createElement('label');
+                naLabel.style.display = 'flex';
+                naLabel.style.alignItems = 'center';
+                naLabel.style.gap = '0.35rem';
+                naLabel.style.fontSize = '0.75rem';
+                naLabel.style.color = 'var(--text-muted)';
+                naLabel.style.cursor = 'pointer';
+
+                const naCheck = document.createElement('input');
+                naCheck.type = 'checkbox';
+                naCheck.className = 'input-modern';
+                naCheck.style.width = 'auto';
+                naCheck.style.accentColor = 'var(--text-muted)';
+                naCheck.checked = !!item.isNotApplicable;
+                naCheck.onchange = (e) => {
+                    item.isNotApplicable = e.target.checked;
+                    saveState();
+                    updateGlobalDateUI();
+                    renderTree();
+                };
+
+                naLabel.appendChild(naCheck);
+                naLabel.appendChild(document.createTextNode('Não Obrigatório'));
+
+                mgmtFields.appendChild(statusText);
+                mgmtFields.appendChild(naLabel);
             }
             itemRight.appendChild(mgmtFields);
         }
