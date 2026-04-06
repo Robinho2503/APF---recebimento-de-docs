@@ -79,23 +79,26 @@
                         </div>
                         <!-- Progress Line -->
                         <div id="project-progress-container" style="margin-bottom: 1rem; display: none;"></div>
-                        <!-- Layout intuitivo: Barra de Busca Global -->
-                        <div class="global-search-wrapper">
-                            <i class="ph ph-magnifying-glass search-icon"></i>
-                            <input type="text" id="global-tree-search" placeholder="Pesquisar documento, setor ou pendência por nome..." class="input-modern" style="width: 100%; padding-left: 2.75rem; font-size: 0.95rem; height: 3.2rem; border-radius: 1rem; border-color: rgba(255,255,255,0.1) !important;">
-                            <button id="btn-clear-search" title="Limpar busca" style="display: none;">
-                                <i class="ph ph-x-circle"></i>
-                            </button>
-                            <div class="search-filters-group">
-                                <button class="filter-chip active" data-filter="all">Tudo</button>
-                                <button class="filter-chip" data-filter="pendente">Pendentes</button>
-                                <button class="filter-chip" data-filter="apontamento">Apontamentos</button>
+                        <!-- Container Flex: Busca e Quadros Lado a Lado -->
+                        <div class="search-dashboard-row" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start; margin-bottom: 1.5rem;">
+                            <!-- Layout intuitivo: Barra de Busca Global -->
+                            <div class="global-search-wrapper" style="flex: 1; min-width: 300px; margin-bottom: 0;">
+                                <i class="ph ph-magnifying-glass search-icon"></i>
+                                <input type="text" id="global-tree-search" placeholder="Pesquisar documento, setor ou pendência por nome..." class="input-modern" style="width: 100%; padding-left: 2.75rem; font-size: 0.95rem; height: 3.2rem; border-radius: 1rem; border-color: rgba(255,255,255,0.1) !important;">
+                                <button id="btn-clear-search" title="Limpar busca" style="display: none;">
+                                    <i class="ph ph-x-circle"></i>
+                                </button>
+                                <div class="search-filters-group">
+                                    <button class="filter-chip active" data-filter="all">Tudo</button>
+                                    <button class="filter-chip" data-filter="pendente">Pendentes</button>
+                                    <button class="filter-chip" data-filter="apontamento">Apontamentos</button>
+                                </div>
                             </div>
-                        </div>
 
-                        <!-- Layout intuitivo: Dashboard de Status do Projeto -->
-                        <div id="project-dashboard" class="dashboard-grid mb-4" style="display: none;">
-                            <!-- Injetado por JS (Contadores de progresso, vencidos, validados) -->
+                            <!-- Layout intuitivo: Dashboard de Status do Projeto -->
+                            <div id="project-dashboard" class="dashboard-grid" style="display: none; flex: 1.5; min-width: 320px;">
+                                <!-- Injetado por JS (Contadores de progresso, vencidos, validados) -->
+                            </div>
                         </div>
 
                         <!-- Drag Info Map -->
