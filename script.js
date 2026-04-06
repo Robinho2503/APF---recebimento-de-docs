@@ -1995,7 +1995,9 @@ function createNode(item, level) {
                 naLabel.appendChild(document.createTextNode('Não Obrigatório'));
 
                 mgmtFields.appendChild(statusText);
-                mgmtFields.appendChild(naLabel);
+                if (currProj && currProj.id !== 'p_default') {
+                    mgmtFields.appendChild(naLabel);
+                }
             }
             itemRight.appendChild(mgmtFields);
         }
