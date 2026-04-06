@@ -97,9 +97,12 @@ body {
 }
 
 .sidebar .tracking-card.eng-active {
-    background: rgba(96, 165, 250, 0.05);
     border-left-color: var(--info);
     border-color: rgba(96, 165, 250, 0.2);
+}
+
+.sidebar .tracking-card.eng-active.active {
+    background: rgba(96, 165, 250, 0.05);
 }
 
 .sidebar .tracking-card.eng-active:hover {
@@ -108,7 +111,7 @@ body {
 
 .sidebar .tracking-card.eng-active h3,
 .sidebar .tracking-card.eng-active h3 i {
-    color: #1e3a8a !important;
+    color: var(--info) !important;
 }
 
 .sidebar .tracking-card.eng-active .tk-status {
