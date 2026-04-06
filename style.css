@@ -1071,11 +1071,7 @@ hr {
 }
 
 /* User Request: Highlight panels and titles with red in light-mode */
-.light-mode .sidebar,
-.light-mode .checklist-main-col,
-.light-mode .analysis-side-panel {
-    border-color: var(--danger) !important;
-}
+
 
 .light-mode .sidebar-header h2,
 .light-mode .tab-fixed-label,
@@ -1084,9 +1080,7 @@ hr {
     color: var(--danger) !important;
 }
 
-.light-mode .tab-fixed-label {
-    border-bottom-color: var(--danger) !important;
-}
+
 
 .light-mode .sidebar-header h2 i,
 .light-mode .tab-fixed-label i,
