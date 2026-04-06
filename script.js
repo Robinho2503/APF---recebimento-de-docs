@@ -901,9 +901,14 @@ function updateGlobalDateUI() {
     const curr = getCurrentProject();
     if(!curr) return;
     
-    document.getElementById('checklist-proj-name').textContent = curr.name;
-    if (currentProjectName) currentProjectName.textContent = curr.name;
+    document.getElementById('checklist-proj-name').textContent = curr.id === 'p_default' ? 'MODELO DE ENTREGA' : curr.name;
+    if (currentProjectName) currentProjectName.textContent = curr.id === 'p_default' ? 'MODELO DE ENTREGA' : curr.name;
     
+    const dueDateContainer = document.getElementById('due-date-container');
+    if (dueDateContainer) {
+        dueDateContainer.style.display = (curr.id === 'p_default') ? 'none' : 'flex';
+    }
+
     if (projectDueDateInp) {
         projectDueDateInp.disabled = (curr.id === 'p_default');
         projectDueDateInp.value = curr.dueDate || '';
