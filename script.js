@@ -1651,6 +1651,7 @@ function createNode(item, level) {
     const children = getChildItems(item.id);
     const isRootFolder = item.parentId === null;
     const isMgmt = isMgmtActive();
+    const currProj = getCurrentProject();
 
     // SEARCH & FILTER LOGIC
     if (treeSearchQuery || treeSearchFilter !== 'all') {
