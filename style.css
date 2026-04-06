@@ -534,6 +534,7 @@ input[type="date"].input-modern::-webkit-calendar-picker-indicator { filter: inv
 
 .item-icon { font-size: 1.15rem; color: var(--primary); }
 .item-name { font-weight: 500; cursor: pointer; user-select: none; display: flex; align-items: center; gap:0.4rem; font-size: 0.9rem; }
+.children-container .item-name { font-size: 0.82rem; }
 .item-name i.ph-caret-down { transition: transform 0.2s; font-size: 0.8rem; }
 .obs-text { font-size: 0.8rem; color: var(--warning); font-style: italic; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
