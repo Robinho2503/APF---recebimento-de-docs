@@ -920,7 +920,7 @@ function updateGlobalDateUI() {
     
     const subtitleEl_old = document.getElementById('checklist-subtitle');
     if (subtitleEl_old) {
-        subtitleEl_old.textContent = 'Entrega da documentação';
+        subtitleEl_old.textContent = '';
         subtitleEl_old.className = 'default-subtitle';
     }
 
