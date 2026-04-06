@@ -880,7 +880,7 @@ hr {
 .filter-chip.active {
     background: var(--primary);
     border-color: var(--primary);
-    color: white;
+    color: var(--bg-dark);
     box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
 }
 
