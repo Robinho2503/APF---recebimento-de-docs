@@ -882,11 +882,11 @@ function updateGlobalDateUI() {
                 <span class="card-value">${validated}</span>
                 <span class="card-label">Validados</span>
             </div>
-            <div class="dashboard-card info" style="border-color: rgba(96, 165, 250, 0.3); background: rgba(96, 165, 250, 0.04);">
-                <span class="card-value" style="color: #60a5fa">${inAnalysis}</span>
-                <span class="card-label">Em Análise</span>
-            </div>
             <div class="dashboard-card warning">
+                <span class="card-value">${inAnalysis}</span>
+                <span class="card-label">Em Análise APF</span>
+            </div>
+            <div class="dashboard-card danger">
                 <span class="card-value">${pending}</span>
                 <span class="card-label">Pendentes</span>
             </div>
@@ -1007,13 +1007,13 @@ function updateManagementStatsUI() {
 
     dash.style.display = 'grid';
     dash.innerHTML = `
-        <div class="dashboard-card warning">
+        <div class="dashboard-card danger">
             <span class="card-value">${totalPending}</span>
             <span class="card-label">Documentos Pendentes</span>
         </div>
-        <div class="dashboard-card info" style="border-color: rgba(96, 165, 250, 0.3); background: rgba(96, 165, 250, 0.04);">
-            <span class="card-value" style="color: #60a5fa">${awaitingValidation}</span>
-            <span class="card-label">Aguardando Validação APF</span>
+        <div class="dashboard-card warning">
+            <span class="card-value">${awaitingValidation}</span>
+            <span class="card-label">Em Análise APF</span>
         </div>
     `;
 }
