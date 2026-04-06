@@ -652,9 +652,15 @@ function initEventListeners() {
     const filterChips = document.querySelectorAll('.filter-chip');
     filterChips.forEach(chip => {
         chip.addEventListener('click', () => {
-            filterChips.forEach(c => c.classList.remove('active'));
-            chip.classList.add('active');
-            treeSearchFilter = chip.dataset.filter;
+            const filter = chip.dataset.filter;
+            filterChips.forEach(c => {
+                if (c.dataset.filter === filter) {
+                    c.classList.add('active');
+                } else {
+                    c.classList.remove('active');
+                }
+            });
+            treeSearchFilter = filter;
             renderTree();
         });
     });

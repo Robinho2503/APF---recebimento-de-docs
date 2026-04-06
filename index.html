@@ -81,13 +81,8 @@
                         <div id="project-progress-container" style="margin-bottom: 1rem; display: none;"></div>
                         <!-- Container Flex: Busca e Quadros Lado a Lado -->
                         <div class="search-dashboard-row" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start; margin-bottom: 1.5rem;">
-                            <!-- Layout intuitivo: Barra de Busca Global -->
+                            <!-- Layout intuitivo: Filtros Globais -->
                             <div class="global-search-wrapper" style="flex: 1; min-width: 300px; margin-bottom: 0;">
-                                <i class="ph ph-magnifying-glass search-icon"></i>
-                                <input type="text" id="global-tree-search" placeholder="Pesquisar documento, setor ou pendência por nome..." class="input-modern" style="width: 100%; padding-left: 2.75rem; font-size: 0.95rem; height: 3.2rem; border-radius: 1rem; border-color: rgba(255,255,255,0.1) !important;">
-                                <button id="btn-clear-search" title="Limpar busca" style="display: none;">
-                                    <i class="ph ph-x-circle"></i>
-                                </button>
                                 <div class="search-filters-group">
                                     <button class="filter-chip active" data-filter="all">Tudo</button>
                                     <button class="filter-chip" data-filter="pendente">Pendentes</button>
@@ -214,6 +209,15 @@
                             </button>
                         </div>
                         <button id="btn-export-zip" class="btn btn-outline" title="Exportar todas as pastas e arquivos deste projeto em ZIP"><i class="ph ph-file-zip"></i> Exportar Tudo (ZIP)</button>
+                    </div>
+
+                    <!-- Filtros de aba APF -->
+                    <div class="global-search-wrapper" style="margin-bottom: 1rem;">
+                        <div class="search-filters-group">
+                            <button class="filter-chip active" data-filter="all">Tudo</button>
+                            <button class="filter-chip" data-filter="pendente">Pendentes</button>
+                            <button class="filter-chip" data-filter="apontamento">Apontamentos</button>
+                        </div>
                     </div>
 
                     <div id="pendencias-mgmt-panel" class="glass-panel mb-4 hidden" style="padding: 1.5rem; border-color: var(--danger) !important; background: rgba(239, 68, 68, 0.05);">
