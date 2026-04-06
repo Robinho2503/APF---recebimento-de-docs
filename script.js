@@ -842,10 +842,28 @@ function updateGlobalDateUI() {
     const nameEl = document.getElementById('checklist-proj-name');
     const subtitleEl = document.getElementById('checklist-subtitle');
     
-    if(!p || p.id === 'p_default') {
+    if(!p || p.id === 'none') {
         if(dash) dash.style.display = 'none';
         if(nameEl) nameEl.textContent = 'APF Checklist';
         if(subtitleEl) subtitleEl.textContent = 'Selecione um empreendimento no painel lateral';
+        return;
+    }
+
+    if(p.id === 'p_default') {
+        if(dash) dash.style.display = 'none';
+        if(nameEl) nameEl.textContent = 'MODELO DE ENTREGA';
+        if(subtitleEl) subtitleEl.textContent = '';
+        if(currentProjectName) currentProjectName.textContent = 'MODELO DE ENTREGA';
+        
+        const dueDateContainer = document.getElementById('due-date-container');
+        if (dueDateContainer) dueDateContainer.style.display = 'none';
+        
+        if (projectDueDateInp) {
+            projectDueDateInp.disabled = true;
+            projectDueDateInp.value = '';
+        }
+        if (btnRenameProject) btnRenameProject.style.display = 'none';
+        if (btnDeleteProject) btnDeleteProject.style.display = 'none';
         return;
     }
 
@@ -901,26 +919,26 @@ function updateGlobalDateUI() {
     const curr = getCurrentProject();
     if(!curr) return;
     
-    document.getElementById('checklist-proj-name').textContent = curr.id === 'p_default' ? 'MODELO DE ENTREGA' : curr.name;
-    if (currentProjectName) currentProjectName.textContent = curr.id === 'p_default' ? 'MODELO DE ENTREGA' : curr.name;
+    document.getElementById('checklist-proj-name').textContent = curr.name;
+    if (currentProjectName) currentProjectName.textContent = curr.name;
     
     const dueDateContainer = document.getElementById('due-date-container');
     if (dueDateContainer) {
-        dueDateContainer.style.display = (curr.id === 'p_default') ? 'none' : 'flex';
+        dueDateContainer.style.display = 'flex';
     }
 
     if (projectDueDateInp) {
-        projectDueDateInp.disabled = (curr.id === 'p_default');
+        projectDueDateInp.disabled = false;
         projectDueDateInp.value = curr.dueDate || '';
     }
     
     // Badge unificado no subtitle agora
 
     if (btnRenameProject) {
-        btnRenameProject.style.display = (curr.id === 'p_default') ? 'none' : 'inline-flex';
+        btnRenameProject.style.display = 'inline-flex';
     }
     if (btnDeleteProject) {
-        btnDeleteProject.style.display = (curr.id === 'p_default') ? 'none' : 'inline-flex';
+        btnDeleteProject.style.display = 'inline-flex';
     }
     
     const subtitleEl_old = document.getElementById('checklist-subtitle');
