@@ -1070,4 +1070,29 @@ hr {
     animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* User Request: Highlight panels and titles with red in light-mode */
+.light-mode .sidebar,
+.light-mode .checklist-main-col,
+.light-mode .analysis-side-panel {
+    border-color: var(--danger) !important;
+}
+
+.light-mode .sidebar-header h2,
+.light-mode .tab-fixed-label,
+.light-mode #checklist-subtitle,
+.light-mode .analysis-panel-header h3 {
+    color: var(--danger) !important;
+}
+
+.light-mode .tab-fixed-label {
+    border-bottom-color: var(--danger) !important;
+}
+
+.light-mode .sidebar-header h2 i,
+.light-mode .tab-fixed-label i,
+.light-mode .analysis-panel-header h3 i,
+.light-mode #checklist-subtitle i {
+    color: var(--danger) !important;
+}
+
 
