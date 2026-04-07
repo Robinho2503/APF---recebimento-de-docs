@@ -1834,29 +1834,16 @@ function createNode(item, level) {
     // INDICATORS for ROOT FOLDERS
     if(isRootFolder && localUI.currentProjectId !== 'p_default') {
         const stats = getNodeStats(item.id);
+        const totalAlerts = stats.pendente + stats.apontamento;
         const indicatorsCont = document.createElement('div');
         indicatorsCont.className = 'sector-indicators';
-        let hasIndicators = false;
 
-        if (stats.pendente > 0) {
+        if (totalAlerts > 0) {
             const circle = document.createElement('span');
             circle.className = 'pending-circle';
-            circle.textContent = stats.pendente;
-            circle.title = `${stats.pendente} item(s) pendente(s)`;
+            circle.textContent = totalAlerts;
+            circle.title = `${totalAlerts} item(s) com pendências ou apontamentos`;
             indicatorsCont.appendChild(circle);
-            hasIndicators = true;
-        }
-
-        if (stats.apontamento > 0) {
-            const circleA = document.createElement('span');
-            circleA.className = 'apontamento-circle';
-            circleA.textContent = stats.apontamento;
-            circleA.title = `${stats.apontamento} item(s) com apontamentos de APF`;
-            indicatorsCont.appendChild(circleA);
-            hasIndicators = true;
-        }
-
-        if (hasIndicators) {
             itemLeft.prepend(indicatorsCont);
         } else {
             const spacer = document.createElement('div');
