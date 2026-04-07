@@ -941,11 +941,40 @@ function updateGlobalDateUI() {
     }
 
     // Update the classic deadline UI if it exists
-    const curr = getCurrentProject();
-    if(!curr) return;
-    
-    document.getElementById('checklist-proj-name').textContent = curr.name;
-    if (currentProjectName) currentProjectName.textContent = curr.name;
+    const p = getCurrentProject();
+    if (!p) return;
+
+    // Se for o Modelo de Entrega (p_default), resetar filtros de status e esconder chips
+    const filterWrappers = document.querySelectorAll('.search-filters-group');
+    if (p.id === 'p_default') {
+        treeSearchFilter = 'all';
+        filterWrappers.forEach(wrapper => {
+            const chips = wrapper.querySelectorAll('.filter-chip');
+            chips.forEach(chip => {
+                if (chip.dataset.filter !== 'all') {
+                    chip.style.display = 'none';
+                } else {
+                    chip.classList.add('active');
+                }
+            });
+        });
+    } else {
+        filterWrappers.forEach(wrapper => {
+            const chips = wrapper.querySelectorAll('.filter-chip');
+            chips.forEach(chip => {
+                chip.style.display = '';
+                if (chip.dataset.filter === treeSearchFilter) {
+                    chip.classList.add('active');
+                } else {
+                    chip.classList.remove('active');
+                }
+            });
+        });
+    }
+
+    const { items: projectItems } = p;
+    document.getElementById('checklist-proj-name').textContent = p.name;
+    if (currentProjectName) currentProjectName.textContent = p.name;
     
     const dueDateContainer = document.getElementById('due-date-container');
     if (dueDateContainer) {
