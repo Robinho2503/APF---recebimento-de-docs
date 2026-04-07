@@ -977,18 +977,13 @@ function updateGlobalDateUI() {
             </div>
         `;
     }
-}
-    
-    const subtitleEl_old = document.getElementById('checklist-subtitle');
-    if (subtitleEl_old) {
-        subtitleEl_old.textContent = '';
-        subtitleEl_old.className = 'default-subtitle';
-    }
 
-    if(curr.engAnalysisOpened) {
-        if (subtitleEl_old) {
-            subtitleEl_old.innerHTML = '<i class="ph ph-file-search"></i> Engenharia Aberta';
-            subtitleEl_old.className = 'badge-eng-subtitle';
+    // Engenharia Aberta?
+    const btnToggleEng = document.getElementById('btn-toggle-eng-analysis');
+    if(p.engAnalysisOpened) {
+        if (subtitleEl) {
+            subtitleEl.innerHTML = '<i class="ph ph-file-search"></i> Engenharia Aberta';
+            subtitleEl.className = 'badge-eng-subtitle';
         }
         if (btnToggleEng) {
             btnToggleEng.innerHTML = '<i class="ph ph-magnifying-glass"></i> Engenharia aberta';
@@ -997,8 +992,10 @@ function updateGlobalDateUI() {
             btnToggleEng.style.color = 'var(--info)';
             btnToggleEng.style.borderColor = 'var(--info)';
         }
-        projectGlobalCountdown.style.display = 'none';
+        if (projectGlobalCountdown) projectGlobalCountdown.style.display = 'none';
     } else {
+        if (subtitleEl) subtitleEl.className = 'default-subtitle';
+    }
 }
 
 function updateManagementStatsUI() {
