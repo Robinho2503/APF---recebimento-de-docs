@@ -924,15 +924,8 @@ function updateGlobalDateUI() {
         if (btnRenameProject) btnRenameProject.style.display = 'none';
         if (btnDeleteProject) btnDeleteProject.style.display = 'none';
 
-        // Ocultar filtros de status no modelo
+        // Reseta filtro no modelo
         treeSearchFilter = 'all';
-        filterWrappers.forEach(wrapper => {
-            const chips = wrapper.querySelectorAll('.filter-chip');
-            chips.forEach(chip => {
-                if (chip.dataset.filter !== 'all') { chip.style.display = 'none'; } 
-                else { chip.classList.add('active'); }
-            });
-        });
         return;
     }
 
@@ -945,15 +938,6 @@ function updateGlobalDateUI() {
     if(dueDateContainer) dueDateContainer.style.display = 'flex';
     if(projectDueDateInp) { projectDueDateInp.disabled = false; projectDueDateInp.value = p.dueDate || ''; }
 
-    // Mostrar os filtros de status
-    filterWrappers.forEach(wrapper => {
-        const chips = wrapper.querySelectorAll('.filter-chip');
-        chips.forEach(chip => {
-            chip.style.display = '';
-            if (chip.dataset.filter === treeSearchFilter) { chip.classList.add('active'); } 
-            else { chip.classList.remove('active'); }
-        });
-    });
 
     // Calcular Estatísticas para o Dashboard
     let allItems;
@@ -976,11 +960,21 @@ function updateGlobalDateUI() {
     if(dash) {
         dash.style.display = 'grid';
         dash.innerHTML = `
-            <div class="dashboard-card"><span class="card-value">${total}</span><span class="card-label">Total GERAL</span></div>
-            <div class="dashboard-card accent"><span class="card-value">${validated}</span><span class="card-label">Validados</span></div>
-            <div class="dashboard-card warning"><span class="card-value">${inAnalysis}</span><span class="card-label">Em Análise APF</span></div>
-            <div class="dashboard-card danger"><span class="card-value">${pending}</span><span class="card-label">Pendentes</span></div>
-            <div class="dashboard-card danger"><span class="card-value">${withPoints}</span><span class="card-label">Apontamentos</span></div>
+            <div class="dashboard-card ${treeSearchFilter === 'all' ? 'active' : ''}" onclick="handleDashboardFilter('all', ${total})">
+                <span class="card-value">${total}</span><span class="card-label">Total GERAL</span>
+            </div>
+            <div class="dashboard-card accent ${treeSearchFilter === 'validado' ? 'active' : ''}" onclick="handleDashboardFilter('validado', ${validated})">
+                <span class="card-value">${validated}</span><span class="card-label">Validados</span>
+            </div>
+            <div class="dashboard-card warning ${treeSearchFilter === 'analise' ? 'active' : ''}" onclick="handleDashboardFilter('analise', ${inAnalysis})">
+                <span class="card-value">${inAnalysis}</span><span class="card-label">Em Análise APF</span>
+            </div>
+            <div class="dashboard-card danger ${treeSearchFilter === 'pendente' ? 'active' : ''}" onclick="handleDashboardFilter('pendente', ${pending})">
+                <span class="card-value">${pending}</span><span class="card-label">Pendentes</span>
+            </div>
+            <div class="dashboard-card danger ${treeSearchFilter === 'apontamento' ? 'active' : ''}" onclick="handleDashboardFilter('apontamento', ${withPoints})">
+                <span class="card-value">${withPoints}</span><span class="card-label">Apontamentos</span>
+            </div>
         `;
     }
 }
@@ -1037,15 +1031,55 @@ function updateManagementStatsUI() {
 
     dash.style.display = 'grid';
     dash.innerHTML = `
-        <div class="dashboard-card danger">
+        <div class="dashboard-card danger ${treeSearchFilter === 'pendente' ? 'active' : ''}" onclick="handleDashboardFilter('pendente', ${totalPending})">
             <span class="card-value">${totalPending}</span>
             <span class="card-label">Documentos Pendentes</span>
         </div>
-        <div class="dashboard-card warning">
+        <div class="dashboard-card warning ${treeSearchFilter === 'analise' ? 'active' : ''}" onclick="handleDashboardFilter('analise', ${awaitingValidation})">
             <span class="card-value">${awaitingValidation}</span>
             <span class="card-label">Em Análise APF</span>
         </div>
     `;
+}
+
+// Global filter handler for dashboard cards
+window.handleDashboardFilter = function(filter, count) {
+    if (count === 0 && filter !== 'all') {
+        const labels = {
+            'pendente': 'Pendentes',
+            'apontamento': 'Apontamentos',
+            'validado': 'Validados',
+            'analise': 'em Análise APF'
+        };
+        showTemporaryMessage(`Sem documentos em ${labels[filter] || filter}`);
+        return;
+    }
+
+    // Toggle filter: if clicking active, go back to 'all'
+    if (treeSearchFilter === filter && filter !== 'all') {
+        treeSearchFilter = 'all';
+    } else {
+        treeSearchFilter = filter;
+    }
+    
+    updateGlobalDateUI();
+    renderTree();
+};
+
+function showTemporaryMessage(msg) {
+    let container = document.querySelector('.toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = `<i class="ph ph-info"></i> ${msg}`;
+    container.appendChild(toast);
+    
+    // Auto remove after animation completes
+    setTimeout(() => toast.remove(), 2500);
 }
 
 // function updateProjectDropdown() {
@@ -1571,9 +1605,14 @@ function expandRelevantNodes() {
             return nodeChildren.some(c => {
                 const cMatches = c.name.toLowerCase().includes(treeSearchQuery);
                 const cHasAtt = c.attachments && c.attachments.length > 0;
+                const cValid = c.validationStatus === 'APF check' || c.validationStatus === 'Validado';
+                const cPointed = c.validationStatus === 'Apontamento';
+
                 let cMatchesFilter = true;
                 if (treeSearchFilter === 'pendente') cMatchesFilter = !cHasAtt;
-                else if (treeSearchFilter === 'apontamento') cMatchesFilter = cHasAtt && c.validationStatus === 'Apontamento';
+                else if (treeSearchFilter === 'apontamento') cMatchesFilter = cHasAtt && cPointed;
+                else if (treeSearchFilter === 'validado') cMatchesFilter = cHasAtt && cValid;
+                else if (treeSearchFilter === 'analise') cMatchesFilter = cHasAtt && !cValid && !cPointed;
                 
                 return (cMatches && cMatchesFilter) || anyChildMatches(c.id);
             });
