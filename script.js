@@ -539,6 +539,7 @@ function initEventListeners() {
         btnOpenTemplate.onclick = () => {
             if(localUI.currentProjectId === 'p_default') return;
             localUI.currentProjectId = 'p_default';
+            localUI.expandedIds.clear(); // Ocultar pastas por padrão ao abrir o modelo
             saveLocalUI();
             updateGlobalDateUI();
             renderTree();
@@ -1188,6 +1189,7 @@ function renderTracking() {
         card.addEventListener('click', () => {
             if(localUI.currentProjectId === p.id) return;
             localUI.currentProjectId = p.id;
+            localUI.expandedIds.clear(); // Garantir que as pastas fiquem ocultas por padrão ao trocar de projeto
             saveLocalUI();
             updateGlobalDateUI();
             renderTree();
