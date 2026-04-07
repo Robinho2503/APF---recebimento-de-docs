@@ -919,7 +919,7 @@ hr {
     border: none;
     border-radius: 2rem;
     color: var(--text-muted);
-    font-size: 0.7rem;
+    font-size: 0.6rem;
     font-weight: 700;
     text-transform: uppercase;
     cursor: pointer;
@@ -929,6 +929,7 @@ hr {
 .btn-toggle-all:hover {
     color: var(--primary);
 }
+.btn-toggle-all i { font-size: 0.65rem; }
 
 #global-tree-search:focus {
     background: rgba(255, 255, 255, 0.08);
