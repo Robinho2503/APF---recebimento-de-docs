@@ -156,7 +156,10 @@
                 </div>
 
                 <!-- Management Content -->
-                <div id="management-content" style="display: none;">
+                <div id="management-content" style="display: none; position: relative;">
+                    <button id="btn-show-history" class="btn btn-outline btn-sm" style="position: absolute; top: -3rem; left: 0; z-index: 10;" title="Visualizar histórico de ações">
+                        <i class="ph ph-clock-counter-clockwise"></i> Histórico
+                    </button>
                     <div class="management-controls mb-4">
                         <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
                             <button id="btn-open-template" class="btn btn-outline" title="Acessar e editar a estrutura do Modelo de Entrega"><i class="ph ph-layout"></i> Modelo de Entrega</button>
@@ -211,9 +214,6 @@
                             </button>
                             <button id="btn-toggle-pendencias" class="btn btn-outline" title="Iniciar resolução de PENDÊNCIAS CAIXA">
                                 <i class="ph ph-warning-diamond"></i> Resolução de pendências
-                            </button>
-                            <button id="btn-show-history" class="btn btn-outline" title="Visualizar histórico de ações do empreendimento">
-                                <i class="ph ph-clock-counter-clockwise"></i> Histórico
                             </button>
                         </div>
                         <button id="btn-export-zip" class="btn btn-outline" title="Exportar todas as pastas e arquivos deste projeto em ZIP"><i class="ph ph-file-zip"></i> Exportar Tudo (ZIP)</button>
