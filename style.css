@@ -909,6 +909,27 @@ hr {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
+.btn-toggle-all {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0;
+    background: transparent;
+    border: none;
+    border-radius: 2rem;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+.btn-toggle-all:hover {
+    color: var(--primary);
+}
+
 #global-tree-search:focus {
     background: rgba(255, 255, 255, 0.08);
     border-color: var(--primary);
