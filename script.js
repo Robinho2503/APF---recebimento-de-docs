@@ -1608,13 +1608,10 @@ function renderTree() {
     const updateBtn = (btn) => {
         if (!btn) return;
         const label = btn.querySelector('.label');
-        const icon = btn.querySelector('i');
         if (anyExpanded) {
             label.textContent = 'Ocultar tudo';
-            icon.className = 'ph ph-minus';
         } else {
             label.textContent = 'Mostrar tudo';
-            icon.className = 'ph ph-plus-minus';
         }
     };
     updateBtn(btnChecklist);
@@ -2926,7 +2923,7 @@ function renderAuditLog() {
     if (!container) return;
     
     if (!state.auditLog || state.auditLog.length === 0) {
-        container.innerHTML = '<p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 2rem;">Nenhuma ação registrada ainda.</p>';
+        container.innerHTML = '<p style="text-align: center; color: var(--text-muted); font-size: 0.55rem; font-weight: 700; padding: 2rem;">Nenhuma ação registrada ainda.</p>';
         return;
     }
 
