@@ -42,7 +42,7 @@ let isInitialCloudLoad = true;
 let localUI = {
     expandedIds: new Set(),
     showFullChecklistDuringPendencia: false,
-    currentProjectId: 'p_default'
+    currentProjectId: null
 };
 let treeSearchQuery = '';
 let treeSearchFilter = 'all'; // all, pendente, apontamento
@@ -54,7 +54,7 @@ function loadLocalUI() {
             const parsed = JSON.parse(saved);
             localUI.expandedIds = new Set(parsed.expandedIds || []);
             localUI.showFullChecklistDuringPendencia = parsed.showFullChecklistDuringPendencia || false;
-            localUI.currentProjectId = parsed.currentProjectId || 'p_default';
+            localUI.currentProjectId = parsed.currentProjectId || null;
         }
     } catch (e) { console.warn("Erro ao carregar IU local", e); }
 }
@@ -105,9 +105,9 @@ async function loadState() {
             
             if (isInitialCloudLoad) {
                 isInitialCloudLoad = false;
-                // If local currentProjectId is invalid for current projects, reset it
+                // If local currentProjectId is invalid for current projects, reset it to null (shows placeholder)
                 if (!state.projects.find(p => p.id === localUI.currentProjectId)) {
-                    localUI.currentProjectId = state.projects[0]?.id || 'p_default';
+                    localUI.currentProjectId = null;
                 }
             }
 
@@ -865,135 +865,97 @@ function updateGlobalDateUI() {
     const dash = document.getElementById('project-dashboard');
     const nameEl = document.getElementById('checklist-proj-name');
     const subtitleEl = document.getElementById('checklist-subtitle');
-    
+    const noProjPlaceholder = document.getElementById('no-project-selected');
+    const mainWrapper = document.getElementById('main-content-wrapper');
+    const filterWrappers = document.querySelectorAll('.search-filters-group');
+    const dueDateContainer = document.getElementById('due-date-container');
+
+    // 1. Estado Inicial: Nenhum projeto selecionado
     if(!p || p.id === 'none') {
+        if(noProjPlaceholder) noProjPlaceholder.style.display = 'flex';
+        if(mainWrapper) mainWrapper.style.display = 'none';
         if(dash) dash.style.display = 'none';
         if(nameEl) nameEl.textContent = 'APF Checklist';
         if(subtitleEl) subtitleEl.textContent = 'Selecione um empreendimento no painel lateral';
         return;
-    }
+    } 
 
+    // Se houver projeto, mostrar o conteúdo principal
+    if(noProjPlaceholder) noProjPlaceholder.style.display = 'none';
+    if(mainWrapper) mainWrapper.style.display = 'block';
+
+    // 2. Caso Especial: MODELO DE ENTREGA
     if(p.id === 'p_default') {
         if(dash) dash.style.display = 'none';
         if(nameEl) nameEl.textContent = 'MODELO DE ENTREGA';
-        if(subtitleEl) subtitleEl.textContent = '';
+        if(subtitleEl) subtitleEl.textContent = 'Estrutura padrão de pastas';
         if(currentProjectName) currentProjectName.textContent = 'MODELO DE ENTREGA';
         
-        const dueDateContainer = document.getElementById('due-date-container');
         if (dueDateContainer) dueDateContainer.style.display = 'none';
-        
-        if (projectDueDateInp) {
-            projectDueDateInp.disabled = true;
-            projectDueDateInp.value = '';
-        }
+        if (projectDueDateInp) { projectDueDateInp.disabled = true; projectDueDateInp.value = ''; }
         if (btnRenameProject) btnRenameProject.style.display = 'none';
         if (btnDeleteProject) btnDeleteProject.style.display = 'none';
+
+        // Ocultar filtros de status no modelo
+        treeSearchFilter = 'all';
+        filterWrappers.forEach(wrapper => {
+            const chips = wrapper.querySelectorAll('.filter-chip');
+            chips.forEach(chip => {
+                if (chip.dataset.filter !== 'all') { chip.style.display = 'none'; } 
+                else { chip.classList.add('active'); }
+            });
+        });
         return;
     }
 
+    // 3. Caso Normal: Empreendimentos Reais
     if(nameEl) nameEl.textContent = p.name;
     if(subtitleEl) subtitleEl.textContent = 'Entrega de documentação';
+    if(currentProjectName) currentProjectName.textContent = p.name;
+    if(btnRenameProject) btnRenameProject.style.display = 'inline-flex';
+    if(btnDeleteProject) btnDeleteProject.style.display = 'inline-flex';
+    if(dueDateContainer) dueDateContainer.style.display = 'flex';
+    if(projectDueDateInp) { projectDueDateInp.disabled = false; projectDueDateInp.value = p.dueDate || ''; }
 
-    // Calculate Dashboard Stats
+    // Mostrar os filtros de status
+    filterWrappers.forEach(wrapper => {
+        const chips = wrapper.querySelectorAll('.filter-chip');
+        chips.forEach(chip => {
+            chip.style.display = '';
+            if (chip.dataset.filter === treeSearchFilter) { chip.classList.add('active'); } 
+            else { chip.classList.remove('active'); }
+        });
+    });
+
+    // Calcular Estatísticas para o Dashboard
     let allItems;
     if (p.pendenciaActive && !isMgmtActive()) {
         allItems = p.pendencias || [];
     } else {
         allItems = p.items.filter(i => {
             const hasChildren = p.items.some(child => child.parentId === i.id);
-            return !hasChildren && i.parentId !== null; // Only count leaf items (actual documents), not root sectors
+            return !hasChildren && i.parentId !== null;
         });
     }
 
     const applicableItems = allItems.filter(i => !i.isNotApplicable);
     const total = applicableItems.length;
-    const validated = applicableItems.filter(i => (i.validationStatus === 'APF check' || i.validationStatus === 'Validado') && i.attachments?.length > 0).length;
+    const validated = applicableItems.filter(i => (i.validationStatus === 'Validado' || i.validationStatus === 'APF check') && i.attachments?.length > 0).length;
     const withPoints = applicableItems.filter(i => i.validationStatus === 'Apontamento' && i.attachments?.length > 0).length;
     const pending = applicableItems.filter(i => !i.attachments || i.attachments.length === 0).length;
     const inAnalysis = total - validated - withPoints - pending;
 
-    const progressPct = total > 0 ? Math.round((validated / total) * 100) : 0;
-
     if(dash) {
         dash.style.display = 'grid';
         dash.innerHTML = `
-            <div class="dashboard-card">
-                <span class="card-value">${total}</span>
-                <span class="card-label">Total GERAL</span>
-            </div>
-            <div class="dashboard-card accent">
-                <span class="card-value">${validated}</span>
-                <span class="card-label">Validados</span>
-            </div>
-            <div class="dashboard-card warning">
-                <span class="card-value">${inAnalysis}</span>
-                <span class="card-label">Em Análise APF</span>
-            </div>
-            <div class="dashboard-card danger">
-                <span class="card-value">${pending}</span>
-                <span class="card-label">Pendentes</span>
-            </div>
-            <div class="dashboard-card danger">
-                <span class="card-value">${withPoints}</span>
-                <span class="card-label">Apontamentos</span>
-            </div>
+            <div class="dashboard-card"><span class="card-value">${total}</span><span class="card-label">Total GERAL</span></div>
+            <div class="dashboard-card accent"><span class="card-value">${validated}</span><span class="card-label">Validados</span></div>
+            <div class="dashboard-card warning"><span class="card-value">${inAnalysis}</span><span class="card-label">Em Análise APF</span></div>
+            <div class="dashboard-card danger"><span class="card-value">${pending}</span><span class="card-label">Pendentes</span></div>
+            <div class="dashboard-card danger"><span class="card-value">${withPoints}</span><span class="card-label">Apontamentos</span></div>
         `;
     }
-
-    // Update the classic deadline UI if it exists
-    const p = getCurrentProject();
-    if (!p) return;
-
-    // Se for o Modelo de Entrega (p_default), resetar filtros de status e esconder chips
-    const filterWrappers = document.querySelectorAll('.search-filters-group');
-    if (p.id === 'p_default') {
-        treeSearchFilter = 'all';
-        filterWrappers.forEach(wrapper => {
-            const chips = wrapper.querySelectorAll('.filter-chip');
-            chips.forEach(chip => {
-                if (chip.dataset.filter !== 'all') {
-                    chip.style.display = 'none';
-                } else {
-                    chip.classList.add('active');
-                }
-            });
-        });
-    } else {
-        filterWrappers.forEach(wrapper => {
-            const chips = wrapper.querySelectorAll('.filter-chip');
-            chips.forEach(chip => {
-                chip.style.display = '';
-                if (chip.dataset.filter === treeSearchFilter) {
-                    chip.classList.add('active');
-                } else {
-                    chip.classList.remove('active');
-                }
-            });
-        });
-    }
-
-    const { items: projectItems } = p;
-    document.getElementById('checklist-proj-name').textContent = p.name;
-    if (currentProjectName) currentProjectName.textContent = p.name;
-    
-    const dueDateContainer = document.getElementById('due-date-container');
-    if (dueDateContainer) {
-        dueDateContainer.style.display = 'flex';
-    }
-
-    if (projectDueDateInp) {
-        projectDueDateInp.disabled = false;
-        projectDueDateInp.value = curr.dueDate || '';
-    }
-    
-    // Badge unificado no subtitle agora
-
-    if (btnRenameProject) {
-        btnRenameProject.style.display = 'inline-flex';
-    }
-    if (btnDeleteProject) {
-        btnDeleteProject.style.display = 'inline-flex';
-    }
+}
     
     const subtitleEl_old = document.getElementById('checklist-subtitle');
     if (subtitleEl_old) {
@@ -1015,45 +977,6 @@ function updateGlobalDateUI() {
         }
         projectGlobalCountdown.style.display = 'none';
     } else {
-        if (btnToggleEng) {
-            btnToggleEng.innerHTML = '<i class="ph ph-magnifying-glass"></i> Abrir Engenharia';
-            btnToggleEng.className = 'btn btn-outline';
-            btnToggleEng.style.backgroundColor = '';
-            btnToggleEng.style.color = '';
-            btnToggleEng.style.borderColor = '';
-        }
-
-        if(curr.dueDate) {
-            let totalD = 0;
-            let elapsedD = 0;
-            if (curr.createdAt) {
-                const tStart = new Date(curr.createdAt).getTime();
-                const tEnd = new Date(curr.dueDate).getTime();
-                const tNow = new Date().getTime();
-                if (tEnd > tStart) {
-                    totalD = Math.ceil((tEnd - tStart) / (1000 * 60 * 60 * 24));
-                    elapsedD = Math.floor((tNow - tStart) / (1000 * 60 * 60 * 24));
-                    if (elapsedD < 0) elapsedD = 0;
-                }
-            }
-            const diff = calculateDays(curr.dueDate);
-            let diffStr = '';
-            let bizDaysStr = ` (${calculateBusinessDays(curr.dueDate)} dias úteis)`;
-            
-            if (diff === 0) {
-                diffStr = "Entrega Hoje";
-                bizDaysStr = '';
-            } else if (diff > 0) {
-                diffStr = `Faltam ${diff} dia(s)`;
-            } else {
-                diffStr = `Atrasado ${Math.abs(diff)} dia(s)`;
-                bizDaysStr = '';
-            }
-            
-            if (subtitleEl_old) subtitleEl_old.textContent = `Prazo: ${formatDateToPT(curr.dueDate)} ┃ ${diffStr}${bizDaysStr}`;
-            projectGlobalCountdown.style.display = 'none';
-        }
-    }
 }
 
 function updateManagementStatsUI() {

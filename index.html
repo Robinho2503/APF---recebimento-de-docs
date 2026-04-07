@@ -32,7 +32,18 @@
 
         <!-- Main Content -->
         <main class="content-area">
-            <div class="flex-between mb-2">
+            <!-- Mensagem de Placeholder: Nenhum projeto selecionado -->
+            <div id="no-project-selected" class="glass-panel" style="display: none; justify-content: center; align-items: center; min-height: 50vh; text-align: center; margin-top: 2rem;">
+                <div style="max-width: 500px; padding: 2rem;">
+                    <i class="ph ph-hand-pointing" style="font-size: 3.5rem; color: var(--primary); margin-bottom: 1.5rem; display: block; opacity: 0.8;"></i>
+                    <h2 style="font-size: 1.4rem; color: var(--text-main); line-height: 1.5; font-weight: 500;">Selecione um dos empreendimentos na aba ao lado para visualizar</h2>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.75rem;">Ou acesse a aba APF para criar um novo registro.</p>
+                </div>
+            </div>
+
+            <!-- Conteúdo Real (Abas, Checklist, Análise) -->
+            <div id="main-content-wrapper">
+                <div class="flex-between mb-2">
                 <div style="flex-grow: 1;"></div>
                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                     <div class="apf-nav-group">
