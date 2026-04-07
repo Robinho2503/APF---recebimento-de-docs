@@ -1105,6 +1105,10 @@ hr {
     background: rgba(255, 255, 255, 0.08) !important;
 }
 
+.dashboard-card.danger {
+    border-color: var(--danger) !important;
+}
+
 .dashboard-card .card-value {
     transition: color 0.2s ease;
 }

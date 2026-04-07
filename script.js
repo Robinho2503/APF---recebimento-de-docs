@@ -960,9 +960,6 @@ function updateGlobalDateUI() {
     if(dash) {
         dash.style.display = 'grid';
         dash.innerHTML = `
-            <div class="dashboard-card ${treeSearchFilter === 'all' ? 'active' : ''}" onclick="handleDashboardFilter('all', ${total})">
-                <span class="card-value">${total}</span><span class="card-label">Total GERAL</span>
-            </div>
             <div class="dashboard-card accent ${treeSearchFilter === 'validado' ? 'active' : ''}" onclick="handleDashboardFilter('validado', ${validated})">
                 <span class="card-value">${validated}</span><span class="card-label">Validados</span>
             </div>
