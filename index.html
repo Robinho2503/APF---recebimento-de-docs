@@ -92,9 +92,16 @@
                             <!-- Layout intuitivo: Filtros Globais -->
                             <div class="global-search-wrapper" style="flex: 1; min-width: 300px; margin-bottom: 0;">
                                 <div class="search-filters-group">
-                                    <button class="filter-chip active" data-filter="all">Tudo</button>
-                                    <button class="filter-chip" data-filter="pendente">Pendentes</button>
-                                    <button class="filter-chip" data-filter="apontamento">Apontamentos</button>
+                                    <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                        <button class="filter-chip active" data-filter="all" style="width: 100%;">Tudo</button>
+                                        <button id="btn-toggle-all-checklist" class="btn-toggle-all" title="Mostrar/Ocultar todos os itens do empreendimento">
+                                            <i class="ph ph-plus-minus"></i> <span class="label">Mostrar tudo</span>
+                                        </button>
+                                    </div>
+                                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                        <button class="filter-chip" data-filter="pendente">Pendentes</button>
+                                        <button class="filter-chip" data-filter="apontamento">Apontamentos</button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -204,10 +211,17 @@
                         <!-- Layout intuitivo: Filtros de aba APF -->
                         <div class="global-search-wrapper" style="flex: 1; min-width: 300px; margin-bottom: 0;">
                             <div class="search-filters-group">
-                                <button class="filter-chip active" data-filter="all">Tudo</button>
+                            <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                <button class="filter-chip active" data-filter="all" style="width: 100%;">Tudo</button>
+                                <button id="btn-toggle-all-mgmt" class="btn-toggle-all" title="Mostrar/Ocultar todos os itens do empreendimento">
+                                    <i class="ph ph-plus-minus"></i> <span class="label">Mostrar tudo</span>
+                                </button>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                                 <button class="filter-chip" data-filter="pendente">Pendentes</button>
                                 <button class="filter-chip" data-filter="apontamento">Apontamentos</button>
                             </div>
+                        </div>
                         </div>
 
                         <!-- Dashboard Estatístico da Aba APF -->

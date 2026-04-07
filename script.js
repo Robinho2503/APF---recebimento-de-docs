@@ -558,6 +558,34 @@ function initEventListeners() {
         btnAddRoot.addEventListener('click', () => handleAddFolder(null));
     }
 
+    // Toggle All logic
+    const btnToggleAllChecklist = document.getElementById('btn-toggle-all-checklist');
+    const btnToggleAllMgmt = document.getElementById('btn-toggle-all-mgmt');
+
+    const handleToggleAll = (btn) => {
+        const p = getCurrentProject();
+        if(!p) return;
+
+        const isExpanding = btn.querySelector('.label').textContent.includes('Mostrar');
+        
+        p.items.forEach(item => {
+            const hasChildren = p.items.some(child => child.parentId === item.id);
+            if (hasChildren) {
+                if (isExpanding) {
+                    localUI.expandedIds.add(item.id);
+                } else {
+                    localUI.expandedIds.delete(item.id);
+                }
+            }
+        });
+
+        saveLocalUI();
+        renderTree();
+    };
+
+    if (btnToggleAllChecklist) btnToggleAllChecklist.onclick = () => handleToggleAll(btnToggleAllChecklist);
+    if (btnToggleAllMgmt) btnToggleAllMgmt.onclick = () => handleToggleAll(btnToggleAllMgmt);
+
     if (btnTogglePendencias) {
         btnTogglePendencias.onclick = () => {
             const curr = getCurrentProject();
@@ -1566,6 +1594,32 @@ function formatDateToPT(isoStr) {
 }
 
 function renderTree() {
+    const p = getCurrentProject();
+    if (!p) return;
+
+    // Update Toggle All Button Text
+    const btnChecklist = document.getElementById('btn-toggle-all-checklist');
+    const btnMgmt = document.getElementById('btn-toggle-all-mgmt');
+    
+    // Check if at least one folder is expanded
+    const foldersWithChildren = p.items.filter(item => p.items.some(child => child.parentId === item.id));
+    const anyExpanded = foldersWithChildren.some(f => localUI.expandedIds.has(f.id));
+
+    const updateBtn = (btn) => {
+        if (!btn) return;
+        const label = btn.querySelector('.label');
+        const icon = btn.querySelector('i');
+        if (anyExpanded) {
+            label.textContent = 'Ocultar tudo';
+            icon.className = 'ph ph-minus';
+        } else {
+            label.textContent = 'Mostrar tudo';
+            icon.className = 'ph ph-plus-minus';
+        }
+    };
+    updateBtn(btnChecklist);
+    updateBtn(btnMgmt);
+
     if(!checklistContainer || !managementContainer) return;
     
     // Clear
