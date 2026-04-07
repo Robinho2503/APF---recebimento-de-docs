@@ -2621,7 +2621,9 @@ function renderAnalysisPanels() {
         const pct = total > 0 ? Math.round((delivered / total) * 100) : 0;
         const grade = getGrade(pct);
 
-        const aponHtml = apontamentos > 0
+        const showApontamentos = curr.pendenciaActive;
+
+        const aponHtml = (showApontamentos && apontamentos > 0)
             ? `<div style="margin-top:0.3rem; font-size:0.68rem; color:var(--danger); display:flex; align-items:center; gap:0.25rem;"><i class="ph ph-warning-circle"></i> ${apontamentos} apontamento(s) pendente(s)</div>`
             : '';
 
@@ -2629,7 +2631,12 @@ function renderAnalysisPanels() {
         if (pct === 100) perfStatus = `Excelente! O setor atingiu <strong>100%</strong> de entrega da documentação prevista, alcançando padrão <strong>${grade.label}</strong>.`;
         else if (pct < 50) perfStatus = `Atenção: o setor está com baixa adesão de documentos (<strong>${pct}%</strong>), classificado como <strong>${grade.label}</strong>. Recomendamos priorizar estas entregas.`;
 
-        let pendStatus = apontamentos > 0 ? `<br><br><span style="color:var(--danger)"><i class="ph ph-warning-circle"></i> Há <strong>${apontamentos}</strong> documento(s) com apontamentos precisando de correção ou ressubmissão neste setor.</span>` : `<br><br><span style="color:var(--accent)"><i class="ph ph-check-circle"></i> Não há apontamentos bloqueando este setor no momento.</span>`;
+        let pendStatus = '';
+        if (showApontamentos) {
+            pendStatus = apontamentos > 0 
+                ? `<br><br><span style="color:var(--danger)"><i class="ph ph-warning-circle"></i> Há <strong>${apontamentos}</strong> documento(s) com apontamentos precisando de correção ou ressubmissão neste setor.</span>` 
+                : `<br><br><span style="color:var(--accent)"><i class="ph ph-check-circle"></i> Não há apontamentos bloqueando este setor no momento.</span>`;
+        }
 
         let resumo = `${perfStatus}${pendStatus}`;
 
