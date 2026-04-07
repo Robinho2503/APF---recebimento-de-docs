@@ -212,6 +212,9 @@
                             <button id="btn-toggle-pendencias" class="btn btn-outline" title="Iniciar resolução de PENDÊNCIAS CAIXA">
                                 <i class="ph ph-warning-diamond"></i> Resolução de pendências
                             </button>
+                            <button id="btn-show-history" class="btn btn-outline" title="Visualizar histórico de ações do empreendimento">
+                                <i class="ph ph-clock-counter-clockwise"></i> Histórico
+                            </button>
                         </div>
                         <button id="btn-export-zip" class="btn btn-outline" title="Exportar todas as pastas e arquivos deste projeto em ZIP"><i class="ph ph-file-zip"></i> Exportar Tudo (ZIP)</button>
                     </div>
@@ -253,37 +256,36 @@
                             <!-- Listado via JS -->
                         </div>
                     </div>
-                    <div class="management-grid-layout">
-                        <!-- Coluna Principal: Árvore de Gestão -->
-                        <div class="management-main-col">
-                            <div id="management-render-area" class="tree-container management-mode">
-                                <!-- Tree rendered via JS -->
-                            </div>
-                        </div>
-
-                        <!-- Coluna Lateral: Histórico de Ações -->
-                        <aside class="management-side-col">
-                            <div id="apf-audit-log" class="glass-panel" style="padding: 1.5rem; border-top: 1px solid var(--panel-border);">
-                                <div class="flex-between mb-4">
-                                    <h3 style="font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
-                                        <i class="ph ph-clock-counter-clockwise text-primary"></i> Histórico
-                                    </h3>
-                                    <button id="btn-clear-logs" class="btn btn-outline btn-sm" title="Limpar histórico permanentemente">
-                                        <i class="ph ph-trash"></i>
-                                    </button>
-                                </div>
-                                <div id="audit-log-container" style="max-height: 500px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; padding-right: 0.5rem;">
-                                    <!-- Log entries injected via JS -->
-                                    <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 2rem;">Nenhuma ação registrada ainda.</p>
-                                </div>
-                            </div>
-                        </aside>
+                    <div id="management-render-area" class="tree-container management-mode">
+                        <!-- Tree rendered via JS -->
                     </div>
                 </div>
             </section>
         </main>
     </div> <!-- .app-container -->
     </div> <!-- .main-layout -->
+
+    <!-- History Modal (Audit Log) -->
+    <div id="history-modal" class="modal-backdrop hidden">
+        <div class="modal glass-panel" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3 style="display: flex; align-items: center; gap: 0.6rem;">
+                    <i class="ph ph-clock-counter-clockwise text-primary"></i> Histórico de Ações
+                </h3>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <button id="btn-clear-logs" class="btn btn-outline btn-sm" title="Limpar histórico permanentemente" style="padding: 0.4rem;">
+                        <i class="ph ph-trash" style="margin:0;"></i>
+                    </button>
+                    <button id="btn-close-history" class="icon-btn"><i class="ph ph-x"></i></button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div id="audit-log-container" style="max-height: 60vh; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; padding: 0.5rem;">
+                    <!-- Log entries injected via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Preview Modal -->
     <div id="preview-modal" class="modal-backdrop hidden">

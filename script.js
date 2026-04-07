@@ -212,6 +212,7 @@ let checklistContainer, sidebarApf, btnToggleSidebar, managementContainer, track
 let tabs, tabContents, btnUnlock, btnBackToMain, inputPassword, passwordError, passwordLock, managementContent;
 let btnSettings, btnSaveSettings, btnResetModel, geminiModelInp, geminiKeyInp, btnToggleKey, dbxKeyInp, apfPassInp;
 let btnTogglePendencias, pendenciasMgmtPanel, btnAddPendencia, pendenciaStartDateInp, modalOverlay, btnCloseModal;
+let btnShowHistory, historyModal, btnCloseHistory;
 let projectDueDateInp, currentProjectName, projectGlobalCountdown;
 
 function initDOMElements() {
@@ -253,6 +254,11 @@ function initDOMElements() {
     projectDueDateInp = document.getElementById('project-due-date');
     currentProjectName = document.getElementById('current-project-name');
     projectGlobalCountdown = document.getElementById('project-global-countdown');
+
+    // History Modal
+    btnShowHistory = document.getElementById('btn-show-history');
+    historyModal = document.getElementById('history-modal');
+    btnCloseHistory = document.getElementById('btn-close-history');
     
     // Audit Log
     const btnClearLogs = document.getElementById('btn-clear-logs');
@@ -2642,6 +2648,24 @@ function initSettings() {
         settingsModal.classList.remove('hidden');
     });
 
+    if (btnSettings) {
+        btnSettings.onclick = () => settingsModal.classList.remove('hidden');
+    }
+
+    // History Modal Events
+    if (btnShowHistory) {
+        btnShowHistory.onclick = () => {
+            renderAuditLog();
+            historyModal.classList.remove('hidden');
+        };
+    }
+    if (btnCloseHistory) {
+        btnCloseHistory.onclick = () => historyModal.classList.add('hidden');
+    }
+    if (historyModal) {
+        historyModal.onclick = (e) => { if(e.target === historyModal) historyModal.classList.add('hidden'); };
+    }
+
     btnCloseSettings.addEventListener('click', () => settingsModal.classList.add('hidden'));
     settingsModal.addEventListener('click', (e) => { if(e.target === settingsModal) settingsModal.classList.add('hidden'); });
 
@@ -2893,15 +2917,8 @@ function addAuditLog(action, details, type = 'info') {
 
 function renderAuditLog() {
     const container = document.getElementById('audit-log-container');
-    const wrapper = document.getElementById('apf-audit-log');
     if (!container) return;
     
-    // Solo mostrar audit log si estamos en modo gestión APF y autenticados
-    if (wrapper) {
-        const mgmt = isMgmtActive();
-        wrapper.style.display = (mgmt && isAuthenticated) ? 'block' : 'none';
-    }
-
     if (!state.auditLog || state.auditLog.length === 0) {
         container.innerHTML = '<p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 2rem;">Nenhuma ação registrada ainda.</p>';
         return;

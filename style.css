@@ -670,35 +670,9 @@ input[type="date"].input-modern::-webkit-calendar-picker-indicator { filter: inv
     display: block !important;
 }
 
-/* Management Layout (APF Tab) */
-.management-grid-layout {
-    display: flex;
-    gap: 1.5rem;
-    align-items: flex-start;
-    margin-top: 1rem;
-}
-
-.management-main-col {
-    flex: 1.8;
-    min-width: 0;
-}
-
-.management-side-col {
-    flex: 1;
-    position: sticky;
-    top: 1rem;
-    min-width: 320px;
-}
-
-@media (max-width: 1100px) {
-    .management-grid-layout {
-        flex-direction: column;
-    }
-    .management-side-col {
-        width: 100%;
-        min-width: 0;
-        position: static;
-    }
+/* Fix for folder toggle when filtering */
+.tree-node.force-visible {
+    display: block !important;
 }
     font-size: 0.9rem;
     font-weight: 700;
