@@ -46,6 +46,9 @@
                             <button id="btn-settings" class="icon-btn" title="Configurações Gerais">
                                 <i class="ph ph-gear"></i>
                             </button>
+                            <button id="btn-show-history" class="icon-btn" title="Histórico de Ações">
+                                <i class="ph ph-clock-counter-clockwise"></i>
+                            </button>
                             <!-- Dropbox connection hidden as we migrated to Firebase Storage -->
                             <button id="btn-connect-dropbox" class="icon-btn" title="Conectar Dropbox" style="display: none;">
                                 <i class="ph ph-dropbox-logo"></i>
@@ -156,10 +159,7 @@
                 </div>
 
                 <!-- Management Content -->
-                <div id="management-content" style="display: none; position: relative;">
-                    <button id="btn-show-history" class="btn btn-outline btn-sm" style="position: absolute; top: -3rem; left: 0; z-index: 10;" title="Visualizar histórico de ações">
-                        <i class="ph ph-clock-counter-clockwise"></i> Histórico
-                    </button>
+                <div id="management-content" style="display: none;">
                     <div class="management-controls mb-4">
                         <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
                             <button id="btn-open-template" class="btn btn-outline" title="Acessar e editar a estrutura do Modelo de Entrega"><i class="ph ph-layout"></i> Modelo de Entrega</button>
