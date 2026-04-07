@@ -651,6 +651,7 @@ function initEventListeners() {
         searchInp.addEventListener('input', (e) => {
             treeSearchQuery = e.target.value.toLowerCase();
             if (btnClearSearch) btnClearSearch.style.display = treeSearchQuery.length > 0 ? 'flex' : 'none';
+            if (treeSearchQuery.length > 0 || treeSearchFilter !== 'all') expandRelevantNodes();
             renderTree();
         });
     }
@@ -676,6 +677,7 @@ function initEventListeners() {
                 }
             });
             treeSearchFilter = filter;
+            if (treeSearchFilter !== 'all' || treeSearchQuery !== '') expandRelevantNodes();
             renderTree();
         });
     });
@@ -1568,6 +1570,34 @@ function calculateBusinessDays(targetDateStr) {
     return count;
 }
 
+function expandRelevantNodes() {
+    const items = getItems();
+    if (!items || items.length === 0) return;
+
+    items.forEach(item => {
+        const hasChildren = items.some(child => child.parentId === item.id);
+        if (!hasChildren) return; // Só interessa expandir quem tem filhos
+
+        const anyChildMatches = (nodeId) => {
+            const nodeChildren = items.filter(i => i.parentId === nodeId);
+            return nodeChildren.some(c => {
+                const cMatches = c.name.toLowerCase().includes(treeSearchQuery);
+                const cHasAtt = c.attachments && c.attachments.length > 0;
+                let cMatchesFilter = true;
+                if (treeSearchFilter === 'pendente') cMatchesFilter = !cHasAtt;
+                else if (treeSearchFilter === 'apontamento') cMatchesFilter = cHasAtt && c.validationStatus === 'Apontamento';
+                
+                return (cMatches && cMatchesFilter) || anyChildMatches(c.id);
+            });
+        };
+
+        if (anyChildMatches(item.id)) {
+            localUI.expandedIds.add(item.id);
+        }
+    });
+    saveLocalUI();
+}
+
 function formatDateToPT(isoStr) {
     if(!isoStr) return '';
     const parts = isoStr.split('-');
@@ -1700,12 +1730,6 @@ function createNode(item, level) {
 
         if (!(matchesQuery && matchesFilter) && !anyChildMatches(item.id)) {
             return null; // Skip this node
-        }
-        
-        // Se houver uma busca ativa ou filtro e este item (ou um filho) coincidir, 
-        // forçamos a expansão para que o usuário veja o resultado sem ter que abrir as pastas manualmente.
-        if (anyChildMatches(item.id)) {
-            localUI.expandedIds.add(item.id);
         }
     }
 
