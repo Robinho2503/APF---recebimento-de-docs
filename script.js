@@ -1832,7 +1832,7 @@ function createNode(item, level) {
     nameSpan.appendChild(titleText);
 
     // INDICATORS for ROOT FOLDERS
-    if(isRootFolder && localUI.currentProjectId !== 'p_default') {
+    if(isRootFolder && localUI.currentProjectId !== 'p_default' && getCurrentProject()?.pendenciaActive) {
         const stats = getNodeStats(item.id);
         const indicatorsCont = document.createElement('div');
         indicatorsCont.className = 'sector-indicators';
