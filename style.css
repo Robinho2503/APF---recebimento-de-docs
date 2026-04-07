@@ -596,7 +596,79 @@ input[type="date"].input-modern::-webkit-calendar-picker-indicator { filter: inv
     -webkit-mask: radial-gradient(transparent 55%, black 57%);
     mask: radial-gradient(transparent 55%, black 57%);
 }
-.circular-progress-container .progress-text {
+.circular-progress-container .progress-text {/* Audit Log Styles */
+#audit-log-container {
+    scrollbar-width: thin;
+    scrollbar-color: var(--panel-border) transparent;
+}
+#audit-log-container::-webkit-scrollbar {
+    width: 6px;
+}
+#audit-log-container::-webkit-scrollbar-thumb {
+    background-color: var(--panel-border);
+    border-radius: 10px;
+}
+
+.audit-entry {
+    background: rgba(0,0,0,0.15);
+    border-left: 3px solid var(--primary);
+    padding: 0.75rem 1rem;
+    border-radius: 0.4rem;
+    font-size: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    animation: fadeIn 0.3s ease;
+}
+
+.audit-entry.danger { border-left-color: var(--danger); }
+.audit-entry.warning { border-left-color: var(--warning); }
+.audit-entry.success { border-left-color: var(--accent); }
+
+.audit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.25rem;
+}
+
+.audit-time {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.audit-action {
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.audit-details {
+    color: var(--text-muted);
+    line-height: 1.4;
+    font-size: 0.8rem;
+}
+
+.audit-project {
+    display: inline-block;
+    background: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary);
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.25rem;
+    font-weight: 700;
+    font-size: 0.7rem;
+    margin-right: 0.5rem;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Fix for folder toggle when filtering */
+.tree-node.force-visible {
+    display: block !important;
+}
     font-size: 0.9rem;
     font-weight: 700;
     color: var(--text-main);

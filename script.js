@@ -31,7 +31,8 @@ const DEFAULT_ITEMS = [
 let state = {
     projects: [
         { id: 'p_default', name: 'Modelo de Entrega', items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)), dueDate: '', createdAt: new Date().toISOString().split('T')[0], engAnalysisOpened: false, pendencias: [], pendenciaStartDate: '' }
-    ]
+    ],
+    auditLog: []
 };
 let isAuthenticated = false;
 let editingPendenciaId = null;
@@ -134,6 +135,7 @@ function renderAfterUpdate() {
     renderTree();
     renderTracking();
     updateThemeIcon();
+    renderAuditLog();
 }
 
 let saveTimeout = null;
@@ -180,7 +182,8 @@ function saveState() {
                         }))
                     };
                 })
-            }))
+            })),
+            auditLog: state.auditLog || []
         };
         
         try {
@@ -250,6 +253,18 @@ function initDOMElements() {
     projectDueDateInp = document.getElementById('project-due-date');
     currentProjectName = document.getElementById('current-project-name');
     projectGlobalCountdown = document.getElementById('project-global-countdown');
+    
+    // Audit Log
+    const btnClearLogs = document.getElementById('btn-clear-logs');
+    if (btnClearLogs) {
+        btnClearLogs.onclick = () => {
+            if (confirm('Tem certeza que deseja limpar permanentemente o histórico de ações?')) {
+                state.auditLog = [];
+                saveState();
+                renderAuditLog();
+            }
+        };
+    }
 }
 
 // Init
@@ -1446,7 +1461,14 @@ function renderPendenciasChecklist(curr) {
         obsInput.style.fontSize = '0.75rem';
         obsInput.placeholder = 'Observação...';
         obsInput.value = p.observation || '';
-        obsInput.onchange = (e) => { p.observation = e.target.value; saveState(); };
+        obsInput.onchange = (e) => { 
+            const oldVal = p.observation || '';
+            p.observation = e.target.value; 
+            saveState(); 
+            if (oldVal !== p.observation) {
+                addAuditLog('Observação Adicionada', `Nova observação em <strong>${p.docName}</strong>: "${p.observation}"`, 'info');
+            }
+        };
         
         obsBox.appendChild(obsInput);
         if(p.observation && p.observation.trim() !== '') {
@@ -1679,6 +1701,12 @@ function createNode(item, level) {
         if (!(matchesQuery && matchesFilter) && !anyChildMatches(item.id)) {
             return null; // Skip this node
         }
+        
+        // Se houver uma busca ativa ou filtro e este item (ou um filho) coincidir, 
+        // forçamos a expansão para que o usuário veja o resultado sem ter que abrir as pastas manualmente.
+        if (anyChildMatches(item.id)) {
+            localUI.expandedIds.add(item.id);
+        }
     }
 
     const nodeWrapper = document.createElement('div');
@@ -1909,7 +1937,14 @@ function createNode(item, level) {
                 justInput.style.height = '60px';
                 justInput.placeholder = 'Justificativa...';
                 if(item.justification) justInput.value = item.justification;
-                justInput.onchange = (e) => { item.justification = e.target.value; saveState(); };
+                justInput.onchange = (e) => { 
+                    const oldVal = item.justification || '';
+                    item.justification = e.target.value; 
+                    saveState(); 
+                    if (oldVal !== item.justification) {
+                        addAuditLog('Justificativa Adicionada', `Nova justificativa em <strong>${item.name}</strong>: "${item.justification}"`, 'info');
+                    }
+                };
                 justBox.appendChild(justInput);
 
                 if(item.justification && item.justification.trim() !== '') {
@@ -1947,7 +1982,13 @@ function createNode(item, level) {
                     if(item.validationStatus === o.value || (opt === 'Validado' && item.validationStatus === 'Validado')) o.selected = true;
                     valSelect.appendChild(o);
                 });
-                valSelect.onchange = (e) => { item.validationStatus = e.target.value; saveState(); renderTree(); };
+                valSelect.onchange = (e) => { 
+                    const oldStatus = item.validationStatus;
+                    item.validationStatus = e.target.value; 
+                    saveState(); 
+                    renderTree(); 
+                    addAuditLog('Status de Validação', `Status de <strong>${item.name}</strong> alterado de "${oldStatus || 'Pendente'}" para "${item.validationStatus}"`, 'warning');
+                };
                 mgmtFields.appendChild(valSelect);
 
                 if(item.validationStatus === 'Apontamento') {
@@ -2284,8 +2325,19 @@ function renderPendenciasMgmt() {
             };
         }
         if (obsInp) {
-            obsInp.oninput = (e) => { p.observation = e.target.value; saveState(); };
-            obsInp.onblur = () => renderTree();
+            obsInp.oninput = (e) => { 
+                const oldVal = p.observation || '';
+                p.observation = e.target.value; 
+                saveState();
+                // Não logamos oninput para não inundar, apenas no blur ou mudança significativa se necessário.
+                // Mas para consistência com os outros que usam onchange:
+            };
+            obsInp.onblur = () => {
+                renderTree();
+                if (p.observation) {
+                     addAuditLog('Apontamento de Pendência', `Novo apontamento em <strong>${p.docName}</strong>: "${p.observation}"`, 'warning');
+                }
+            };
         }
     });
 }
@@ -2365,6 +2417,10 @@ window.handleFileUpload = async function(itemId, files, isPendencia = false) {
             saveState();
             renderTree();
             
+            // Log Action
+            const fileNames = Array.from(files).map(f => f.name).join(', ');
+            addAuditLog('Documento Anexado', `Anexado(s) ${files.length} arquivo(s) em <strong>${targetItem.docName || targetItem.name}</strong>: ${fileNames}`, 'success');
+
             if (targetItem.attachments.length > 0) {
                 const addedCount = files.length;
                 const newAttachments = targetItem.attachments.slice(-addedCount);
@@ -2408,13 +2464,20 @@ window.handleDeleteFile = async function(itemId, fileId, isPendencia = false) {
                 await dbx.filesDeleteV2({ path: att.dropboxPath });
                 console.log("Arquivo removido do Dropbox (Legado).");
             }
+            
+            const deletedFileName = att.name;
+            targetItem.attachments = targetItem.attachments.filter(a => a.id !== fileId);
+            saveState();
+            renderTree();
+            
+            addAuditLog('Documento Excluído', `Removido <strong>${deletedFileName}</strong> de <strong>${targetItem.docName || targetItem.name}</strong>`, 'danger');
         } catch (err) {
-            console.warn("Aviso: Falha ao remover arquivo físico da nuvem. Ele pode já ter sido excluído.", err);
+            console.error("Erro ao excluir arquivo", err);
+            // Mesmo com erro no storage, removemos do estado para não travar o UI
+            targetItem.attachments = targetItem.attachments.filter(a => a.id !== fileId);
+            saveState();
+            renderTree();
         }
-        
-        targetItem.attachments = targetItem.attachments.filter(a => a.id !== fileId);
-        saveState();
-        renderTree();
     }
 }
 
@@ -2780,4 +2843,63 @@ window.autoAnalyzeDocumentAI = async function(att, itemId, originalFile = null, 
     } catch (e) {
         console.error("Auto AI Error:", e);
     }
+}
+
+// --- AUDIT LOG SYSTEM ---
+
+function addAuditLog(action, details, type = 'info') {
+    if (!state.auditLog) state.auditLog = [];
+    const entry = {
+        id: generateId(),
+        timestamp: new Date().toISOString(),
+        action,
+        details,
+        type,
+        projectId: localUI.currentProjectId,
+        projectName: getCurrentProject()?.name || 'Desconhecido'
+    };
+    state.auditLog.unshift(entry);
+    // Limit to 200 items for performance
+    if (state.auditLog.length > 200) state.auditLog = state.auditLog.slice(0, 200);
+    saveState();
+    renderAuditLog();
+}
+
+function renderAuditLog() {
+    const container = document.getElementById('audit-log-container');
+    const wrapper = document.getElementById('apf-audit-log');
+    if (!container) return;
+    
+    // Solo mostrar audit log si estamos en modo gestión APF y autenticados
+    if (wrapper) {
+        const mgmt = isMgmtActive();
+        wrapper.style.display = (mgmt && isAuthenticated) ? 'block' : 'none';
+    }
+
+    if (!state.auditLog || state.auditLog.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 2rem;">Nenhuma ação registrada ainda.</p>';
+        return;
+    }
+
+    container.innerHTML = state.auditLog.map(log => {
+        const date = new Date(log.timestamp);
+        const timeStr = date.toLocaleString('pt-BR');
+        let typeClass = '';
+        if (log.type === 'danger') typeClass = 'danger';
+        else if (log.type === 'warning') typeClass = 'warning';
+        else if (log.type === 'success') typeClass = 'success';
+
+        return `
+            <div class="audit-entry ${typeClass}">
+                <div class="audit-header">
+                    <span class="audit-action">${log.action}</span>
+                    <span class="audit-time">${timeStr}</span>
+                </div>
+                <div class="audit-details">
+                    <span class="audit-project">${log.projectName}</span>
+                    ${log.details}
+                </div>
+            </div>
+        `;
+    }).join('');
 }

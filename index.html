@@ -256,6 +256,22 @@
                     <div id="management-render-area" class="tree-container management-mode">
                         <!-- Tree rendered via JS -->
                     </div>
+                    
+                    <!-- Audit Log Section - APF ONLY -->
+                    <div id="apf-audit-log" class="glass-panel" style="margin-top: 3rem; padding: 1.5rem; border-top: 1px solid var(--panel-border);">
+                        <div class="flex-between mb-4">
+                            <h3 style="font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
+                                <i class="ph ph-clock-counter-clockwise text-primary"></i> Histórico de Ações (Audit Log)
+                            </h3>
+                            <button id="btn-clear-logs" class="btn btn-outline btn-sm" title="Limpar histórico permanentemente">
+                                <i class="ph ph-trash"></i> Limpar Histórico
+                            </button>
+                        </div>
+                        <div id="audit-log-container" style="max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; padding-right: 0.5rem;">
+                            <!-- Log entries injected via JS -->
+                            <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 2rem;">Nenhuma ação registrada ainda.</p>
+                        </div>
+                    </div>
                 </div>
             </section>
         </main>
