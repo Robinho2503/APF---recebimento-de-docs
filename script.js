@@ -32,9 +32,13 @@ let state = {
     projects: [
         { id: 'p_default', name: 'Modelo de Entrega', items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)), dueDate: '', createdAt: new Date().toISOString().split('T')[0], engAnalysisOpened: false, pendencias: [], pendenciaStartDate: '' }
     ],
+    settings: {
+        sectorPasswords: { "APF": "1234" } // Senha padrão inicial
+    },
     auditLog: []
 };
 let isAuthenticated = false;
+let authenticatedSector = null;
 let editingPendenciaId = null;
 let isInitialCloudLoad = true;
 
@@ -121,6 +125,9 @@ async function syncWithCloud() {
                 if (!p.pendencias) p.pendencias = [];
             }
             
+            if (!cloudData.settings) cloudData.settings = {};
+            if (!cloudData.settings.sectorPasswords) cloudData.settings.sectorPasswords = { "APF": "1234" };
+
             state = cloudData;
             localStorage.setItem(CACHE_KEY, JSON.stringify(state)); // Update cache
             
@@ -244,6 +251,18 @@ function calculateProjectStats(project) {
     return { pendente, apontamento };
 }
 
+function getItemSector(itemId) {
+    const items = getItems();
+    if (!items) return null;
+    let curr = items.find(i => i.id === itemId);
+    while (curr && curr.parentId !== null) {
+        let parent = items.find(i => i.id === curr.parentId);
+        if (!parent) break;
+        curr = parent;
+    }
+    return curr ? curr.name : null;
+}
+
 function updateThemeIcon() {
     const themeBtn = document.getElementById('btn-theme-toggle');
     if (themeBtn) {
@@ -263,8 +282,13 @@ let btnSettings, btnSaveSettings, btnResetModel, geminiModelInp, geminiKeyInp, b
 let btnTogglePendencias, pendenciasMgmtPanel, btnAddPendencia, pendenciaStartDateInp, modalOverlay, btnCloseModal;
 let btnShowHistory, historyModal, btnCloseHistory;
 let projectDueDateInp, currentProjectName, projectGlobalCountdown;
+let globalLogin, loginSector;
 
 function initDOMElements() {
+    // Auth
+    globalLogin = document.getElementById('global-login');
+    loginSector = document.getElementById('login-sector');
+
     // Buttons
     btnNewProject = document.getElementById('btn-new-project');
     btnExportZip = document.getElementById('btn-export-zip');
@@ -285,7 +309,6 @@ function initDOMElements() {
     tabs = document.querySelectorAll('.tab-btn');
     tabContents = document.querySelectorAll('.tab-content');
     btnUnlock = document.getElementById('btn-unlock');
-    btnBackToMain = document.getElementById('btn-back-to-main');
     inputPassword = document.getElementById('apf-password');
     passwordError = document.getElementById('password-error');
     passwordLock = document.getElementById('password-lock');
@@ -337,6 +360,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     initEventListeners();
     initDropbox();
     await loadState(); 
+    
+    // Check session after state is loaded (to populate sectors)
+    applyAuthState();
+    
     initAIEngine();
     initSettings();
 });
@@ -360,13 +387,29 @@ function initEventListeners() {
     // Authenticate events
     if (btnUnlock) {
         btnUnlock.addEventListener('click', () => {
-            const storedPassword = localStorage.getItem('apf_access_password') || '1234';
-            if(inputPassword.value === storedPassword) {
+            const sector = loginSector.value;
+            const password = inputPassword.value;
+            
+            if (!sector) {
+                alert("Por favor, selecione um setor.");
+                return;
+            }
+
+            const storedPasswords = state.settings?.sectorPasswords || {};
+            const correctPassword = storedPasswords[sector] || "1234"; // Default fallback to 1234
+            
+            if(password === correctPassword) {
                 isAuthenticated = true;
+                authenticatedSector = sector;
                 inputPassword.value = '';
                 passwordError.style.display = 'none';
+                
+                // Salvar sessão temporária no sessionStorage
+                sessionStorage.setItem('apf_session_sector', sector);
+                
                 applyAuthState();
                 renderTree();
+                populateLoginSectors(); // Update if needed
             } else {
                 passwordError.style.display = 'block';
                 inputPassword.style.borderColor = 'var(--danger)';
@@ -383,23 +426,15 @@ function initEventListeners() {
         });
     }
 
-    if (btnBackToMain) {
-        btnBackToMain.addEventListener('click', () => {
-            tabs.forEach(t => t.classList.remove('active'));
-            tabContents.forEach(tc => tc.classList.remove('active'));
-            const checklistSection = document.getElementById('tab-checklist');
-            if (checklistSection) checklistSection.style.display = '';
-            applyAuthState();
-            updateGlobalDateUI();
-            renderTree();
-            renderTracking();
-        });
-    }
-
     // Tab Navigation initialization
     if (tabs) {
         tabs.forEach(tab => {
             tab.addEventListener('click', () => {
+                // If not APF, cannot access management tab
+                if (tab.dataset.tab === 'management' && authenticatedSector !== 'APF') {
+                    showTemporaryMessage("Acesso restrito ao perfil APF.");
+                    return;
+                }
                 const alreadyActive = tab.classList.contains('active');
 
                 if (alreadyActive) {
@@ -889,50 +924,87 @@ async function initDropbox() {
 
 
 function applyAuthState() {
-    if(!passwordLock || !managementContent) return;
+    if(!globalLogin || !managementContent) return;
 
     const tabsNav = document.querySelector('.tabs');
     const isMgmt = isMgmtActive();
     const apfSubmenu = document.getElementById('apf-submenu');
     const apfBtn = document.querySelector('.apf-access-btn');
 
-    // Update APF access button label
-    if (apfBtn) {
-        if (isMgmt) {
-            apfBtn.innerHTML = '<i class="ph ph-sign-out"></i> SAIR';
-            apfBtn.style.borderColor = 'var(--danger)';
-            apfBtn.style.color = 'var(--danger)';
-            apfBtn.title = 'Sair do Acesso APF';
-        } else {
-            apfBtn.innerHTML = 'APF';
-            apfBtn.style.borderColor = '';
-            apfBtn.style.color = '';
-            apfBtn.title = 'Acesso Administrativo APF';
+    // Restore session if exists and not yet set
+    if (!isAuthenticated) {
+        const savedSector = sessionStorage.getItem('apf_session_sector');
+        if (savedSector) {
+            isAuthenticated = true;
+            authenticatedSector = savedSector;
         }
     }
 
-    // Show APF tools only when in APF tab and authenticated
-    if (apfSubmenu) apfSubmenu.style.display = (isMgmt && isAuthenticated) ? 'flex' : 'none';
-
-    if (isMgmt) {
-        // APF tab is active
-        if (isAuthenticated) {
-            passwordLock.style.display = 'none';
-            managementContent.style.display = 'block';
-            if (sidebarApf) sidebarApf.style.display = 'flex';
-        } else {
-            passwordLock.style.display = 'block';
-            managementContent.style.display = 'none';
-            if (sidebarApf) sidebarApf.style.display = 'none';
-            if (inputPassword) inputPassword.focus();
-        }
+    if (!isAuthenticated) {
+        // Site Completely Locked
+        globalLogin.style.display = 'flex';
+        document.querySelector('.main-layout').style.display = 'none';
+        populateLoginSectors();
+        if (inputPassword) inputPassword.focus();
+        return;
     } else {
-        // Checklist is visible (default state) - lock screen hidden
-        passwordLock.style.display = 'none';
+        globalLogin.style.display = 'none';
+        document.querySelector('.main-layout').style.display = 'block';
+    }
+
+    // Update APF access button label
+    if (apfBtn) {
+        apfBtn.innerHTML = isMgmt ? '<i class="ph ph-sign-out"></i> SAIR' : 'APF';
+        if (isMgmt) {
+            apfBtn.style.borderColor = 'var(--danger)';
+            apfBtn.style.color = 'var(--danger)';
+        } else {
+            apfBtn.style.borderColor = '';
+            apfBtn.style.color = '';
+        }
+        
+        // Hide APF button for non-APF sectors
+        apfBtn.style.display = authenticatedSector === 'APF' ? 'inline-flex' : 'none';
+    }
+
+    if (isMgmt && authenticatedSector !== 'APF') {
+        // Kick out non-admin from management
+        tabs.forEach(t => t.classList.remove('active'));
+        tabContents.forEach(tc => tc.classList.remove('active'));
+        document.getElementById('tab-checklist').classList.add('active');
+        document.querySelector('[data-tab="checklist"]').classList.add('active');
+        showTemporaryMessage("Redirecionado: Você não possui permissão de APF.");
+    }
+
+    if (apfSubmenu) apfSubmenu.style.display = (isMgmt && authenticatedSector === 'APF') ? 'flex' : 'none';
+    
+    if (isMgmt) {
+        managementContent.style.display = 'block';
+        if (sidebarApf) sidebarApf.style.display = 'flex';
+    } else {
         managementContent.style.display = 'none';
         if (sidebarApf) sidebarApf.style.display = 'flex';
     }
-    if (tabsNav) tabsNav.style.display = 'flex';
+}
+
+function populateLoginSectors() {
+    if (!loginSector) return;
+    
+    // Get all root folders (sectors) from the current project or model
+    const p = getCurrentProject() || state.projects.find(proj => proj.id === 'p_default');
+    if (!p) return;
+
+    const sectors = p.items.filter(i => i.parentId === null).map(i => i.name).sort();
+    const currentVal = loginSector.value;
+    
+    let html = '<option value="">Selecione seu setor...</option>';
+    html += '<option value="APF">APF (Administrativo)</option>';
+    sectors.forEach(s => {
+        html += `<option value="${s}">${s}</option>`;
+    });
+    
+    loginSector.innerHTML = html;
+    if (currentVal) loginSector.value = currentVal;
 }
 
 
@@ -1849,6 +1921,10 @@ function createNode(item, level) {
     const isRootFolder = item.parentId === null;
     const isMgmt = isMgmtActive();
     const currProj = getCurrentProject();
+    
+    // Per-sector permission logic
+    const nodeSector = getItemSector(item.id);
+    const canEdit = authenticatedSector === 'APF' || authenticatedSector === nodeSector;
 
     // SEARCH & FILTER LOGIC
     if (treeSearchQuery || treeSearchFilter !== 'all') {
@@ -2021,11 +2097,18 @@ function createNode(item, level) {
                 fileInput.disabled = true;
             }
 
+            if (!canEdit) {
+                btnAttach.disabled = true;
+                btnAttach.style.opacity = '0.3';
+                btnAttach.title = 'Apenas o setor proprietário pode anexar';
+                fileInput.disabled = true;
+            }
+
             if (hasAtt) {
                 statusRow.appendChild(btnAttach);
             }
             itemRight.appendChild(statusRow);
-
+            
             if(hasAtt) {
                 const inlineAttachments = document.createElement('div');
                 inlineAttachments.className = 'inline-attachments-row';
@@ -2047,6 +2130,11 @@ function createNode(item, level) {
                     btnDel.className = 'icon-btn delete';
                     btnDel.innerHTML = '<i class="ph ph-x"></i>';
                     btnDel.onclick = () => window.handleDeleteFile(item.id, att.id);
+                    if (!canEdit) {
+                        btnDel.disabled = true;
+                        btnDel.style.opacity = '0.3';
+                        btnDel.style.cursor = 'not-allowed';
+                    }
 
                     attBadge.appendChild(nameTxt);
                     if (att.aiCheckResult) {
@@ -2077,6 +2165,7 @@ function createNode(item, level) {
                 forecastInput.style.fontSize = '0.75rem';
                 if(item.forecastDate) forecastInput.value = item.forecastDate;
                 forecastInput.onchange = (e) => { item.forecastDate = e.target.value; saveState(); };
+                if (!canEdit) forecastInput.disabled = true;
 
                 forecastGroup.innerHTML = '<label style="font-size:0.75rem; color:var(--text-muted);">Prev:</label>';
                 forecastGroup.appendChild(forecastInput);
@@ -2084,6 +2173,10 @@ function createNode(item, level) {
                 const btnJustify = document.createElement('button');
                 btnJustify.className = 'btn btn-outline btn-sm';
                 btnJustify.innerHTML = '<i class="ph ph-chat-text"></i> Justif.';
+                if (!canEdit) {
+                    btnJustify.disabled = true;
+                    btnJustify.style.opacity = '0.5';
+                }
                 
                 const justBox = document.createElement('div');
                 justBox.className = 'justification-box';
@@ -2101,6 +2194,7 @@ function createNode(item, level) {
                         addAuditLog('Justificativa Adicionada', `Nova justificativa em <strong>${item.name}</strong>: "${item.justification}"`, 'info');
                     }
                 };
+                if (!canEdit) justInput.disabled = true;
                 justBox.appendChild(justInput);
 
                 if(item.justification && item.justification.trim() !== '') {
@@ -2308,6 +2402,15 @@ function handleAddFolder(parentId) {
             validationStatus: 'Em Análise de APF',
             observation: ''
         };
+
+        // NEW: If creating a root folder (Sector), ask for password
+        if (parentId === null) {
+            const pass = prompt(`Defina uma senha para o novo setor "${name.trim()}":`, '1234');
+            if (!state.settings) state.settings = {};
+            if (!state.settings.sectorPasswords) state.settings.sectorPasswords = {};
+            state.settings.sectorPasswords[name.trim()] = pass || '1234';
+        }
+
         getItems().push(item);
         if(parentItem) parentItem.expanded = true;
         saveState();
@@ -2345,6 +2448,48 @@ function handleRenameFolder(id) {
 }
 
 // GESTÃO DE PENDÊNCIAS
+
+function renderSectorPasswordsSettings() {
+    const listCont = document.getElementById('sector-passwords-list');
+    if (!listCont) return;
+
+    if (!state.settings) state.settings = {};
+    if (!state.settings.sectorPasswords) state.settings.sectorPasswords = { "APF": "1234" };
+
+    const p = getCurrentProject() || state.projects.find(proj => proj.id === 'p_default');
+    const rootSectors = ["APF", ...new Set(p.items.filter(i => i.parentId === null).map(i => i.name).sort())];
+
+    listCont.innerHTML = '';
+    rootSectors.forEach(s => {
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.alignItems = 'center';
+        row.style.gap = '0.5rem';
+        
+        const label = document.createElement('span');
+        label.style.fontSize = '0.75rem';
+        label.style.color = 'var(--text-main)';
+        label.style.width = '120px';
+        label.style.flexShrink = '0';
+        label.className = 'text-truncate';
+        label.textContent = s;
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'input-modern btn-sm';
+        input.style.flex = '1';
+        input.value = state.settings.sectorPasswords[s] || '1234';
+        input.onchange = (e) => {
+            state.settings.sectorPasswords[s] = e.target.value;
+            saveState();
+            addAuditLog('Senha Alterada', `Senha do setor <strong>${s}</strong> foi alterada.`, 'warning');
+        };
+
+        row.appendChild(label);
+        row.appendChild(input);
+        listCont.appendChild(row);
+    });
+}
 
 function renderPendenciasMgmt() {
     const curr = getCurrentProject();
@@ -2757,6 +2902,18 @@ function renderAnalysisPanels() {
     sectorsEl.innerHTML = projHeader + sectorsHtml;
 }
 
+function getItemSector(itemId) {
+    const items = getItems();
+    if (!items) return null;
+    let curr = items.find(i => i.id === itemId);
+    while (curr && curr.parentId !== null) {
+        let parent = items.find(i => i.id === curr.parentId);
+        if (!parent) break;
+        curr = parent;
+    }
+    return curr ? curr.name : null;
+}
+
 function initSettings() {
     const btnSettings = document.getElementById('btn-settings');
     const settingsModal = document.getElementById('settings-modal');
@@ -2778,6 +2935,8 @@ function initSettings() {
         geminiKeyInp.value = localStorage.getItem('apf_gemini_key') || '';
         dbxKeyInp.value = localStorage.getItem('apf_dropbox_app_key') || '';
         apfPassInp.value = localStorage.getItem('apf_access_password') || '';
+        
+        renderSectorPasswordsSettings();
         settingsModal.classList.remove('hidden');
     });
 

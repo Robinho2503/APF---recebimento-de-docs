@@ -14,6 +14,40 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dropbox.js/10.34.0/Dropbox-sdk.min.js"></script>
 </head>
 <body>
+    <!-- Global Login Screen -->
+    <div id="global-login" class="modal-backdrop" style="display: none; background: var(--bg-dark); z-index: 9999;">
+        <div id="password-lock" style="max-width: 450px; margin: auto; padding: 3rem; text-align: center; border: none; background: transparent;" class="stagger-enter">
+            <div class="apf-logo-box">
+                <svg class="apf-logo-svg" viewBox="0 0 400 240" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Minimalist Background Circle - Centered -->
+                    <circle cx="200" cy="120" r="45" fill="rgba(255,255,255,0.05)"/>
+                    <path d="M92 180 V120 C92 95 107 75 122 75 C137 75 152 95 152 120 V180 M92 145 H152" stroke="white" stroke-width="14" fill="none" stroke-linecap="round"/>
+                    <path d="M177 180 V75 H212 C237 75 237 120 212 120 H177" stroke="white" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M257 180 V75 H307 M257 120 H297" stroke="white" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+
+            <h2 style="color: var(--text-main); margin-bottom: 0.75rem; font-size: 1.5rem;">Acesso ao Portal</h2>
+            <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 0.9rem; line-height: 1.6;">Selecione seu setor e digite a senha para continuar</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center; width: 100%;">
+                <select id="login-sector" class="input-modern" style="max-width: none; width: 100%; font-size: 1rem; padding: 0.8rem; appearance: auto;">
+                    <option value="">Selecione seu setor...</option>
+                    <option value="APF">APF (Administrativo)</option>
+                    <!-- Dynamically populated -->
+                </select>
+                <input type="password" id="apf-password" class="input-modern text-center" placeholder="Senha" style="max-width: none; width: 100%; font-size: 1.1rem; letter-spacing: 0.2rem; padding: 0.8rem;" />
+                <button id="btn-unlock" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.8rem;">
+                    <i class="ph ph-key"></i> Entrar
+                </button>
+            </div>
+            
+            <p id="password-error" class="error-text mt-4" style="display: none; font-weight: 500; font-size: 0.85rem;">
+                <i class="ph ph-warning-circle"></i> Credenciais incorretas. Tente novamente.
+            </p>
+        </div>
+    </div>
+
     <div class="main-layout">
         <!-- Sidebar Acompanhamento sempre visível -->
         <aside id="sidebar-apf" class="sidebar glass-panel">
@@ -136,40 +170,6 @@
 
             <!-- Acesso APF Tab Content -->
             <section id="tab-management" class="tab-content glass-panel mt-4">
-                <!-- Lock Screen -->
-                <!-- Password Lock Screen -->
-                <div id="password-lock" style="max-width: 450px; margin: 4rem auto; padding: 3rem; text-align: center;" class="glass-panel stagger-enter">
-                    <div class="apf-logo-box">
-                        <svg class="apf-logo-svg" viewBox="0 0 400 240" xmlns="http://www.w3.org/2000/svg">
-                            <!-- Minimalist Background Circle - Centered -->
-                            <circle cx="200" cy="120" r="45" fill="rgba(255,255,255,0.05)"/>
-                            <!-- Modern Letter A - Shifted left to center -->
-                            <path d="M92 180 V120 C92 95 107 75 122 75 C137 75 152 95 152 120 V180 M92 145 H152" stroke="white" stroke-width="14" fill="none" stroke-linecap="round"/>
-                            <!-- Modern Letter P - Shifted left to center -->
-                            <path d="M177 180 V75 H212 C237 75 237 120 212 120 H177" stroke="white" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                            <!-- Modern Letter F - Shifted left to center -->
-                            <path d="M257 180 V75 H307 M257 120 H297" stroke="white" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </div>
-
-                    <h2 style="color: var(--text-main); margin-bottom: 0.75rem; font-size: 1.5rem;">Acesso restrito</h2>
-                    <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 0.9rem; line-height: 1.6;">Área destinada apenas para as validações de APF</p>
-                    
-                    <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center;">
-                        <input type="password" id="apf-password" class="input-modern text-center" placeholder="Digite a senha" style="font-size: 1.1rem; letter-spacing: 0.2rem; padding: 0.8rem;" />
-                        <button id="btn-unlock" class="btn btn-primary" style="width: 100%; max-width: 300px; justify-content: center; padding: 0.8rem;">
-                            <i class="ph ph-key"></i> Acessar
-                        </button>
-                        <button id="btn-back-to-main" class="btn btn-outline" style="width: 100%; max-width: 300px; justify-content: center; padding: 0.8rem;">
-                            <i class="ph ph-arrow-left"></i> Voltar para Entrega de documentação
-                        </button>
-                    </div>
-                    
-                    <p id="password-error" class="error-text mt-4" style="display: none; font-weight: 500; font-size: 0.85rem;">
-                        <i class="ph ph-warning-circle"></i> Senha incorreta. Verifique e tente novamente.
-                    </p>
-                </div>
-
                 <!-- Management Content -->
                 <div id="management-content" style="display: none;">
                     <div class="management-controls mb-4">
@@ -344,6 +344,16 @@
                             <i class="ph ph-eye"></i>
                         </button>
                     </div>
+                </div>
+
+                <div class="mb-4 pt-4" style="border-top: 1px solid var(--panel-border);">
+                    <label class="label-modern">
+                        <i class="ph ph-lock-key text-primary"></i> Senhas dos Setores
+                    </label>
+                    <div id="sector-passwords-list" style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.5rem;">
+                        <!-- Populate via JS -->
+                    </div>
+                    <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem;">As senhas padrão são "1234". Recomendamos alterá-las.</p>
                 </div>
 
                 <!-- Dropbox settings hidden as we migrated to Firebase Storage -->
