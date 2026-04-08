@@ -309,8 +309,8 @@ function initDOMElements() {
     tabs = document.querySelectorAll('.tab-btn');
     tabContents = document.querySelectorAll('.tab-content');
     btnUnlock = document.getElementById('btn-unlock');
-    inputPassword = document.getElementById('apf-password');
-    passwordError = document.getElementById('password-error');
+    inputPassword = document.getElementById('global-password-input');
+    passwordError = document.getElementById('global-password-error');
     passwordLock = document.getElementById('password-lock');
     managementContent = document.getElementById('management-content');
 
@@ -920,6 +920,69 @@ async function initDropbox() {
             };
         }
     }
+}
+
+function showTemporaryMessage(msg, type = 'info') {
+    const toast = document.createElement('div');
+    toast.style.position = 'fixed';
+    toast.style.bottom = '2rem';
+    toast.style.right = '2rem';
+    toast.style.padding = '0.75rem 1.5rem';
+    toast.style.borderRadius = '0.5rem';
+    toast.style.background = type === 'danger' ? 'var(--danger)' : 'var(--accent)';
+    toast.style.color = 'white';
+    toast.style.boxShadow = '0 10px 25px rgba(0,0,0,0.3)';
+    toast.style.zIndex = '100000';
+    toast.style.fontSize = '0.85rem';
+    toast.style.fontWeight = '600';
+    toast.style.display = 'flex';
+    toast.style.alignItems = 'center';
+    toast.style.gap = '0.5rem';
+    toast.style.transform = 'translateY(1rem)';
+    toast.style.opacity = '0';
+    toast.style.transition = 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+    
+    const icon = type === 'danger' ? 'ph-warning-circle' : 'ph-info';
+    toast.innerHTML = `<i class="ph ${icon}"></i> ${msg}`;
+    
+    document.body.appendChild(toast);
+    
+    // Animation in
+    setTimeout(() => {
+        toast.style.transform = 'translateY(0)';
+        toast.style.opacity = '1';
+    }, 10);
+    
+    // Auto remove
+    setTimeout(() => {
+        toast.style.transform = 'translateY(1rem)';
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+function populateLoginSectors() {
+    if (!loginSector) return;
+    
+    const p = getCurrentProject() || state.projects.find(proj => proj.id === 'p_default');
+    if (!p) return;
+
+    // Root folders names from the tree
+    const rootSectors = [...new Set(p.items.filter(i => i.parentId === null).map(i => i.name).sort())];
+    
+    const currentVal = loginSector.value;
+    
+    // Re-populate preserving "Selecione" and "APF"
+    loginSector.innerHTML = '<option value="">Selecione seu setor...</option><option value="APF">APF (Administrativo)</option>';
+    
+    rootSectors.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = s;
+        loginSector.appendChild(opt);
+    });
+    
+    if (currentVal) loginSector.value = currentVal;
 }
 
 
