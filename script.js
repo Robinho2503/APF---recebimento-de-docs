@@ -80,54 +80,75 @@ function isMgmtActive() {
     return activeTabObj && activeTabObj.dataset.tab === 'management';
 }
 
+function debounce(func, wait) {
+    let timeout;
+    return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+
 // Persistence
+const CACHE_KEY = 'apf_global_state_cache_v2';
+
 async function loadState() {
-    // 1. First, check if there's local data for migration
-    const localSaved = localStorage.getItem('apf_checklist_v2.2');
-    
-    // 2. Setup Real-time Listener from Firebase
+    // 1. First, check if there's local cache for instant load
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+        try {
+            state = JSON.parse(cached);
+            console.log("Loaded from local cache.");
+            renderAfterUpdate();
+        } catch(e) { console.warn("Cache error", e); }
+    }
+
+    // 2. Setup Silent Cloud Load
+    await syncWithCloud();
+}
+
+async function syncWithCloud() {
     const docRef = doc(db, GLOBAL_DOC_PATH);
-    
-    onSnapshot(docRef, (snapshot) => {
+    try {
+        const snapshot = await getDoc(docRef);
         if (snapshot.exists()) {
             const cloudData = snapshot.data();
-            console.log("Cloud update received:", cloudData);
+            console.log("Cloud data fetched:", cloudData);
             
-            // Apply migrations to cloud data if needed
+            // Basic Migrations
             for (const p of cloudData.projects) {
                 if (!p.createdAt) p.createdAt = new Date().toISOString().split('T')[0];
                 if (p.engAnalysisOpened === undefined) p.engAnalysisOpened = false;
                 if (!p.pendencias) p.pendencias = [];
-                // ... other migrations if needed
             }
             
             state = cloudData;
+            localStorage.setItem(CACHE_KEY, JSON.stringify(state)); // Update cache
             
             if (isInitialCloudLoad) {
                 isInitialCloudLoad = false;
-                // If local currentProjectId is invalid for current projects, reset it to null (shows placeholder)
                 if (!state.projects.find(p => p.id === localUI.currentProjectId)) {
                     localUI.currentProjectId = null;
                 }
             }
 
             renderAfterUpdate();
-        } else if (localSaved && isInitialCloudLoad) {
-            // 3. Migration: Cloud is empty but we have local data
-            console.log("Empty cloud. Migrating local data to Firebase...");
-            try {
-                const parsed = JSON.parse(localSaved);
-                state = parsed;
+        } else {
+            // Check for legacy migration
+            const localSaved = localStorage.getItem('apf_checklist_v2.2');
+            if (localSaved && isInitialCloudLoad) {
+                console.log("Migrating legacy data...");
+                state = JSON.parse(localSaved);
                 isInitialCloudLoad = false;
-                saveState(); // This will push local data to Firestore
-            } catch(e) { console.error("Migration error", e); }
-        } else if (isInitialCloudLoad) {
-            // 4. Everything empty
-            console.log("Starting with default state.");
-            isInitialCloudLoad = false;
-            saveState();
+                saveState();
+            } else if (isInitialCloudLoad) {
+                console.log("Starting default state.");
+                isInitialCloudLoad = false;
+                saveState();
+            }
         }
-    });
+    } catch(e) {
+        console.error("Cloud sync error:", e);
+    }
 }
 
 function renderAfterUpdate() {
@@ -146,32 +167,21 @@ function saveState() {
     saveTimeout = setTimeout(async () => {
         const docRef = doc(db, GLOBAL_DOC_PATH);
         const saveableState = {
-            projects: state.projects.map(p => ({
-                ...p,
-                engAnalysisOpened: p.engAnalysisOpened || false,
-                pendenciaActive: p.pendenciaActive || false,
-                pendencias: (p.pendencias || []).map(pend => ({
-                    id: pend.id,
-                    docName: pend.docName,
-                    sector: pend.sector,
-                    specification: pend.specification || '',
-                    attachments: (pend.attachments || []).map(att => ({
-                        ...att,
-                        dropboxPath: att.dropboxPath || '',
-                        dropboxUrl: att.dropboxUrl || '',
-                        storagePath: att.storagePath || '',
-                        downloadUrl: att.downloadUrl || '',
-                        objectUrl: att.downloadUrl || att.dropboxUrl || att.objectUrl || '',
-                        source: att.source || ''
-                    })),
-                    observation: pend.observation || ''
-                })),
-                pendenciaStartDate: p.pendenciaStartDate || '',
-                items: p.items.map(item => {
-                    const { expanded, ...rest } = item; // Remove expanded property from global sync
-                    return {
-                        ...rest,
-                        attachments: (item.attachments || []).map(att => ({
+            projects: state.projects.map(p => {
+                // Pre-calculate stats for the project before saving
+                const stats = p.id !== 'p_default' ? calculateProjectStats(p) : { pendente: 0, apontamento: 0 };
+                
+                return {
+                    ...p,
+                    stats, // Save pre-calculated stats
+                    engAnalysisOpened: p.engAnalysisOpened || false,
+                    pendenciaActive: p.pendenciaActive || false,
+                    pendencias: (p.pendencias || []).map(pend => ({
+                        id: pend.id,
+                        docName: pend.docName,
+                        sector: pend.sector,
+                        specification: pend.specification || '',
+                        attachments: (pend.attachments || []).map(att => ({
                             ...att,
                             dropboxPath: att.dropboxPath || '',
                             dropboxUrl: att.dropboxUrl || '',
@@ -179,20 +189,59 @@ function saveState() {
                             downloadUrl: att.downloadUrl || '',
                             objectUrl: att.downloadUrl || att.dropboxUrl || att.objectUrl || '',
                             source: att.source || ''
-                        }))
-                    };
-                })
-            })),
+                        })),
+                        observation: pend.observation || ''
+                    })),
+                    pendenciaStartDate: p.pendenciaStartDate || '',
+                    items: p.items.map(item => {
+                        const { expanded, ...rest } = item;
+                        return {
+                            ...rest,
+                            attachments: (item.attachments || []).map(att => ({
+                                ...att,
+                                dropboxPath: att.dropboxPath || '',
+                                dropboxUrl: att.dropboxUrl || '',
+                                storagePath: att.storagePath || '',
+                                downloadUrl: att.downloadUrl || '',
+                                objectUrl: att.downloadUrl || att.dropboxUrl || att.objectUrl || '',
+                                source: att.source || ''
+                            }))
+                        };
+                    })
+                };
+            }),
             auditLog: state.auditLog || []
         };
         
+        // Update Local Cache Immediately
+        localStorage.setItem(CACHE_KEY, JSON.stringify(saveableState));
+
         try {
             await setDoc(docRef, saveableState);
-            console.log("State synced to cloud.");
+            console.log("State synced to cloud & cache.");
         } catch (e) {
             console.error("Error syncing to cloud:", e);
         }
-    }, 300); // 300ms debounce
+    }, 500); // 500ms debounce
+}
+
+function calculateProjectStats(project) {
+    let pendente = 0;
+    let apontamento = 0;
+    
+    project.items.forEach(item => {
+        const hasChildren = project.items.some(child => child.parentId === item.id);
+        if (item.parentId !== null && !hasChildren) {
+            if(!item.isNotApplicable && (!item.attachments || item.attachments.length === 0)) {
+                pendente++;
+            }
+            if(item.validationStatus === 'Apontamento') {
+                apontamento++;
+            }
+        }
+    });
+    
+    return { pendente, apontamento };
 }
 
 function updateThemeIcon() {
@@ -1337,13 +1386,19 @@ function getChildItems(parentId) {
 }
 
 function getNodeStats(itemId) {
+    const p = getCurrentProject();
+    if (!p) return { pendente: 0, apontamento: 0 };
+
+    // If it's a root folder (sector), and we have pre-calculated stats for the project
+    // we could potentially optimize further, but for now we still do the sub-tree sweep
+    // unless we store stats per folder. For now, let's keep the sweep but use it smarter.
+    
     let pendente = 0;
     let apontamento = 0;
     
     const children = getChildItems(itemId);
-    const item = getItems().find(i => i.id === itemId);
+    const item = p.items.find(i => i.id === itemId);
     
-    // Only count as an actual item if it has no children (is a leaf/document)
     if(item && item.parentId !== null && children.length === 0) {
         if(!item.isNotApplicable && (!item.attachments || item.attachments.length === 0)) {
             pendente++;
@@ -1360,6 +1415,52 @@ function getNodeStats(itemId) {
     });
     
     return { pendente, apontamento };
+}
+
+async function compressImage(file) {
+    // Only compress images
+    if (!file.type.startsWith('image/')) return file;
+
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                // Max resolution 1920px (Full HD)
+                const MAX_SIZE = 1920;
+                if (width > height) {
+                    if (width > MAX_SIZE) {
+                        height *= MAX_SIZE / width;
+                        width = MAX_SIZE;
+                    }
+                } else {
+                    if (height > MAX_SIZE) {
+                        width *= MAX_SIZE / height;
+                        height = MAX_SIZE;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob((blob) => {
+                    const compressedFile = new File([blob], file.name, {
+                        type: 'image/jpeg',
+                        lastModified: Date.now(),
+                    });
+                    resolve(compressedFile);
+                }, 'image/jpeg', 0.7); // 70% quality as requested
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
 }
 
 function renderPendenciasChecklist(curr) {
@@ -2052,7 +2153,10 @@ function createNode(item, level) {
                     obsInp.className = 'input-modern btn-sm';
                     obsInp.placeholder = 'Qual apontamento?';
                     obsInp.value = item.observation || '';
-                    obsInp.oninput = (e) => { item.observation = e.target.value; saveState(); }; 
+                    obsInp.oninput = (e) => { 
+                        item.observation = e.target.value; 
+                        debouncedSave(); 
+                    }; 
                     obsInp.onblur = () => renderTree();
                     mgmtFields.appendChild(obsInp);
                 }
@@ -2383,9 +2487,7 @@ function renderPendenciasMgmt() {
             obsInp.oninput = (e) => { 
                 const oldVal = p.observation || '';
                 p.observation = e.target.value; 
-                saveState();
-                // Não logamos oninput para não inundar, apenas no blur ou mudança significativa se necessário.
-                // Mas para consistência com os outros que usam onchange:
+                debouncedSave();
             };
             obsInp.onblur = () => {
                 renderTree();
@@ -2440,14 +2542,16 @@ window.handleFileUpload = async function(itemId, files, isPendencia = false) {
                 const id = generateId();
                 const sanitizedFileName = sanitizePathSegment(file.name);
                 
+                // Aplicar compressão se for imagem
+                const fileToUpload = await compressImage(file);
+                
                 // Nova estrutura de caminho unificada no Firebase Storage
-                // storage_path: APF_Projetos/[Projeto_ID]/[Setor]/[ID_Arquivo]-[Nome]
                 const fbStoragePath = `APF_Projetos/${currProject.id}/${folderPath}/${id}-${sanitizedFileName}`;
                 
                 try {
                     // 1. Upload para Firebase Storage
                     const storageRef = ref(storage, fbStoragePath);
-                    await uploadBytes(storageRef, file);
+                    await uploadBytes(storageRef, fileToUpload);
                     
                     // 2. Obter URL de Download pública
                     const downloadUrl = await getDownloadURL(storageRef);
@@ -2456,17 +2560,16 @@ window.handleFileUpload = async function(itemId, files, isPendencia = false) {
                         id: id,
                         name: file.name,
                         type: file.type,
-                        storagePath: fbStoragePath, // Caminho no Firebase
-                        downloadUrl: downloadUrl,    // URL direta do Firebase
-                        objectUrl: downloadUrl,      // Compatibilidade legada
-                        source: 'firebase'           // Marcador de nova origem
+                        storagePath: fbStoragePath,
+                        downloadUrl: downloadUrl,
+                        objectUrl: downloadUrl,
+                        source: 'firebase'
                     });
 
-                    // Definir status padrão como 'Em Análise de APF' para qualquer anexo novo
                     targetItem.validationStatus = 'Em Análise de APF';
                 } catch (err) {
                     console.error("Erro no upload para o Firebase Storage", err);
-                    alert(`Falha ao enviar '${file.name}' ao Firebase. Verifique se o Storage está ativado e as permissões (Rules) estão liberadas.`);
+                    alert(`Falha ao enviar '${file.name}' ao Firebase.`);
                 }
             }
             saveState();
