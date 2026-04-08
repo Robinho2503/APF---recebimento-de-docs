@@ -1050,25 +1050,7 @@ function applyAuthState() {
     }
 }
 
-function populateLoginSectors() {
-    if (!loginSector) return;
-    
-    // Get all root folders (sectors) from the current project or model
-    const p = getCurrentProject() || state.projects.find(proj => proj.id === 'p_default');
-    if (!p) return;
 
-    const sectors = p.items.filter(i => i.parentId === null).map(i => i.name).sort();
-    const currentVal = loginSector.value;
-    
-    let html = '<option value="">Selecione seu setor...</option>';
-    html += '<option value="APF">APF (Administrativo)</option>';
-    sectors.forEach(s => {
-        html += `<option value="${s}">${s}</option>`;
-    });
-    
-    loginSector.innerHTML = html;
-    if (currentVal) loginSector.value = currentVal;
-}
 
 
 // Project Management & Global UI
@@ -1244,21 +1226,7 @@ window.handleDashboardFilter = function(filter, count) {
     renderTree();
 };
 
-function showTemporaryMessage(msg) {
-    let container = document.querySelector('.toast-container');
-    if (!container) {
-        container = document.createElement('div');
-        container.className = 'toast-container';
-        document.body.appendChild(container);
-    }
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.innerHTML = `<i class="ph ph-info"></i> ${msg}`;
-    container.appendChild(toast);
-    
-    // Auto remove after animation completes
-    setTimeout(() => toast.remove(), 2500);
-}
+
 
 // function updateProjectDropdown() {
 //     const mgmt = isMgmtActive();
@@ -2965,17 +2933,7 @@ function renderAnalysisPanels() {
     sectorsEl.innerHTML = projHeader + sectorsHtml;
 }
 
-function getItemSector(itemId) {
-    const items = getItems();
-    if (!items) return null;
-    let curr = items.find(i => i.id === itemId);
-    while (curr && curr.parentId !== null) {
-        let parent = items.find(i => i.id === curr.parentId);
-        if (!parent) break;
-        curr = parent;
-    }
-    return curr ? curr.name : null;
-}
+
 
 function initSettings() {
     const btnSettings = document.getElementById('btn-settings');
