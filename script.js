@@ -2024,8 +2024,10 @@ function createNode(item, level) {
         const hasAtt = item.attachments && item.attachments.length > 0;
         
         let matchesFilter = true;
-        if (treeSearchFilter === 'pendente') matchesFilter = !hasAtt;
+        if (treeSearchFilter === 'pendente') matchesFilter = !hasAtt && !item.isNotApplicable;
         else if (treeSearchFilter === 'apontamento') matchesFilter = hasAtt && item.validationStatus === 'Apontamento';
+        else if (treeSearchFilter === 'validado') matchesFilter = (hasAtt && item.validationStatus === 'Validado') || item.isNotApplicable;
+        else if (treeSearchFilter === 'analise') matchesFilter = hasAtt && item.validationStatus === 'Em Análise de APF';
 
         // An item should be shown if it matches OR if any of its children match
         const anyChildMatches = (nodeId) => {
@@ -2034,8 +2036,10 @@ function createNode(item, level) {
                 const cMatches = c.name.toLowerCase().includes(treeSearchQuery);
                 const cHasAtt = c.attachments && c.attachments.length > 0;
                 let cMatchesFilter = true;
-                if (treeSearchFilter === 'pendente') cMatchesFilter = !cHasAtt;
+                if (treeSearchFilter === 'pendente') cMatchesFilter = !cHasAtt && !c.isNotApplicable;
                 else if (treeSearchFilter === 'apontamento') cMatchesFilter = cHasAtt && c.validationStatus === 'Apontamento';
+                else if (treeSearchFilter === 'validado') cMatchesFilter = (cHasAtt && c.validationStatus === 'Validado') || c.isNotApplicable;
+                else if (treeSearchFilter === 'analise') cMatchesFilter = cHasAtt && c.validationStatus === 'Em Análise de APF';
                 
                 return (cMatches && cMatchesFilter) || anyChildMatches(c.id);
             });
