@@ -164,7 +164,6 @@ function renderAfterUpdate() {
     renderTracking();
     updateThemeIcon();
     renderAuditLog();
-    applyAuthState(); // Garantir que setores e estado de login sejam atualizados ao carregar dados
 }
 
 let saveTimeout = null;
@@ -1048,12 +1047,6 @@ function applyAuthState() {
         showTemporaryMessage("Redirecionado: Você não possui permissão de APF.");
     }
 
-    // Gerenciar visibilidade do novo painel independente de autenticação
-    const authPanel = document.getElementById('auth-panel');
-    if (authPanel) {
-        authPanel.style.display = isAuthenticated ? 'block' : 'none';
-    }
-
     if (apfSubmenu) apfSubmenu.style.display = (isMgmt && authenticatedSector === 'APF') ? 'flex' : 'none';
     
     if (authNavTabs) {
@@ -1084,11 +1077,8 @@ function applyAuthState() {
         if (isAuthenticated) {
             sidebarAuthInfo.style.display = 'flex';
             sidebarAuthInfo.innerHTML = `
-                <div class="sector-name-wrapper">
-                    <i class="ph ph-lock-simple" style="opacity: 0.6;"></i>
-                    <span class="sector-name-text">Você está logado no acesso (${authenticatedSector})</span>
-                </div>
-                <button id="btn-logout-sidebar" class="icon-btn-simple" title="Sair da Sessão">
+                <span>Você está logado no acesso (${authenticatedSector})</span>
+                <button id="btn-logout-sidebar" class="icon-btn" title="Sair da Sessão" style="font-size: 0.8rem; height: 24px; width: 24px; border: 1px solid var(--panel-border); background: var(--panel-bg); color: var(--text-muted); padding: 0;">
                     <i class="ph ph-sign-out"></i>
                 </button>
             `;
@@ -1534,8 +1524,7 @@ function renderTracking() {
             <div class="tracking-body">
                 <div class="mb-1 flex-between" style="align-items: center; gap: 0.5rem;">
                     <h3 style="font-weight:700; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; margin: 0; ${titleStyle}" title="${p.name}"><i class="ph ph-buildings" style="${iconStyle}"></i> ${p.name}</h3>
-                    <div style="display: flex; gap: 0.35rem; align-items: center;">
-                        <i class="ph ph-lock-simple" style="opacity: 0.4; font-size: 0.75rem;"></i>
+                    <div style="display: flex; gap: 0.35rem;">
                         ${p.pendencias?.length > 0 ? `
                             <div style="background:rgba(239, 68, 68, 0.15); color:var(--danger); font-size: 0.65rem; padding: 0.15rem 0.4rem; border-radius: 0.35rem; font-weight: 700; display: flex; align-items: center; gap: 0.2rem;" title="Pendências ativas">
                                 <i class="ph ph-warning-circle"></i> ${p.pendencias.length}

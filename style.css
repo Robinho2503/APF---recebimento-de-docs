@@ -73,11 +73,7 @@ body {
     user-select: none;
 }
 
-.sidebar-header { 
-    padding: 1.25rem 1rem 0.5rem 1rem; 
-    border-bottom: 1px solid var(--panel-border);
-    background: rgba(255,255,255,0.02);
-}
+.sidebar-header { padding: 0.8rem 1.5rem 1.25rem; border-bottom: 1px solid var(--panel-border); display: flex; flex-direction: column; align-items: center; }
 .sidebar-header h2 { font-size: 1.25rem; }
 .sidebar-header p { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem; }
 .sidebar-content {
@@ -233,45 +229,19 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
     color: var(--danger) !important;
 }
 
-.auth-panel {
-    padding: 0.75rem;
-    border-radius: 0.5rem;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
 .sidebar-auth-info {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.5);
-    padding: 0.3rem 0.5rem;
-    border-radius: 0.4rem;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    background: rgba(0, 0, 0, 0.1);
-    width: 100%;
-    transition: all 0.2s ease;
-}
-
-.icon-btn-simple {
-    background: transparent;
-    border: none;
-    color: rgba(255, 255, 255, 0.3);
-    cursor: pointer;
-    font-size: 0.85rem;
-    padding: 0.2rem;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    gap: 0.35rem;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin: -0.45rem 0 0.4rem 0;
+    padding: 0.1rem 0.5rem;
     border-radius: 0.25rem;
-}
-
-.icon-btn-simple:hover {
-    color: var(--danger);
-    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--text-muted);
+    opacity: 0.7;
+    white-space: nowrap;
 }
 
 .auth-nav-tabs {
@@ -980,20 +950,11 @@ hr {
 }
 
 /* Checklist + Analysis side-by-side layout */
-.main-layout {
+.checklist-analysis-layout {
     display: flex;
     gap: 1.25rem;
-    height: calc(100vh - 40px);
-    overflow: hidden;
-}
-
-.sidebar-column {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    width: 320px;
-    flex-shrink: 0;
-    height: 100%;
+    align-items: flex-start;
+    animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .checklist-main-col {
