@@ -1078,43 +1078,7 @@ function applyAuthState() {
     if (topAuthInfo) {
         if (isAuthenticated) {
             topAuthInfo.style.display = 'flex';
-            
-            // Calculate stats for current sector if a project is selected
-            let badgeHtml = '';
-            const curr = getCurrentProject();
-            if (curr && authenticatedSector) {
-                let stats = { pendente: 0, apontamento: 0 };
-                
-                if (authenticatedSector === 'APF') {
-                    // APF sees total project stats
-                    stats = calculateProjectStats(curr);
-                } else {
-                    // Other sectors see only their own folder stats
-                    const rootItem = curr.items.find(i => i.parentId === null && i.name === authenticatedSector);
-                    if (rootItem) {
-                        stats = getNodeStats(rootItem.id);
-                    }
-                }
-                
-                if (stats.pendente > 0 || stats.apontamento > 0) {
-                    badgeHtml = `
-                        <div class="badges-group" style="margin-right: 0.5rem; margin-left: 0.25rem;">
-                            <i class="ph ph-lock-simple" style="opacity: 0.6; font-size: 0.85rem;"></i>
-                            ${stats.pendente > 0 ? `<div class="status-badge-solid" title="Pendências">${stats.pendente}</div>` : ''}
-                            ${stats.apontamento > 0 ? `<div class="status-badge-solid apontamento" title="Apontamentos">${stats.apontamento}</div>` : ''}
-                        </div>
-                    `;
-                } else {
-                    // Still show lock icon even if no pendencies
-                    badgeHtml = `<i class="ph ph-lock-simple" style="opacity: 0.4; font-size: 0.85rem; margin-right: 0.5rem; margin-left: 0.25rem;"></i>`;
-                }
-            } else {
-                // If no project selected, just show lock icon if authenticated
-                badgeHtml = `<i class="ph ph-lock-simple" style="opacity: 0.4; font-size: 0.85rem; margin-right: 0.5rem; margin-left: 0.25rem;"></i>`;
-            }
-
             topAuthInfo.innerHTML = `
-                ${badgeHtml}
                 <span class="auth-text-small">Você está logado no acesso (${authenticatedSector})</span>
                 <button id="btn-logout-sidebar" class="icon-btn-simple" title="Sair da Sessão" style="font-size: 0.75rem; margin-left: 0.25rem;">
                     <i class="ph ph-sign-out"></i>
