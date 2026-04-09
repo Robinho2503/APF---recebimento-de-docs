@@ -2118,16 +2118,6 @@ function createNode(item, level) {
             indicatorsCont.appendChild(circle);
         }
 
-        if (isLocked) {
-            const lockIcon = document.createElement('i');
-            lockIcon.className = 'ph ph-lock';
-            lockIcon.style.color = 'var(--text-muted)';
-            lockIcon.style.opacity = '0.6';
-            lockIcon.style.fontSize = '0.85rem';
-            lockIcon.title = 'Acesso Restrito';
-            indicatorsCont.appendChild(lockIcon);
-        }
-
         if (indicatorsCont.children.length > 0) {
             itemLeft.prepend(indicatorsCont);
         } else {
@@ -2143,6 +2133,21 @@ function createNode(item, level) {
     
     const itemRight = document.createElement('div');
     itemRight.className = 'item-right';
+
+    // LOCK ICON FOR ROOT FOLDERS - Right Aligned
+    if(isRootFolder && localUI.currentProjectId !== 'p_default') {
+        const isLocked = authenticatedSector && authenticatedSector !== 'APF' && authenticatedSector.trim() !== item.name.trim();
+        if (isLocked) {
+            const lockIcon = document.createElement('i');
+            lockIcon.className = 'ph ph-lock-simple';
+            lockIcon.style.color = 'var(--text-muted)';
+            lockIcon.style.opacity = '0.6';
+            lockIcon.style.fontSize = '1.1rem';
+            lockIcon.style.marginRight = '0.5rem';
+            lockIcon.title = 'Acesso Restrito';
+            itemRight.appendChild(lockIcon);
+        }
+    }
 
     if(!isMgmt) {
         if(!isRootFolder && !hasChildren) {
