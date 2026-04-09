@@ -283,14 +283,13 @@ let btnTogglePendencias, pendenciasMgmtPanel, btnAddPendencia, pendenciaStartDat
 let btnShowHistory, historyModal, btnCloseHistory;
 let projectDueDateInp, currentProjectName, projectGlobalCountdown;
 let globalLogin, loginSector;
-let btnLogout, authStatusBanner, authNavTabs;
+let btnLogout, sidebarAuthInfo, authNavTabs;
 
 function initDOMElements() {
     // Auth
     globalLogin = document.getElementById('global-login');
     loginSector = document.getElementById('login-sector');
-    btnLogout = document.getElementById('btn-logout');
-    authStatusBanner = document.getElementById('auth-status-banner');
+    sidebarAuthInfo = document.getElementById('sidebar-auth-info');
     authNavTabs = document.getElementById('auth-nav-tabs');
 
     // Buttons
@@ -1073,11 +1072,21 @@ function applyAuthState() {
         if (sidebarApf) sidebarApf.style.display = 'flex';
     }
 
-    // Update Logout and Banner
-    if (btnLogout) btnLogout.style.display = 'inline-flex';
-    if (authStatusBanner) {
-        authStatusBanner.style.display = 'flex';
-        authStatusBanner.innerHTML = `<i class="ph ph-user-circle"></i> Você está logado no acesso (${authenticatedSector})`;
+    // Update Sidebar Auth Info
+    if (sidebarAuthInfo) {
+        if (isAuthenticated) {
+            sidebarAuthInfo.style.display = 'flex';
+            sidebarAuthInfo.innerHTML = `
+                <span>Você está logado no acesso (${authenticatedSector})</span>
+                <button id="btn-logout-sidebar" class="icon-btn" title="Sair da Sessão" style="font-size: 0.8rem; height: 24px; width: 24px; border: 1px solid var(--panel-border); background: var(--panel-bg); color: var(--text-muted); padding: 0;">
+                    <i class="ph ph-sign-out"></i>
+                </button>
+            `;
+            const slout = document.getElementById('btn-logout-sidebar');
+            if (slout) slout.onclick = logout;
+        } else {
+            sidebarAuthInfo.style.display = 'none';
+        }
     }
 }
 
@@ -2096,6 +2105,18 @@ function createNode(item, level) {
     const titleText = document.createTextNode(' ' + item.name);
     nameSpan.appendChild(titleText);
 
+    // LOCK ICON for sectors in main panel
+    if (isRootFolder && authenticatedSector && authenticatedSector !== 'APF' && authenticatedSector.trim() !== item.name.trim()) {
+        const lockIcon = document.createElement('i');
+        lockIcon.className = 'ph ph-lock';
+        lockIcon.style.marginLeft = '0.5rem';
+        lockIcon.style.color = 'var(--text-muted)';
+        lockIcon.style.opacity = '0.6';
+        lockIcon.style.fontSize = '0.85rem';
+        lockIcon.title = 'Acesso Restrito';
+        nameSpan.appendChild(lockIcon);
+    }
+
     // INDICATORS for ROOT FOLDERS
     if(isRootFolder && localUI.currentProjectId !== 'p_default') {
         const stats = getNodeStats(item.id);
@@ -2977,7 +2998,6 @@ function renderAnalysisPanels() {
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem; gap:0.5rem;">
                     <div class="sector-name-wrapper">
                         <span class="sector-name-text">${root.name}</span>
-                        ${(authenticatedSector && authenticatedSector !== 'APF' && authenticatedSector.trim() !== root.name.trim()) ? '<i class="ph ph-lock" title="Acesso Restrito"></i>' : ''}
                     </div>
                     <span style="font-size:0.7rem; font-weight:800; color:${grade.color}; background:${grade.bg}; padding:0.15rem 0.45rem; border-radius:0.3rem; border:1px solid ${grade.color}44; white-space:nowrap;">${grade.g} - ${grade.label}</span>
                 </div>
