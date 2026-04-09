@@ -296,6 +296,34 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
     border-color: var(--primary) !important;
 }
 
+/* Badges & Indicators */
+.badges-group {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.status-badge-solid {
+    background: var(--danger);
+    color: white !important;
+    font-size: 0.68rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    min-width: 18px;
+    height: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.status-badge-solid.apontamento {
+    background: var(--warning);
+    color: var(--bg-dark) !important;
+}
+
 #btn-theme-toggle {
     margin-left: auto;
 }

@@ -1526,10 +1526,16 @@ function renderTracking() {
             <div class="tracking-body">
                 <div class="mb-1 flex-between" style="align-items: center; gap: 0.5rem;">
                     <h3 style="font-weight:700; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; margin: 0; ${titleStyle}" title="${p.name}"><i class="ph ph-buildings" style="${iconStyle}"></i> ${p.name}</h3>
-                    <div style="display: flex; gap: 0.35rem;">
+                    <div class="badges-group">
+                        <i class="ph ph-lock-simple" style="opacity: 0.5; font-size: 0.8rem;"></i>
                         ${p.pendencias?.length > 0 ? `
-                            <div style="background:rgba(239, 68, 68, 0.15); color:var(--danger); font-size: 0.65rem; padding: 0.15rem 0.4rem; border-radius: 0.35rem; font-weight: 700; display: flex; align-items: center; gap: 0.2rem;" title="Pendências ativas">
-                                <i class="ph ph-warning-circle"></i> ${p.pendencias.length}
+                            <div class="status-badge-solid" title="Pendências ativas">
+                                ${p.pendencias.length}
+                            </div>
+                        ` : ''}
+                        ${projApontamentos > 0 ? `
+                            <div class="status-badge-solid apontamento" title="Apontamentos de APF">
+                                ${projApontamentos}
                             </div>
                         ` : ''}
                     </div>
