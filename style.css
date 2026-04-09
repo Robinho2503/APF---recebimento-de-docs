@@ -229,19 +229,36 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
     color: var(--danger) !important;
 }
 
-.sidebar-auth-info {
+.top-auth-info {
     display: none;
     align-items: center;
-    justify-content: center;
-    gap: 0.35rem;
+    gap: 0.25rem;
+    padding: 0 0.5rem;
+}
+
+.auth-text-small {
     font-size: 0.65rem;
     color: var(--text-muted);
-    margin: -0.45rem 0 0.4rem 0;
-    padding: 0.1rem 0.5rem;
-    border-radius: 0.25rem;
-    border: 1px solid var(--text-muted);
-    opacity: 0.7;
+    font-weight: 500;
     white-space: nowrap;
+    opacity: 0.8;
+}
+
+.icon-btn-simple {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    opacity: 0.5;
+}
+
+.icon-btn-simple:hover {
+    opacity: 1;
+    color: var(--danger);
 }
 
 .auth-nav-tabs {

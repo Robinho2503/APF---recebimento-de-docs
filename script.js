@@ -164,6 +164,7 @@ function renderAfterUpdate() {
     renderTracking();
     updateThemeIcon();
     renderAuditLog();
+    applyAuthState(); // Garante que a tela de login ou status de acesso sejam atualizados com os dados da nuvem
 }
 
 let saveTimeout = null;
@@ -283,13 +284,13 @@ let btnTogglePendencias, pendenciasMgmtPanel, btnAddPendencia, pendenciaStartDat
 let btnShowHistory, historyModal, btnCloseHistory;
 let projectDueDateInp, currentProjectName, projectGlobalCountdown;
 let globalLogin, loginSector;
-let btnLogout, sidebarAuthInfo, authNavTabs;
+let btnLogout, topAuthInfo, authNavTabs;
 
 function initDOMElements() {
     // Auth
     globalLogin = document.getElementById('global-login');
     loginSector = document.getElementById('login-sector');
-    sidebarAuthInfo = document.getElementById('sidebar-auth-info');
+    topAuthInfo = document.getElementById('top-auth-info');
     authNavTabs = document.getElementById('auth-nav-tabs');
 
     // Buttons
@@ -1072,20 +1073,20 @@ function applyAuthState() {
         if (sidebarApf) sidebarApf.style.display = 'flex';
     }
 
-    // Update Sidebar Auth Info
-    if (sidebarAuthInfo) {
+    // Update Top Auth Info
+    if (topAuthInfo) {
         if (isAuthenticated) {
-            sidebarAuthInfo.style.display = 'flex';
-            sidebarAuthInfo.innerHTML = `
-                <span>Você está logado no acesso (${authenticatedSector})</span>
-                <button id="btn-logout-sidebar" class="icon-btn" title="Sair da Sessão" style="font-size: 0.8rem; height: 24px; width: 24px; border: 1px solid var(--panel-border); background: var(--panel-bg); color: var(--text-muted); padding: 0;">
+            topAuthInfo.style.display = 'flex';
+            topAuthInfo.innerHTML = `
+                <span class="auth-text-small">Você está logado no acesso (${authenticatedSector})</span>
+                <button id="btn-logout-sidebar" class="icon-btn-simple" title="Sair da Sessão" style="font-size: 0.75rem; margin-left: 0.25rem;">
                     <i class="ph ph-sign-out"></i>
                 </button>
             `;
             const slout = document.getElementById('btn-logout-sidebar');
             if (slout) slout.onclick = logout;
         } else {
-            sidebarAuthInfo.style.display = 'none';
+            topAuthInfo.style.display = 'none';
         }
     }
 }
