@@ -3303,7 +3303,8 @@ function addAuditLog(action, details, type = 'info') {
         details,
         type,
         projectId: localUI.currentProjectId,
-        projectName: getCurrentProject()?.name || 'Desconhecido'
+        projectName: getCurrentProject()?.name || 'Desconhecido',
+        sector: authenticatedSector || 'Sistema'
     };
     state.auditLog.unshift(entry);
     // Limit to 200 items for performance
@@ -3337,6 +3338,9 @@ function renderAuditLog() {
                 </div>
                 <div class="audit-details">
                     <span class="audit-project">${log.projectName}</span>
+                    <span class="audit-user" style="display: block; font-size: 0.65rem; color: var(--text-muted); margin-bottom: 0.25rem;">
+                        <i class="ph ph-user"></i> Usuário: <b>${log.sector || 'Sistema'}</b>
+                    </span>
                     ${log.details}
                 </div>
             </div>
