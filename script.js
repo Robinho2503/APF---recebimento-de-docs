@@ -283,11 +283,14 @@ let btnTogglePendencias, pendenciasMgmtPanel, btnAddPendencia, pendenciaStartDat
 let btnShowHistory, historyModal, btnCloseHistory;
 let projectDueDateInp, currentProjectName, projectGlobalCountdown;
 let globalLogin, loginSector;
+let btnLogout, authStatusBanner;
 
 function initDOMElements() {
     // Auth
     globalLogin = document.getElementById('global-login');
     loginSector = document.getElementById('login-sector');
+    btnLogout = document.getElementById('btn-logout');
+    authStatusBanner = document.getElementById('auth-status-banner');
 
     // Buttons
     btnNewProject = document.getElementById('btn-new-project');
@@ -424,6 +427,10 @@ function initEventListeners() {
         inputPassword.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') btnUnlock.click();
         });
+    }
+
+    if (btnLogout) {
+        btnLogout.addEventListener('click', logout);
     }
 
     // Tab Navigation initialization
@@ -1047,6 +1054,39 @@ function applyAuthState() {
     } else {
         managementContent.style.display = 'none';
         if (sidebarApf) sidebarApf.style.display = 'flex';
+    }
+
+    // Update Logout and Banner
+    if (btnLogout) btnLogout.style.display = 'inline-flex';
+    if (authStatusBanner) {
+        authStatusBanner.style.display = 'flex';
+        authStatusBanner.innerHTML = `<i class="ph ph-user-circle"></i> Você está logado no acesso (${authenticatedSector})`;
+    }
+}
+
+function logout() {
+    if (confirm('Deseja realmente sair da sessão atual?')) {
+        isAuthenticated = false;
+        authenticatedSector = null;
+        sessionStorage.removeItem('apf_session_sector');
+        
+        // Return to login screen
+        if (globalLogin) globalLogin.style.display = 'flex';
+        if (authStatusBanner) authStatusBanner.style.display = 'none';
+        if (btnLogout) btnLogout.style.display = 'none';
+        
+        const mainLayout = document.querySelector('.main-layout');
+        if (mainLayout) mainLayout.style.display = 'none';
+        
+        // Clear password input
+        const inputPassword = document.getElementById('global-password-input');
+        if (inputPassword) {
+            inputPassword.value = '';
+            inputPassword.focus();
+        }
+        
+        applyAuthState();
+        renderTree();
     }
 }
 
@@ -2918,7 +2958,10 @@ function renderAnalysisPanels() {
         return `
             <div style="padding:0.65rem 0.75rem; border-radius:0.5rem; margin-bottom:0.4rem; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem; gap:0.5rem;">
-                    <span style="font-size:0.8rem; font-weight:600; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${root.name}</span>
+                    <span style="font-size:0.8rem; font-weight:600; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display: flex; align-items: center; gap: 0.4rem;">
+                        ${root.name}
+                        ${(authenticatedSector !== 'APF' && authenticatedSector !== root.name) ? '<i class="ph ph-lock" style="font-size: 0.75rem; opacity: 0.5;" title="Acesso Restrito"></i>' : ''}
+                    </span>
                     <span style="font-size:0.7rem; font-weight:800; color:${grade.color}; background:${grade.bg}; padding:0.15rem 0.45rem; border-radius:0.3rem; border:1px solid ${grade.color}44; white-space:nowrap;">${grade.g} - ${grade.label}</span>
                 </div>
                 <div style="height:4px; background:rgba(255,255,255,0.08); border-radius:2px; margin-bottom:0.35rem; overflow:hidden;">

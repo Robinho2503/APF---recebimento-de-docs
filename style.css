@@ -221,6 +221,46 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
     padding: 0.25rem;
     margin-bottom: 1rem;
     transition: all 0.3s ease;
+    flex-wrap: nowrap;
+}
+
+.auth-status-banner {
+    position: fixed;
+    top: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    padding: 0.6rem 1.5rem;
+    background: rgba(16, 185, 129, 0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 2rem;
+    color: var(--accent);
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    animation: slideDownIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.light-mode .auth-status-banner {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+@keyframes slideDownIn {
+    from { opacity: 0; transform: translate(-50%, -20px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+#btn-logout:hover {
+    color: var(--danger) !important;
+    background: rgba(239, 68, 68, 0.1) !important;
 }
 
 .apf-submenu {
