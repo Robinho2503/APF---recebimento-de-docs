@@ -2105,22 +2105,13 @@ function createNode(item, level) {
     const titleText = document.createTextNode(' ' + item.name);
     nameSpan.appendChild(titleText);
 
-    // LOCK ICON for sectors in main panel
-    if (isRootFolder && authenticatedSector && authenticatedSector !== 'APF' && authenticatedSector.trim() !== item.name.trim()) {
-        const lockIcon = document.createElement('i');
-        lockIcon.className = 'ph ph-lock';
-        lockIcon.style.marginLeft = '0.5rem';
-        lockIcon.style.color = 'var(--text-muted)';
-        lockIcon.style.opacity = '0.6';
-        lockIcon.style.fontSize = '0.85rem';
-        lockIcon.title = 'Acesso Restrito';
-        nameSpan.appendChild(lockIcon);
-    }
 
     // INDICATORS for ROOT FOLDERS
     if(isRootFolder && localUI.currentProjectId !== 'p_default') {
         const stats = getNodeStats(item.id);
         const totalAlerts = stats.pendente + stats.apontamento;
+        const isLocked = authenticatedSector && authenticatedSector !== 'APF' && authenticatedSector.trim() !== item.name.trim();
+
         const indicatorsCont = document.createElement('div');
         indicatorsCont.className = 'sector-indicators';
 
@@ -2130,6 +2121,19 @@ function createNode(item, level) {
             circle.textContent = totalAlerts;
             circle.title = `${totalAlerts} item(s) com pendências ou apontamentos`;
             indicatorsCont.appendChild(circle);
+        }
+
+        if (isLocked) {
+            const lockIcon = document.createElement('i');
+            lockIcon.className = 'ph ph-lock';
+            lockIcon.style.color = 'var(--text-muted)';
+            lockIcon.style.opacity = '0.6';
+            lockIcon.style.fontSize = '0.85rem';
+            lockIcon.title = 'Acesso Restrito';
+            indicatorsCont.appendChild(lockIcon);
+        }
+
+        if (indicatorsCont.children.length > 0) {
             itemLeft.prepend(indicatorsCont);
         } else {
             const spacer = document.createElement('div');
