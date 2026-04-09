@@ -233,7 +233,7 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
     display: none;
     align-items: center;
     gap: 0.25rem;
-    padding: 0 0.5rem;
+    padding: 0 0.75rem;
 }
 
 .auth-text-small {
@@ -304,24 +304,23 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
 }
 
 .status-badge-solid {
-    background: var(--danger);
+    background: var(--danger) !important;
     color: white !important;
-    font-size: 0.68rem;
-    padding: 2px 6px;
-    border-radius: 10px;
+    font-size: 0.65rem;
+    padding: 1px 6px;
+    border-radius: 12px;
     font-weight: 800;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.2rem;
     min-width: 18px;
     height: 18px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
 .status-badge-solid.apontamento {
-    background: var(--warning);
-    color: var(--bg-dark) !important;
+    background: var(--danger) !important;
+    opacity: 0.85;
 }
 
 #btn-theme-toggle {
