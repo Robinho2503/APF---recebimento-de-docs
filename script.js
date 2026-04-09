@@ -972,11 +972,12 @@ function showTemporaryMessage(msg, type = 'info') {
 function populateLoginSectors() {
     if (!loginSector) return;
     
+    // Try current project, then default project, then fallback to DEFAULT_ITEMS
     const p = getCurrentProject() || state.projects.find(proj => proj.id === 'p_default');
-    if (!p) return;
+    const itemsSource = (p && p.items && p.items.length > 0) ? p.items : DEFAULT_ITEMS;
 
     // Root folders names from the tree
-    const rootSectors = [...new Set(p.items.filter(i => i.parentId === null).map(i => i.name).sort())];
+    const rootSectors = [...new Set(itemsSource.filter(i => i.parentId === null).map(i => i.name).sort())];
     
     const currentVal = loginSector.value;
     

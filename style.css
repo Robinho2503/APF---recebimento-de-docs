@@ -296,6 +296,10 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
     border-color: var(--primary) !important;
 }
 
+#btn-theme-toggle {
+    margin-left: auto;
+}
+
 .sector-name-wrapper {
     display: flex;
     align-items: center;
