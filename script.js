@@ -1288,6 +1288,16 @@ window.handleDashboardFilter = function(filter, count) {
         treeSearchFilter = 'all';
     } else {
         treeSearchFilter = filter;
+        
+        // Auto-expand all folders when applying a filter to show inner results
+        const p = getCurrentProject();
+        if (p) {
+            p.items.forEach(item => {
+                const hasChildren = p.items.some(child => child.parentId === item.id);
+                if (hasChildren) localUI.expandedIds.add(item.id);
+            });
+            saveLocalUI();
+        }
     }
     
     updateGlobalDateUI();
@@ -2022,12 +2032,19 @@ function createNode(item, level) {
     if (treeSearchQuery || treeSearchFilter !== 'all') {
         const matchesQuery = item.name.toLowerCase().includes(treeSearchQuery);
         const hasAtt = item.attachments && item.attachments.length > 0;
+        const isFolder = getChildItems(item.id).length > 0 || item.parentId === null;
         
         let matchesFilter = true;
-        if (treeSearchFilter === 'pendente') matchesFilter = !hasAtt && !item.isNotApplicable;
-        else if (treeSearchFilter === 'apontamento') matchesFilter = hasAtt && item.validationStatus === 'Apontamento';
-        else if (treeSearchFilter === 'validado') matchesFilter = (hasAtt && item.validationStatus === 'Validado') || item.isNotApplicable;
-        else if (treeSearchFilter === 'analise') matchesFilter = hasAtt && item.validationStatus === 'Em Análise de APF';
+        if (treeSearchFilter !== 'all') {
+            if (isFolder) {
+                matchesFilter = false;
+            } else {
+                if (treeSearchFilter === 'pendente') matchesFilter = !hasAtt && !item.isNotApplicable;
+                else if (treeSearchFilter === 'apontamento') matchesFilter = hasAtt && item.validationStatus === 'Apontamento';
+                else if (treeSearchFilter === 'validado') matchesFilter = (hasAtt && item.validationStatus === 'Validado') || item.isNotApplicable;
+                else if (treeSearchFilter === 'analise') matchesFilter = hasAtt && item.validationStatus === 'Em Análise de APF';
+            }
+        }
 
         // An item should be shown if it matches OR if any of its children match
         const anyChildMatches = (nodeId) => {
@@ -2035,11 +2052,19 @@ function createNode(item, level) {
             return nodeChildren.some(c => {
                 const cMatches = c.name.toLowerCase().includes(treeSearchQuery);
                 const cHasAtt = c.attachments && c.attachments.length > 0;
+                const cIsFolder = getItems().some(i => i.parentId === c.id) || c.parentId === null;
+                
                 let cMatchesFilter = true;
-                if (treeSearchFilter === 'pendente') cMatchesFilter = !cHasAtt && !c.isNotApplicable;
-                else if (treeSearchFilter === 'apontamento') cMatchesFilter = cHasAtt && c.validationStatus === 'Apontamento';
-                else if (treeSearchFilter === 'validado') cMatchesFilter = (cHasAtt && c.validationStatus === 'Validado') || c.isNotApplicable;
-                else if (treeSearchFilter === 'analise') cMatchesFilter = cHasAtt && c.validationStatus === 'Em Análise de APF';
+                if (treeSearchFilter !== 'all') {
+                    if (cIsFolder) {
+                        cMatchesFilter = false;
+                    } else {
+                        if (treeSearchFilter === 'pendente') cMatchesFilter = !cHasAtt && !c.isNotApplicable;
+                        else if (treeSearchFilter === 'apontamento') cMatchesFilter = cHasAtt && c.validationStatus === 'Apontamento';
+                        else if (treeSearchFilter === 'validado') cMatchesFilter = (cHasAtt && c.validationStatus === 'Validado') || c.isNotApplicable;
+                        else if (treeSearchFilter === 'analise') cMatchesFilter = cHasAtt && c.validationStatus === 'Em Análise de APF';
+                    }
+                }
                 
                 return (cMatches && cMatchesFilter) || anyChildMatches(c.id);
             });
