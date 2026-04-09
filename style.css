@@ -474,6 +474,8 @@ input[type="date"].input-modern::-webkit-calendar-picker-indicator { filter: inv
     border: none;
     flex-shrink: 0;
     box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    line-height: 1;
+    padding: 0;
 }
 
 .sector-indicators {
