@@ -283,7 +283,7 @@ let btnTogglePendencias, pendenciasMgmtPanel, btnAddPendencia, pendenciaStartDat
 let btnShowHistory, historyModal, btnCloseHistory;
 let projectDueDateInp, currentProjectName, projectGlobalCountdown;
 let globalLogin, loginSector;
-let btnLogout, sidebarAuthInfo, authNavTabs;
+let btnLogout, sidebarAuthInfo, authNavTabs, authPanel;
 
 function initDOMElements() {
     // Auth
@@ -291,6 +291,7 @@ function initDOMElements() {
     loginSector = document.getElementById('login-sector');
     sidebarAuthInfo = document.getElementById('sidebar-auth-info');
     authNavTabs = document.getElementById('auth-nav-tabs');
+    authPanel = document.getElementById('auth-panel');
 
     // Buttons
     btnNewProject = document.getElementById('btn-new-project');
@@ -1075,6 +1076,7 @@ function applyAuthState() {
     // Update Sidebar Auth Info
     if (sidebarAuthInfo) {
         if (isAuthenticated) {
+            if (authPanel) authPanel.style.display = 'flex';
             sidebarAuthInfo.style.display = 'flex';
             sidebarAuthInfo.innerHTML = `
                 <span>Você está logado no acesso (${authenticatedSector})</span>
@@ -1085,6 +1087,7 @@ function applyAuthState() {
             const slout = document.getElementById('btn-logout-sidebar');
             if (slout) slout.onclick = logout;
         } else {
+            if (authPanel) authPanel.style.display = 'none';
             sidebarAuthInfo.style.display = 'none';
         }
     }
