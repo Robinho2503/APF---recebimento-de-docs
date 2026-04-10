@@ -518,6 +518,7 @@ function initEventListeners() {
                 };
                 state.projects.push(newProj);
                 localUI.currentProjectId = newProj.id;
+                localUI.expandedIds.clear(); // Garantir que novos projetos iniciem colapsados
                 saveLocalUI();
                 saveState();
                 updateGlobalDateUI();
@@ -778,7 +779,13 @@ function initEventListeners() {
         searchInp.addEventListener('input', (e) => {
             treeSearchQuery = e.target.value.toLowerCase();
             if (btnClearSearch) btnClearSearch.style.display = treeSearchQuery.length > 0 ? 'flex' : 'none';
-            if (treeSearchQuery.length > 0 || treeSearchFilter !== 'all') expandRelevantNodes();
+            if (treeSearchQuery.length > 0 || treeSearchFilter !== 'all') {
+                expandRelevantNodes();
+            } else {
+                // Ao limpar a busca manualmente pelo teclado, volta a ocultar tudo
+                localUI.expandedIds.clear();
+                saveLocalUI();
+            }
             renderTree();
         });
     }
@@ -788,6 +795,8 @@ function initEventListeners() {
             searchInp.value = '';
             treeSearchQuery = '';
             btnClearSearch.style.display = 'none';
+            localUI.expandedIds.clear(); // Colapsar pastas ao limpar busca
+            saveLocalUI();
             renderTree();
         };
     }
