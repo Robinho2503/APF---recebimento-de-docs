@@ -15,28 +15,28 @@
 </head>
 <body>
     <!-- Global Login Screen -->
-    <div id="global-login" class="modal-backdrop" style="display: none; background: var(--bg-dark); z-index: 9999;">
-        <div id="password-lock" style="max-width: 450px; margin: auto; padding: 3rem; text-align: center; border: none; background: transparent;" class="stagger-enter">
+    <div id="global-login" class="modal-backdrop login-page-backdrop" style="display: none; z-index: 9999;">
+        <div id="password-lock" class="login-card stagger-enter">
             <div class="apf-logo-box">
-                <img src="./login_icon.png" alt="Logo Entrega" style="width: 90px; height: auto; margin-bottom: 1rem; object-fit: contain;">
+                <img src="/login_icon_new.png" alt="Logo APF" class="login-logo-img">
             </div>
 
-            <h2 style="color: var(--text-main); margin-bottom: 0.75rem; font-size: 1.5rem;">Entrega de documentação</h2>
-            <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 0.9rem; line-height: 1.6;">Selecione seu setor e digite a senha para continuar</p>
+            <h2 class="login-title">Entrega de documentação</h2>
+            <p class="login-subtitle">Selecione seu setor e digite a senha para continuar</p>
             
-            <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center; width: 100%;">
-                <select id="login-sector" class="input-modern" style="max-width: none; width: 100%; font-size: 1rem; padding: 0.8rem; appearance: auto;">
+            <div class="login-form-container">
+                <select id="login-sector" class="input-modern login-input" style="appearance: auto;">
                     <option value="">Selecione seu setor...</option>
                     <option value="APF">APF (Administrativo)</option>
                     <!-- Dynamically populated -->
                 </select>
-                <input type="password" id="global-password-input" class="input-modern text-center" placeholder="Senha" style="max-width: none; width: 100%; font-size: 1.1rem; letter-spacing: 0.2rem; padding: 0.8rem;" />
-                <button id="btn-unlock" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.8rem;">
+                <input type="password" id="global-password-input" class="input-modern login-input text-center" placeholder="Senha" />
+                <button id="btn-unlock" class="btn btn-primary login-btn">
                     <i class="ph ph-key"></i> Entrar
                 </button>
             </div>
             
-            <p id="global-password-error" class="error-text mt-4" style="display: none; font-weight: 500; font-size: 0.85rem;">
+            <p id="global-password-error" class="error-text mt-4 login-error" style="display: none;">
                 <i class="ph ph-warning-circle"></i> Credenciais incorretas. Tente novamente.
             </p>
         </div>
