@@ -32,9 +32,13 @@ let state = {
     projects: [
         { id: 'p_default', name: 'Modelo de Entrega', items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)), dueDate: '', createdAt: new Date().toISOString().split('T')[0], engAnalysisOpened: false, pendencias: [], pendenciaStartDate: '' }
     ],
+    settings: {
+        sectorPasswords: { "APF": "1234" } // Senha padrão inicial
+    },
     auditLog: []
 };
 let isAuthenticated = false;
+let authenticatedSector = null;
 let editingPendenciaId = null;
 let isInitialCloudLoad = true;
 
@@ -80,54 +84,78 @@ function isMgmtActive() {
     return activeTabObj && activeTabObj.dataset.tab === 'management';
 }
 
+function debounce(func, wait) {
+    let timeout;
+    return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+
 // Persistence
+const CACHE_KEY = 'apf_global_state_cache_v2';
+
 async function loadState() {
-    // 1. First, check if there's local data for migration
-    const localSaved = localStorage.getItem('apf_checklist_v2.2');
-    
-    // 2. Setup Real-time Listener from Firebase
+    // 1. First, check if there's local cache for instant load
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+        try {
+            state = JSON.parse(cached);
+            console.log("Loaded from local cache.");
+            renderAfterUpdate();
+        } catch(e) { console.warn("Cache error", e); }
+    }
+
+    // 2. Setup Silent Cloud Load
+    await syncWithCloud();
+}
+
+async function syncWithCloud() {
     const docRef = doc(db, GLOBAL_DOC_PATH);
-    
-    onSnapshot(docRef, (snapshot) => {
+    try {
+        const snapshot = await getDoc(docRef);
         if (snapshot.exists()) {
             const cloudData = snapshot.data();
-            console.log("Cloud update received:", cloudData);
+            console.log("Cloud data fetched:", cloudData);
             
-            // Apply migrations to cloud data if needed
+            // Basic Migrations
             for (const p of cloudData.projects) {
                 if (!p.createdAt) p.createdAt = new Date().toISOString().split('T')[0];
                 if (p.engAnalysisOpened === undefined) p.engAnalysisOpened = false;
                 if (!p.pendencias) p.pendencias = [];
-                // ... other migrations if needed
             }
             
+            if (!cloudData.settings) cloudData.settings = {};
+            if (!cloudData.settings.sectorPasswords) cloudData.settings.sectorPasswords = { "APF": "1234" };
+
             state = cloudData;
+            localStorage.setItem(CACHE_KEY, JSON.stringify(state)); // Update cache
             
             if (isInitialCloudLoad) {
                 isInitialCloudLoad = false;
-                // If local currentProjectId is invalid for current projects, reset it to null (shows placeholder)
                 if (!state.projects.find(p => p.id === localUI.currentProjectId)) {
                     localUI.currentProjectId = null;
                 }
             }
 
             renderAfterUpdate();
-        } else if (localSaved && isInitialCloudLoad) {
-            // 3. Migration: Cloud is empty but we have local data
-            console.log("Empty cloud. Migrating local data to Firebase...");
-            try {
-                const parsed = JSON.parse(localSaved);
-                state = parsed;
+        } else {
+            // Check for legacy migration
+            const localSaved = localStorage.getItem('apf_checklist_v2.2');
+            if (localSaved && isInitialCloudLoad) {
+                console.log("Migrating legacy data...");
+                state = JSON.parse(localSaved);
                 isInitialCloudLoad = false;
-                saveState(); // This will push local data to Firestore
-            } catch(e) { console.error("Migration error", e); }
-        } else if (isInitialCloudLoad) {
-            // 4. Everything empty
-            console.log("Starting with default state.");
-            isInitialCloudLoad = false;
-            saveState();
+                saveState();
+            } else if (isInitialCloudLoad) {
+                console.log("Starting default state.");
+                isInitialCloudLoad = false;
+                saveState();
+            }
         }
-    });
+    } catch(e) {
+        console.error("Cloud sync error:", e);
+    }
 }
 
 function renderAfterUpdate() {
@@ -136,6 +164,7 @@ function renderAfterUpdate() {
     renderTracking();
     updateThemeIcon();
     renderAuditLog();
+    applyAuthState(); // Garante que a tela de login ou status de acesso sejam atualizados com os dados da nuvem
 }
 
 let saveTimeout = null;
@@ -146,32 +175,21 @@ function saveState() {
     saveTimeout = setTimeout(async () => {
         const docRef = doc(db, GLOBAL_DOC_PATH);
         const saveableState = {
-            projects: state.projects.map(p => ({
-                ...p,
-                engAnalysisOpened: p.engAnalysisOpened || false,
-                pendenciaActive: p.pendenciaActive || false,
-                pendencias: (p.pendencias || []).map(pend => ({
-                    id: pend.id,
-                    docName: pend.docName,
-                    sector: pend.sector,
-                    specification: pend.specification || '',
-                    attachments: (pend.attachments || []).map(att => ({
-                        ...att,
-                        dropboxPath: att.dropboxPath || '',
-                        dropboxUrl: att.dropboxUrl || '',
-                        storagePath: att.storagePath || '',
-                        downloadUrl: att.downloadUrl || '',
-                        objectUrl: att.downloadUrl || att.dropboxUrl || att.objectUrl || '',
-                        source: att.source || ''
-                    })),
-                    observation: pend.observation || ''
-                })),
-                pendenciaStartDate: p.pendenciaStartDate || '',
-                items: p.items.map(item => {
-                    const { expanded, ...rest } = item; // Remove expanded property from global sync
-                    return {
-                        ...rest,
-                        attachments: (item.attachments || []).map(att => ({
+            projects: state.projects.map(p => {
+                // Pre-calculate stats for the project before saving
+                const stats = p.id !== 'p_default' ? calculateProjectStats(p) : { pendente: 0, apontamento: 0 };
+                
+                return {
+                    ...p,
+                    stats, // Save pre-calculated stats
+                    engAnalysisOpened: p.engAnalysisOpened || false,
+                    pendenciaActive: p.pendenciaActive || false,
+                    pendencias: (p.pendencias || []).map(pend => ({
+                        id: pend.id,
+                        docName: pend.docName,
+                        sector: pend.sector,
+                        specification: pend.specification || '',
+                        attachments: (pend.attachments || []).map(att => ({
                             ...att,
                             dropboxPath: att.dropboxPath || '',
                             dropboxUrl: att.dropboxUrl || '',
@@ -179,20 +197,71 @@ function saveState() {
                             downloadUrl: att.downloadUrl || '',
                             objectUrl: att.downloadUrl || att.dropboxUrl || att.objectUrl || '',
                             source: att.source || ''
-                        }))
-                    };
-                })
-            })),
+                        })),
+                        observation: pend.observation || ''
+                    })),
+                    pendenciaStartDate: p.pendenciaStartDate || '',
+                    items: p.items.map(item => {
+                        const { expanded, ...rest } = item;
+                        return {
+                            ...rest,
+                            attachments: (item.attachments || []).map(att => ({
+                                ...att,
+                                dropboxPath: att.dropboxPath || '',
+                                dropboxUrl: att.dropboxUrl || '',
+                                storagePath: att.storagePath || '',
+                                downloadUrl: att.downloadUrl || '',
+                                objectUrl: att.downloadUrl || att.dropboxUrl || att.objectUrl || '',
+                                source: att.source || ''
+                            }))
+                        };
+                    })
+                };
+            }),
             auditLog: state.auditLog || []
         };
         
+        // Update Local Cache Immediately
+        localStorage.setItem(CACHE_KEY, JSON.stringify(saveableState));
+
         try {
             await setDoc(docRef, saveableState);
-            console.log("State synced to cloud.");
+            console.log("State synced to cloud & cache.");
         } catch (e) {
             console.error("Error syncing to cloud:", e);
         }
-    }, 300); // 300ms debounce
+    }, 500); // 500ms debounce
+}
+
+function calculateProjectStats(project) {
+    let pendente = 0;
+    let apontamento = 0;
+    
+    project.items.forEach(item => {
+        const hasChildren = project.items.some(child => child.parentId === item.id);
+        if (item.parentId !== null && !hasChildren) {
+            if(!item.isNotApplicable && (!item.attachments || item.attachments.length === 0)) {
+                pendente++;
+            }
+            if(item.validationStatus === 'Apontamento') {
+                apontamento++;
+            }
+        }
+    });
+    
+    return { pendente, apontamento };
+}
+
+function getItemSector(itemId) {
+    const items = getItems();
+    if (!items) return null;
+    let curr = items.find(i => i.id === itemId);
+    while (curr && curr.parentId !== null) {
+        let parent = items.find(i => i.id === curr.parentId);
+        if (!parent) break;
+        curr = parent;
+    }
+    return curr ? curr.name : null;
 }
 
 function updateThemeIcon() {
@@ -214,8 +283,16 @@ let btnSettings, btnSaveSettings, btnResetModel, geminiModelInp, geminiKeyInp, b
 let btnTogglePendencias, pendenciasMgmtPanel, btnAddPendencia, pendenciaStartDateInp, modalOverlay, btnCloseModal;
 let btnShowHistory, historyModal, btnCloseHistory;
 let projectDueDateInp, currentProjectName, projectGlobalCountdown;
+let globalLogin, loginSector;
+let btnLogout, topAuthInfo, authNavTabs;
 
 function initDOMElements() {
+    // Auth
+    globalLogin = document.getElementById('global-login');
+    loginSector = document.getElementById('login-sector');
+    topAuthInfo = document.getElementById('top-auth-info');
+    authNavTabs = document.getElementById('auth-nav-tabs');
+
     // Buttons
     btnNewProject = document.getElementById('btn-new-project');
     btnExportZip = document.getElementById('btn-export-zip');
@@ -236,9 +313,8 @@ function initDOMElements() {
     tabs = document.querySelectorAll('.tab-btn');
     tabContents = document.querySelectorAll('.tab-content');
     btnUnlock = document.getElementById('btn-unlock');
-    btnBackToMain = document.getElementById('btn-back-to-main');
-    inputPassword = document.getElementById('apf-password');
-    passwordError = document.getElementById('password-error');
+    inputPassword = document.getElementById('global-password-input');
+    passwordError = document.getElementById('global-password-error');
     passwordLock = document.getElementById('password-lock');
     managementContent = document.getElementById('management-content');
 
@@ -288,6 +364,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     initEventListeners();
     initDropbox();
     await loadState(); 
+    
+    // Check session after state is loaded (to populate sectors)
+    applyAuthState();
+    
     initAIEngine();
     initSettings();
 });
@@ -311,13 +391,29 @@ function initEventListeners() {
     // Authenticate events
     if (btnUnlock) {
         btnUnlock.addEventListener('click', () => {
-            const storedPassword = localStorage.getItem('apf_access_password') || '1234';
-            if(inputPassword.value === storedPassword) {
+            const sector = loginSector.value;
+            const password = inputPassword.value;
+            
+            if (!sector) {
+                alert("Por favor, selecione um setor.");
+                return;
+            }
+
+            const storedPasswords = state.settings?.sectorPasswords || {};
+            const correctPassword = storedPasswords[sector] || "1234"; // Default fallback to 1234
+            
+            if(password === correctPassword) {
                 isAuthenticated = true;
+                authenticatedSector = sector;
                 inputPassword.value = '';
                 passwordError.style.display = 'none';
+                
+                // Salvar sessão temporária no sessionStorage
+                sessionStorage.setItem('apf_session_sector', sector);
+                
                 applyAuthState();
                 renderTree();
+                populateLoginSectors(); // Update if needed
             } else {
                 passwordError.style.display = 'block';
                 inputPassword.style.borderColor = 'var(--danger)';
@@ -334,23 +430,19 @@ function initEventListeners() {
         });
     }
 
-    if (btnBackToMain) {
-        btnBackToMain.addEventListener('click', () => {
-            tabs.forEach(t => t.classList.remove('active'));
-            tabContents.forEach(tc => tc.classList.remove('active'));
-            const checklistSection = document.getElementById('tab-checklist');
-            if (checklistSection) checklistSection.style.display = '';
-            applyAuthState();
-            updateGlobalDateUI();
-            renderTree();
-            renderTracking();
-        });
+    if (btnLogout) {
+        btnLogout.addEventListener('click', logout);
     }
 
     // Tab Navigation initialization
     if (tabs) {
         tabs.forEach(tab => {
             tab.addEventListener('click', () => {
+                // If not APF, cannot access management tab
+                if (tab.dataset.tab === 'management' && authenticatedSector !== 'APF') {
+                    showTemporaryMessage("Acesso restrito ao perfil APF.");
+                    return;
+                }
                 const alreadyActive = tab.classList.contains('active');
 
                 if (alreadyActive) {
@@ -426,6 +518,7 @@ function initEventListeners() {
                 };
                 state.projects.push(newProj);
                 localUI.currentProjectId = newProj.id;
+                localUI.expandedIds.clear(); // Garantir que novos projetos iniciem colapsados
                 saveLocalUI();
                 saveState();
                 updateGlobalDateUI();
@@ -686,7 +779,13 @@ function initEventListeners() {
         searchInp.addEventListener('input', (e) => {
             treeSearchQuery = e.target.value.toLowerCase();
             if (btnClearSearch) btnClearSearch.style.display = treeSearchQuery.length > 0 ? 'flex' : 'none';
-            if (treeSearchQuery.length > 0 || treeSearchFilter !== 'all') expandRelevantNodes();
+            if (treeSearchQuery.length > 0 || treeSearchFilter !== 'all') {
+                expandRelevantNodes();
+            } else {
+                // Ao limpar a busca manualmente pelo teclado, volta a ocultar tudo
+                localUI.expandedIds.clear();
+                saveLocalUI();
+            }
             renderTree();
         });
     }
@@ -696,6 +795,8 @@ function initEventListeners() {
             searchInp.value = '';
             treeSearchQuery = '';
             btnClearSearch.style.display = 'none';
+            localUI.expandedIds.clear(); // Colapsar pastas ao limpar busca
+            saveLocalUI();
             renderTree();
         };
     }
@@ -838,53 +939,195 @@ async function initDropbox() {
     }
 }
 
+function showTemporaryMessage(msg, type = 'info') {
+    const toast = document.createElement('div');
+    toast.style.position = 'fixed';
+    toast.style.bottom = '2rem';
+    toast.style.right = '2rem';
+    toast.style.padding = '0.75rem 1.5rem';
+    toast.style.borderRadius = '0.5rem';
+    toast.style.background = type === 'danger' ? 'var(--danger)' : 'var(--accent)';
+    toast.style.color = 'white';
+    toast.style.boxShadow = '0 10px 25px rgba(0,0,0,0.3)';
+    toast.style.zIndex = '100000';
+    toast.style.fontSize = '0.85rem';
+    toast.style.fontWeight = '600';
+    toast.style.display = 'flex';
+    toast.style.alignItems = 'center';
+    toast.style.gap = '0.5rem';
+    toast.style.transform = 'translateY(1rem)';
+    toast.style.opacity = '0';
+    toast.style.transition = 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+    
+    const icon = type === 'danger' ? 'ph-warning-circle' : 'ph-info';
+    toast.innerHTML = `<i class="ph ${icon}"></i> ${msg}`;
+    
+    document.body.appendChild(toast);
+    
+    // Animation in
+    setTimeout(() => {
+        toast.style.transform = 'translateY(0)';
+        toast.style.opacity = '1';
+    }, 10);
+    
+    // Auto remove
+    setTimeout(() => {
+        toast.style.transform = 'translateY(1rem)';
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+function populateLoginSectors() {
+    if (!loginSector) return;
+    
+    // Try current project, then default project, then fallback to DEFAULT_ITEMS
+    const p = getCurrentProject() || state.projects.find(proj => proj.id === 'p_default');
+    const itemsSource = (p && p.items && p.items.length > 0) ? p.items : DEFAULT_ITEMS;
+
+    // Root folders names from the tree
+    const rootSectors = [...new Set(itemsSource.filter(i => i.parentId === null).map(i => i.name).sort())];
+    
+    const currentVal = loginSector.value;
+    
+    // Re-populate preserving "Selecione" and "APF"
+    loginSector.innerHTML = '<option value="">Selecione seu setor...</option><option value="APF">APF (Administrativo)</option>';
+    
+    rootSectors.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = s;
+        loginSector.appendChild(opt);
+    });
+    
+    if (currentVal) loginSector.value = currentVal;
+}
+
 
 function applyAuthState() {
-    if(!passwordLock || !managementContent) return;
+    if(!globalLogin || !managementContent) return;
 
     const tabsNav = document.querySelector('.tabs');
     const isMgmt = isMgmtActive();
     const apfSubmenu = document.getElementById('apf-submenu');
     const apfBtn = document.querySelector('.apf-access-btn');
 
-    // Update APF access button label
-    if (apfBtn) {
-        if (isMgmt) {
-            apfBtn.innerHTML = '<i class="ph ph-sign-out"></i> SAIR';
-            apfBtn.style.borderColor = 'var(--danger)';
-            apfBtn.style.color = 'var(--danger)';
-            apfBtn.title = 'Sair do Acesso APF';
-        } else {
-            apfBtn.innerHTML = 'APF';
-            apfBtn.style.borderColor = '';
-            apfBtn.style.color = '';
-            apfBtn.title = 'Acesso Administrativo APF';
+    // Restore session if exists and not yet set
+    if (!isAuthenticated) {
+        const savedSector = sessionStorage.getItem('apf_session_sector');
+        if (savedSector) {
+            isAuthenticated = true;
+            authenticatedSector = savedSector;
         }
     }
 
-    // Show APF tools only when in APF tab and authenticated
-    if (apfSubmenu) apfSubmenu.style.display = (isMgmt && isAuthenticated) ? 'flex' : 'none';
+    if (!isAuthenticated) {
+        // Site Completely Locked
+        globalLogin.style.display = 'flex';
+        document.querySelector('.main-layout').style.display = 'none';
+        populateLoginSectors();
+        if (inputPassword) inputPassword.focus();
+        return;
+    } else {
+        globalLogin.style.display = 'none';
+        document.querySelector('.main-layout').style.display = 'block';
+    }
+
+    // Update APF access button label
+    if (apfBtn) {
+        apfBtn.innerHTML = isMgmt ? '<i class="ph ph-sign-out"></i> SAIR' : 'APF';
+        if (isMgmt) {
+            apfBtn.style.borderColor = 'var(--danger)';
+            apfBtn.style.color = 'var(--danger)';
+        } else {
+            apfBtn.style.borderColor = '';
+            apfBtn.style.color = '';
+        }
+        
+        // Hide APF button for non-APF sectors
+        apfBtn.style.display = authenticatedSector === 'APF' ? 'inline-flex' : 'none';
+    }
+
+    if (isMgmt && authenticatedSector !== 'APF') {
+        // Kick out non-admin from management
+        tabs.forEach(t => t.classList.remove('active'));
+        tabContents.forEach(tc => tc.classList.remove('active'));
+        document.getElementById('tab-checklist').classList.add('active');
+        const checklistBtn = document.querySelector('[data-tab="checklist"]');
+        if (checklistBtn) checklistBtn.classList.add('active');
+        showTemporaryMessage("Redirecionado: Você não possui permissão de APF.");
+    }
+
+    if (apfSubmenu) apfSubmenu.style.display = (isMgmt && authenticatedSector === 'APF') ? 'flex' : 'none';
+    
+    if (authNavTabs) {
+        authNavTabs.style.display = (authenticatedSector === 'APF') ? 'flex' : 'none';
+        
+        // Sync active state of nav tabs
+        const currentActiveTab = isMgmt ? 'management' : 'checklist';
+        const tabBtns = authNavTabs.querySelectorAll('.tab-btn');
+        tabBtns.forEach(btn => {
+            if (btn.dataset.tab === currentActiveTab) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
 
     if (isMgmt) {
-        // APF tab is active
-        if (isAuthenticated) {
-            passwordLock.style.display = 'none';
-            managementContent.style.display = 'block';
-            if (sidebarApf) sidebarApf.style.display = 'flex';
-        } else {
-            passwordLock.style.display = 'block';
-            managementContent.style.display = 'none';
-            if (sidebarApf) sidebarApf.style.display = 'none';
-            if (inputPassword) inputPassword.focus();
-        }
+        managementContent.style.display = 'block';
+        if (sidebarApf) sidebarApf.style.display = 'flex';
     } else {
-        // Checklist is visible (default state) - lock screen hidden
-        passwordLock.style.display = 'none';
         managementContent.style.display = 'none';
         if (sidebarApf) sidebarApf.style.display = 'flex';
     }
-    if (tabsNav) tabsNav.style.display = 'flex';
+
+    // Update Top Auth Info
+    if (topAuthInfo) {
+        if (isAuthenticated) {
+            topAuthInfo.style.display = 'flex';
+            topAuthInfo.innerHTML = `
+                <span class="auth-text-small">Você está logado no acesso (${authenticatedSector})</span>
+                <button id="btn-logout-sidebar" class="icon-btn-simple" title="Sair da Sessão" style="font-size: 0.75rem; margin-left: 0.25rem;">
+                    <i class="ph ph-sign-out"></i>
+                </button>
+            `;
+            const slout = document.getElementById('btn-logout-sidebar');
+            if (slout) slout.onclick = logout;
+        } else {
+            topAuthInfo.style.display = 'none';
+        }
+    }
 }
+
+function logout() {
+    if (confirm('Deseja realmente sair da sessão atual?')) {
+        isAuthenticated = false;
+        authenticatedSector = null;
+        sessionStorage.removeItem('apf_session_sector');
+        
+        // Return to login screen
+        if (globalLogin) globalLogin.style.display = 'flex';
+        if (authStatusBanner) authStatusBanner.style.display = 'none';
+        if (btnLogout) btnLogout.style.display = 'none';
+        
+        const mainLayout = document.querySelector('.main-layout');
+        if (mainLayout) mainLayout.style.display = 'none';
+        
+        // Clear password input
+        const inputPassword = document.getElementById('global-password-input');
+        if (inputPassword) {
+            inputPassword.value = '';
+            inputPassword.focus();
+        }
+        
+        applyAuthState();
+        renderTree();
+    }
+}
+
+
 
 
 // Project Management & Global UI
@@ -1054,27 +1297,23 @@ window.handleDashboardFilter = function(filter, count) {
         treeSearchFilter = 'all';
     } else {
         treeSearchFilter = filter;
+        
+        // Auto-expand all folders when applying a filter to show inner results
+        const p = getCurrentProject();
+        if (p) {
+            p.items.forEach(item => {
+                const hasChildren = p.items.some(child => child.parentId === item.id);
+                if (hasChildren) localUI.expandedIds.add(item.id);
+            });
+            saveLocalUI();
+        }
     }
     
     updateGlobalDateUI();
     renderTree();
 };
 
-function showTemporaryMessage(msg) {
-    let container = document.querySelector('.toast-container');
-    if (!container) {
-        container = document.createElement('div');
-        container.className = 'toast-container';
-        document.body.appendChild(container);
-    }
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.innerHTML = `<i class="ph ph-info"></i> ${msg}`;
-    container.appendChild(toast);
-    
-    // Auto remove after animation completes
-    setTimeout(() => toast.remove(), 2500);
-}
+
 
 // function updateProjectDropdown() {
 //     const mgmt = isMgmtActive();
@@ -1306,13 +1545,6 @@ function renderTracking() {
             <div class="tracking-body">
                 <div class="mb-1 flex-between" style="align-items: center; gap: 0.5rem;">
                     <h3 style="font-weight:700; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; margin: 0; ${titleStyle}" title="${p.name}"><i class="ph ph-buildings" style="${iconStyle}"></i> ${p.name}</h3>
-                    <div style="display: flex; gap: 0.35rem;">
-                        ${p.pendencias?.length > 0 ? `
-                            <div style="background:rgba(239, 68, 68, 0.15); color:var(--danger); font-size: 0.65rem; padding: 0.15rem 0.4rem; border-radius: 0.35rem; font-weight: 700; display: flex; align-items: center; gap: 0.2rem;" title="Pendências ativas">
-                                <i class="ph ph-warning-circle"></i> ${p.pendencias.length}
-                            </div>
-                        ` : ''}
-                    </div>
                 </div>
                 <div class="mb-1" style="font-size: 0.75rem; width: 100%; margin-top: 0.25rem;">
                     ${trackingLine}
@@ -1337,13 +1569,19 @@ function getChildItems(parentId) {
 }
 
 function getNodeStats(itemId) {
+    const p = getCurrentProject();
+    if (!p) return { pendente: 0, apontamento: 0 };
+
+    // If it's a root folder (sector), and we have pre-calculated stats for the project
+    // we could potentially optimize further, but for now we still do the sub-tree sweep
+    // unless we store stats per folder. For now, let's keep the sweep but use it smarter.
+    
     let pendente = 0;
     let apontamento = 0;
     
     const children = getChildItems(itemId);
-    const item = getItems().find(i => i.id === itemId);
+    const item = p.items.find(i => i.id === itemId);
     
-    // Only count as an actual item if it has no children (is a leaf/document)
     if(item && item.parentId !== null && children.length === 0) {
         if(!item.isNotApplicable && (!item.attachments || item.attachments.length === 0)) {
             pendente++;
@@ -1360,6 +1598,52 @@ function getNodeStats(itemId) {
     });
     
     return { pendente, apontamento };
+}
+
+async function compressImage(file) {
+    // Only compress images
+    if (!file.type.startsWith('image/')) return file;
+
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                // Max resolution 1920px (Full HD)
+                const MAX_SIZE = 1920;
+                if (width > height) {
+                    if (width > MAX_SIZE) {
+                        height *= MAX_SIZE / width;
+                        width = MAX_SIZE;
+                    }
+                } else {
+                    if (height > MAX_SIZE) {
+                        width *= MAX_SIZE / height;
+                        height = MAX_SIZE;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob((blob) => {
+                    const compressedFile = new File([blob], file.name, {
+                        type: 'image/jpeg',
+                        lastModified: Date.now(),
+                    });
+                    resolve(compressedFile);
+                }, 'image/jpeg', 0.7); // 70% quality as requested
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
 }
 
 function renderPendenciasChecklist(curr) {
@@ -1748,15 +2032,28 @@ function createNode(item, level) {
     const isRootFolder = item.parentId === null;
     const isMgmt = isMgmtActive();
     const currProj = getCurrentProject();
+    
+    // Per-sector permission logic
+    const nodeSector = getItemSector(item.id);
+    const canEdit = authenticatedSector === 'APF' || authenticatedSector === nodeSector;
 
     // SEARCH & FILTER LOGIC
     if (treeSearchQuery || treeSearchFilter !== 'all') {
         const matchesQuery = item.name.toLowerCase().includes(treeSearchQuery);
         const hasAtt = item.attachments && item.attachments.length > 0;
+        const isFolder = getChildItems(item.id).length > 0 || item.parentId === null;
         
         let matchesFilter = true;
-        if (treeSearchFilter === 'pendente') matchesFilter = !hasAtt;
-        else if (treeSearchFilter === 'apontamento') matchesFilter = hasAtt && item.validationStatus === 'Apontamento';
+        if (treeSearchFilter !== 'all') {
+            if (isFolder) {
+                matchesFilter = false;
+            } else {
+                if (treeSearchFilter === 'pendente') matchesFilter = !hasAtt && !item.isNotApplicable;
+                else if (treeSearchFilter === 'apontamento') matchesFilter = hasAtt && item.validationStatus === 'Apontamento';
+                else if (treeSearchFilter === 'validado') matchesFilter = (hasAtt && item.validationStatus === 'Validado') || item.isNotApplicable;
+                else if (treeSearchFilter === 'analise') matchesFilter = hasAtt && item.validationStatus === 'Em Análise de APF';
+            }
+        }
 
         // An item should be shown if it matches OR if any of its children match
         const anyChildMatches = (nodeId) => {
@@ -1764,9 +2061,19 @@ function createNode(item, level) {
             return nodeChildren.some(c => {
                 const cMatches = c.name.toLowerCase().includes(treeSearchQuery);
                 const cHasAtt = c.attachments && c.attachments.length > 0;
+                const cIsFolder = getItems().some(i => i.parentId === c.id) || c.parentId === null;
+                
                 let cMatchesFilter = true;
-                if (treeSearchFilter === 'pendente') cMatchesFilter = !cHasAtt;
-                else if (treeSearchFilter === 'apontamento') cMatchesFilter = cHasAtt && c.validationStatus === 'Apontamento';
+                if (treeSearchFilter !== 'all') {
+                    if (cIsFolder) {
+                        cMatchesFilter = false;
+                    } else {
+                        if (treeSearchFilter === 'pendente') cMatchesFilter = !cHasAtt && !c.isNotApplicable;
+                        else if (treeSearchFilter === 'apontamento') cMatchesFilter = cHasAtt && c.validationStatus === 'Apontamento';
+                        else if (treeSearchFilter === 'validado') cMatchesFilter = (cHasAtt && c.validationStatus === 'Validado') || c.isNotApplicable;
+                        else if (treeSearchFilter === 'analise') cMatchesFilter = cHasAtt && c.validationStatus === 'Em Análise de APF';
+                    }
+                }
                 
                 return (cMatches && cMatchesFilter) || anyChildMatches(c.id);
             });
@@ -1831,10 +2138,13 @@ function createNode(item, level) {
     const titleText = document.createTextNode(' ' + item.name);
     nameSpan.appendChild(titleText);
 
+
     // INDICATORS for ROOT FOLDERS
     if(isRootFolder && localUI.currentProjectId !== 'p_default') {
         const stats = getNodeStats(item.id);
         const totalAlerts = stats.pendente + stats.apontamento;
+        const isLocked = authenticatedSector && authenticatedSector !== 'APF' && authenticatedSector.trim() !== item.name.trim();
+
         const indicatorsCont = document.createElement('div');
         indicatorsCont.className = 'sector-indicators';
 
@@ -1844,6 +2154,9 @@ function createNode(item, level) {
             circle.textContent = totalAlerts;
             circle.title = `${totalAlerts} item(s) com pendências ou apontamentos`;
             indicatorsCont.appendChild(circle);
+        }
+
+        if (indicatorsCont.children.length > 0) {
             itemLeft.prepend(indicatorsCont);
         } else {
             const spacer = document.createElement('div');
@@ -1858,6 +2171,21 @@ function createNode(item, level) {
     
     const itemRight = document.createElement('div');
     itemRight.className = 'item-right';
+
+    // LOCK ICON FOR ROOT FOLDERS - Right Aligned
+    if(isRootFolder && localUI.currentProjectId !== 'p_default') {
+        const isLocked = authenticatedSector && authenticatedSector !== 'APF' && authenticatedSector.trim() !== item.name.trim();
+        if (isLocked) {
+            const lockIcon = document.createElement('i');
+            lockIcon.className = 'ph ph-lock-simple';
+            lockIcon.style.color = 'var(--text-muted)';
+            lockIcon.style.opacity = '0.6';
+            lockIcon.style.fontSize = '1.1rem';
+            lockIcon.style.marginRight = '0.5rem';
+            lockIcon.title = 'Acesso Restrito';
+            itemRight.appendChild(lockIcon);
+        }
+    }
 
     if(!isMgmt) {
         if(!isRootFolder && !hasChildren) {
@@ -1920,11 +2248,18 @@ function createNode(item, level) {
                 fileInput.disabled = true;
             }
 
+            if (!canEdit) {
+                btnAttach.disabled = true;
+                btnAttach.style.opacity = '0.3';
+                btnAttach.title = 'Apenas o setor proprietário pode anexar';
+                fileInput.disabled = true;
+            }
+
             if (hasAtt) {
                 statusRow.appendChild(btnAttach);
             }
             itemRight.appendChild(statusRow);
-
+            
             if(hasAtt) {
                 const inlineAttachments = document.createElement('div');
                 inlineAttachments.className = 'inline-attachments-row';
@@ -1946,6 +2281,11 @@ function createNode(item, level) {
                     btnDel.className = 'icon-btn delete';
                     btnDel.innerHTML = '<i class="ph ph-x"></i>';
                     btnDel.onclick = () => window.handleDeleteFile(item.id, att.id);
+                    if (!canEdit) {
+                        btnDel.disabled = true;
+                        btnDel.style.opacity = '0.3';
+                        btnDel.style.cursor = 'not-allowed';
+                    }
 
                     attBadge.appendChild(nameTxt);
                     if (att.aiCheckResult) {
@@ -1976,6 +2316,7 @@ function createNode(item, level) {
                 forecastInput.style.fontSize = '0.75rem';
                 if(item.forecastDate) forecastInput.value = item.forecastDate;
                 forecastInput.onchange = (e) => { item.forecastDate = e.target.value; saveState(); };
+                if (!canEdit) forecastInput.disabled = true;
 
                 forecastGroup.innerHTML = '<label style="font-size:0.75rem; color:var(--text-muted);">Prev:</label>';
                 forecastGroup.appendChild(forecastInput);
@@ -1983,6 +2324,10 @@ function createNode(item, level) {
                 const btnJustify = document.createElement('button');
                 btnJustify.className = 'btn btn-outline btn-sm';
                 btnJustify.innerHTML = '<i class="ph ph-chat-text"></i> Justif.';
+                if (!canEdit) {
+                    btnJustify.disabled = true;
+                    btnJustify.style.opacity = '0.5';
+                }
                 
                 const justBox = document.createElement('div');
                 justBox.className = 'justification-box';
@@ -2000,6 +2345,7 @@ function createNode(item, level) {
                         addAuditLog('Justificativa Adicionada', `Nova justificativa em <strong>${item.name}</strong>: "${item.justification}"`, 'info');
                     }
                 };
+                if (!canEdit) justInput.disabled = true;
                 justBox.appendChild(justInput);
 
                 if(item.justification && item.justification.trim() !== '') {
@@ -2052,7 +2398,10 @@ function createNode(item, level) {
                     obsInp.className = 'input-modern btn-sm';
                     obsInp.placeholder = 'Qual apontamento?';
                     obsInp.value = item.observation || '';
-                    obsInp.oninput = (e) => { item.observation = e.target.value; saveState(); }; 
+                    obsInp.oninput = (e) => { 
+                        item.observation = e.target.value; 
+                        debouncedSave(); 
+                    }; 
                     obsInp.onblur = () => renderTree();
                     mgmtFields.appendChild(obsInp);
                 }
@@ -2204,6 +2553,15 @@ function handleAddFolder(parentId) {
             validationStatus: 'Em Análise de APF',
             observation: ''
         };
+
+        // NEW: If creating a root folder (Sector), ask for password
+        if (parentId === null) {
+            const pass = prompt(`Defina uma senha para o novo setor "${name.trim()}":`, '1234');
+            if (!state.settings) state.settings = {};
+            if (!state.settings.sectorPasswords) state.settings.sectorPasswords = {};
+            state.settings.sectorPasswords[name.trim()] = pass || '1234';
+        }
+
         getItems().push(item);
         if(parentItem) parentItem.expanded = true;
         saveState();
@@ -2241,6 +2599,48 @@ function handleRenameFolder(id) {
 }
 
 // GESTÃO DE PENDÊNCIAS
+
+function renderSectorPasswordsSettings() {
+    const listCont = document.getElementById('sector-passwords-list');
+    if (!listCont) return;
+
+    if (!state.settings) state.settings = {};
+    if (!state.settings.sectorPasswords) state.settings.sectorPasswords = { "APF": "1234" };
+
+    const p = getCurrentProject() || state.projects.find(proj => proj.id === 'p_default');
+    const rootSectors = ["APF", ...new Set(p.items.filter(i => i.parentId === null).map(i => i.name).sort())];
+
+    listCont.innerHTML = '';
+    rootSectors.forEach(s => {
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.alignItems = 'center';
+        row.style.gap = '0.5rem';
+        
+        const label = document.createElement('span');
+        label.style.fontSize = '0.75rem';
+        label.style.color = 'var(--text-main)';
+        label.style.width = '120px';
+        label.style.flexShrink = '0';
+        label.className = 'text-truncate';
+        label.textContent = s;
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'input-modern btn-sm';
+        input.style.flex = '1';
+        input.value = state.settings.sectorPasswords[s] || '1234';
+        input.onchange = (e) => {
+            state.settings.sectorPasswords[s] = e.target.value;
+            saveState();
+            addAuditLog('Senha Alterada', `Senha do setor <strong>${s}</strong> foi alterada.`, 'warning');
+        };
+
+        row.appendChild(label);
+        row.appendChild(input);
+        listCont.appendChild(row);
+    });
+}
 
 function renderPendenciasMgmt() {
     const curr = getCurrentProject();
@@ -2383,9 +2783,7 @@ function renderPendenciasMgmt() {
             obsInp.oninput = (e) => { 
                 const oldVal = p.observation || '';
                 p.observation = e.target.value; 
-                saveState();
-                // Não logamos oninput para não inundar, apenas no blur ou mudança significativa se necessário.
-                // Mas para consistência com os outros que usam onchange:
+                debouncedSave();
             };
             obsInp.onblur = () => {
                 renderTree();
@@ -2440,14 +2838,16 @@ window.handleFileUpload = async function(itemId, files, isPendencia = false) {
                 const id = generateId();
                 const sanitizedFileName = sanitizePathSegment(file.name);
                 
+                // Aplicar compressão se for imagem
+                const fileToUpload = await compressImage(file);
+                
                 // Nova estrutura de caminho unificada no Firebase Storage
-                // storage_path: APF_Projetos/[Projeto_ID]/[Setor]/[ID_Arquivo]-[Nome]
                 const fbStoragePath = `APF_Projetos/${currProject.id}/${folderPath}/${id}-${sanitizedFileName}`;
                 
                 try {
                     // 1. Upload para Firebase Storage
                     const storageRef = ref(storage, fbStoragePath);
-                    await uploadBytes(storageRef, file);
+                    await uploadBytes(storageRef, fileToUpload);
                     
                     // 2. Obter URL de Download pública
                     const downloadUrl = await getDownloadURL(storageRef);
@@ -2456,17 +2856,16 @@ window.handleFileUpload = async function(itemId, files, isPendencia = false) {
                         id: id,
                         name: file.name,
                         type: file.type,
-                        storagePath: fbStoragePath, // Caminho no Firebase
-                        downloadUrl: downloadUrl,    // URL direta do Firebase
-                        objectUrl: downloadUrl,      // Compatibilidade legada
-                        source: 'firebase'           // Marcador de nova origem
+                        storagePath: fbStoragePath,
+                        downloadUrl: downloadUrl,
+                        objectUrl: downloadUrl,
+                        source: 'firebase'
                     });
 
-                    // Definir status padrão como 'Em Análise de APF' para qualquer anexo novo
                     targetItem.validationStatus = 'Em Análise de APF';
                 } catch (err) {
                     console.error("Erro no upload para o Firebase Storage", err);
-                    alert(`Falha ao enviar '${file.name}' ao Firebase. Verifique se o Storage está ativado e as permissões (Rules) estão liberadas.`);
+                    alert(`Falha ao enviar '${file.name}' ao Firebase.`);
                 }
             }
             saveState();
@@ -2639,7 +3038,9 @@ function renderAnalysisPanels() {
         return `
             <div style="padding:0.65rem 0.75rem; border-radius:0.5rem; margin-bottom:0.4rem; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem; gap:0.5rem;">
-                    <span style="font-size:0.8rem; font-weight:600; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${root.name}</span>
+                    <div class="sector-name-wrapper">
+                        <span class="sector-name-text">${root.name}</span>
+                    </div>
                     <span style="font-size:0.7rem; font-weight:800; color:${grade.color}; background:${grade.bg}; padding:0.15rem 0.45rem; border-radius:0.3rem; border:1px solid ${grade.color}44; white-space:nowrap;">${grade.g} - ${grade.label}</span>
                 </div>
                 <div style="height:4px; background:rgba(255,255,255,0.08); border-radius:2px; margin-bottom:0.35rem; overflow:hidden;">
@@ -2653,6 +3054,8 @@ function renderAnalysisPanels() {
 
     sectorsEl.innerHTML = projHeader + sectorsHtml;
 }
+
+
 
 function initSettings() {
     const btnSettings = document.getElementById('btn-settings');
@@ -2675,6 +3078,8 @@ function initSettings() {
         geminiKeyInp.value = localStorage.getItem('apf_gemini_key') || '';
         dbxKeyInp.value = localStorage.getItem('apf_dropbox_app_key') || '';
         apfPassInp.value = localStorage.getItem('apf_access_password') || '';
+        
+        renderSectorPasswordsSettings();
         settingsModal.classList.remove('hidden');
     });
 
@@ -2936,7 +3341,8 @@ function addAuditLog(action, details, type = 'info') {
         details,
         type,
         projectId: localUI.currentProjectId,
-        projectName: getCurrentProject()?.name || 'Desconhecido'
+        projectName: getCurrentProject()?.name || 'Desconhecido',
+        sector: authenticatedSector || 'Sistema'
     };
     state.auditLog.unshift(entry);
     // Limit to 200 items for performance
@@ -2970,6 +3376,9 @@ function renderAuditLog() {
                 </div>
                 <div class="audit-details">
                     <span class="audit-project">${log.projectName}</span>
+                    <span class="audit-user" style="display: block; font-size: 0.65rem; color: var(--text-muted); margin-bottom: 0.25rem;">
+                        <i class="ph ph-user"></i> Usuário: <b>${log.sector || 'Sistema'}</b>
+                    </span>
                     ${log.details}
                 </div>
             </div>
