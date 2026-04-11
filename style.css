@@ -1465,6 +1465,11 @@ hr {
     color: #a1a1aa !important; /* Gray color (var(--text-muted)) */
 }
 
+#login-sector option {
+    background-color: #121212 !important; /* Almost black */
+    color: #ffffff !important; /* White text */
+}
+
 .login-input:focus {
     background: rgba(0, 0, 0, 0.4) !important;
     border-color: var(--primary) !important;
