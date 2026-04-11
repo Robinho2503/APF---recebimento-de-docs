@@ -1427,7 +1427,7 @@ hr {
 }
 
 .login-title {
-    color: var(--text-main);
+    color: #ffffff !important;
     font-size: 1.75rem;
     font-weight: 800;
     margin-bottom: 0.5rem;
@@ -1458,6 +1458,11 @@ hr {
     font-size: 1rem !important;
     border-radius: 1rem !important;
     transition: all 0.3s ease !important;
+    color: var(--text-main) !important;
+}
+
+#login-sector {
+    color: #a1a1aa !important; /* Gray color (var(--text-muted)) */
 }
 
 .login-input:focus {
