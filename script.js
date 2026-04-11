@@ -366,7 +366,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadState(); 
     
     // Check session after state is loaded (to populate sectors)
-    applyAuthState();
+    applyAuthState(true);
     
     initAIEngine();
     initSettings();
@@ -411,7 +411,7 @@ function initEventListeners() {
                 // Salvar sessão temporária no sessionStorage
                 sessionStorage.setItem('apf_session_sector', sector);
                 
-                applyAuthState();
+                applyAuthState(true);
                 renderTree();
                 populateLoginSectors(); // Update if needed
             } else {
@@ -1004,7 +1004,7 @@ function populateLoginSectors() {
 }
 
 
-function applyAuthState() {
+function applyAuthState(silentRedirect = false) {
     if(!globalLogin || !managementContent) return;
 
     const tabsNav = document.querySelector('.tabs');
@@ -1048,14 +1048,23 @@ function applyAuthState() {
         apfBtn.style.display = authenticatedSector === 'APF' ? 'inline-flex' : 'none';
     }
 
-    if (isMgmt && authenticatedSector !== 'APF') {
-        // Kick out non-admin from management
-        tabs.forEach(t => t.classList.remove('active'));
-        tabContents.forEach(tc => tc.classList.remove('active'));
-        document.getElementById('tab-checklist').classList.add('active');
-        const checklistBtn = document.querySelector('[data-tab="checklist"]');
-        if (checklistBtn) checklistBtn.classList.add('active');
-        showTemporaryMessage("Redirecionado: Você não possui permissão de APF.");
+    if (authenticatedSector !== 'APF') {
+        const isCurrentlyMgmt = isMgmtActive();
+        if (isCurrentlyMgmt || !document.getElementById('tab-checklist').classList.contains('active')) {
+            // Force Checklist tab for non-APF
+            tabs.forEach(t => t.classList.remove('active'));
+            tabContents.forEach(tc => tc.classList.remove('active'));
+            
+            const checklistTab = document.getElementById('tab-checklist');
+            if (checklistTab) checklistTab.classList.add('active');
+            
+            const checklistBtn = document.querySelector('[data-tab="checklist"]');
+            if (checklistBtn) checklistBtn.classList.add('active');
+            
+            if (isCurrentlyMgmt && !silentRedirect) {
+                showTemporaryMessage("Redirecionado: Você não possui permissão de APF.");
+            }
+        }
     }
 
     if (apfSubmenu) apfSubmenu.style.display = (isMgmt && authenticatedSector === 'APF') ? 'flex' : 'none';
@@ -1122,7 +1131,7 @@ function logout() {
             inputPassword.focus();
         }
         
-        applyAuthState();
+        applyAuthState(true);
         renderTree();
     }
 }
