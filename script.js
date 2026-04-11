@@ -1916,7 +1916,7 @@ function createNode(item, level) {
             if (item.isNotApplicable) {
                 btnAttach.disabled = true;
                 btnAttach.style.opacity = '0.5';
-                btnAttach.title = 'Documento dispensado';
+                btnAttach.title = currProj.id === 'p_default' ? 'Anexar documento' : 'Documento dispensado';
                 fileInput.disabled = true;
             }
 
@@ -2065,7 +2065,7 @@ function createNode(item, level) {
                 statusText.style.fontSize = '0.75rem';
                 statusText.style.color = 'var(--text-muted)';
                 statusText.style.fontStyle = 'italic';
-                statusText.textContent = item.isNotApplicable ? 'Documento dispensado' : 'Aguardando documento...';
+                statusText.textContent = (item.isNotApplicable && currProj.id !== 'p_default') ? 'Documento dispensado' : 'Aguardando documento...';
 
                 const naLabel = document.createElement('label');
                 naLabel.style.display = 'flex';
