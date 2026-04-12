@@ -1551,7 +1551,7 @@ hr {
     top: 0;
     left: 0;
     width: 100%;
-    height: 60px;
+    height: 50px;
     background: var(--panel-bg);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
@@ -1609,13 +1609,14 @@ hr {
 
     .app-container {
         margin-left: 0 !important;
-        padding-top: 5rem !important; /* Espaço para a top bar */
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
+        padding-top: 4rem !important; /* Espaço para a top bar (50px + margem) */
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
     }
 
     .sidebar {
-        left: -360px; /* Escondida por padrão */
+        width: 300px;
+        left: -300px; /* Escondida por padrão */
         z-index: 1002;
         transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         box-shadow: 20px 0 50px rgba(0, 0, 0, 0.5);
@@ -1628,7 +1629,20 @@ hr {
 
     /* Ajustes Dashboard */
     .dashboard-grid {
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
+        gap: 0.5rem !important;
+    }
+
+    .dashboard-card {
+        padding: 0.75rem !important;
+    }
+
+    .dashboard-card .card-value {
+        font-size: 1.25rem !important;
+    }
+
+    .dashboard-card .card-label {
+        font-size: 0.7rem !important;
     }
 
     .search-dashboard-row {
@@ -1659,9 +1673,40 @@ hr {
     .item-right {
         width: 100%;
         justify-content: flex-start !important;
-        margin-top: 0.75rem;
-        padding-top: 0.75rem;
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
         border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* Otimização da Árvore de Documentos */
+    .tree-item {
+        padding: 0.4rem 0.5rem !important;
+    }
+
+    .item-name {
+        font-size: 0.8rem !important;
+    }
+
+    .tree-children {
+        margin-left: 0.75rem !important; /* Reduz indentação para ganhar espaço lateral */
+    }
+
+    /* Otimização Sidebar Content */
+    .sidebar .tracking-card {
+        padding: 0.6rem !important;
+        gap: 0.25rem !important;
+    }
+
+    .sidebar .tracking-card h3 {
+        font-size: 0.75rem !important;
+    }
+
+    .sidebar .tracking-card .mb-1 {
+        margin-bottom: 0.15rem !important;
+    }
+
+    .sidebar .tracking-body div[style*="font-size: 0.75rem"] {
+        font-size: 0.68rem !important;
     }
 }
 
@@ -1713,15 +1758,26 @@ hr {
         padding-top: 1rem !important;
     }
 
-    /* Ajuste de tamanho de botões para facilitar touch */
+    /* Ajuste de tamanho de botões para facilitar touch sem ocupar espaço excessivo */
     .btn, .icon-btn {
-        min-height: 44px;
+        min-height: 38px;
+        padding: 0.4rem 0.75rem !important;
+        font-size: 0.85rem !important;
     }
     
     .apf-nav-group {
         flex-direction: column;
         align-items: stretch;
+        gap: 0.5rem;
     }
+
+    /* Redução de fontes globais em mobile */
+    body {
+        font-size: 14px;
+    }
+
+    h2 { font-size: 1.15rem !important; }
+    h3 { font-size: 1rem !important; }
 }
 
 
