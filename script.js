@@ -300,6 +300,7 @@ let btnShowHistory, historyModal, btnCloseHistory;
 let projectDueDateInp, currentProjectName, projectGlobalCountdown;
 let globalLogin, loginSector;
 let btnLogout, topAuthInfo, authNavTabs, btnLoginThemeToggle;
+let btnMobileMenu, sidebarBackdrop;
 
 function initDOMElements() {
     // Auth
@@ -308,6 +309,8 @@ function initDOMElements() {
     topAuthInfo = document.getElementById('top-auth-info');
     authNavTabs = document.getElementById('auth-nav-tabs');
     btnLoginThemeToggle = document.getElementById('btn-login-theme-toggle');
+    btnMobileMenu = document.getElementById('btn-mobile-menu');
+    sidebarBackdrop = document.getElementById('sidebar-backdrop');
 
     // Buttons
     btnNewProject = document.getElementById('btn-new-project');
@@ -395,6 +398,20 @@ function initEventListeners() {
     
     if (btnLoginThemeToggle) {
         btnLoginThemeToggle.addEventListener('click', toggleTheme);
+    }
+
+    if (btnMobileMenu) {
+        btnMobileMenu.addEventListener('click', () => {
+            sidebarApf.classList.toggle('mobile-active');
+            sidebarBackdrop.classList.toggle('active');
+        });
+    }
+
+    if (sidebarBackdrop) {
+        sidebarBackdrop.addEventListener('click', () => {
+            sidebarApf.classList.remove('mobile-active');
+            sidebarBackdrop.classList.remove('active');
+        });
     }
     
     // Authenticate events
@@ -1458,7 +1475,14 @@ function renderTracking() {
         card.style.setProperty('--indicator-color', statusColor);
         
         card.addEventListener('click', () => {
-            if(localUI.currentProjectId === p.id) return;
+            if(localUI.currentProjectId === p.id) {
+                // Mesmo que já esteja selecionado, fecha a sidebar no mobile para mostrar o conteúdo
+                if (window.innerWidth <= 992 && sidebarApf) {
+                    sidebarApf.classList.remove('mobile-active');
+                    if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
+                }
+                return;
+            }
             localUI.currentProjectId = p.id;
             localUI.expandedIds.clear(); // Garantir que as pastas fiquem ocultas por padrão ao trocar de projeto
             saveLocalUI();
@@ -1466,6 +1490,12 @@ function renderTracking() {
             renderTree();
             renderTracking();
             triggerPanelAnimation();
+
+            // Fechar sidebar no mobile após seleção
+            if (window.innerWidth <= 992 && sidebarApf) {
+                sidebarApf.classList.remove('mobile-active');
+                if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
+            }
         });
 
         let prazoText = 'Sem data inicializada';

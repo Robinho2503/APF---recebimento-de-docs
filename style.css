@@ -1540,5 +1540,189 @@ hr {
     font-weight: 600 !important;
 }
 
+/* ==========================================================================
+   RESPONSIVIDADE (MOBILE & TABLET)
+   ========================================================================== */
+
+/* Header Mobile */
+.mobile-top-bar {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    background: var(--panel-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--panel-border);
+    z-index: 1000;
+    align-items: center;
+    padding: 0 1rem;
+    gap: 1rem;
+}
+
+.mobile-menu-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 0.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--panel-border);
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.mobile-logo-text {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--primary);
+}
+
+.sidebar-backdrop {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 1001;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-backdrop.active {
+    display: block;
+    opacity: 1;
+}
+
+/* Tablet & Mobile Breakpoint */
+@media (max-width: 992px) {
+    .mobile-top-bar {
+        display: flex;
+    }
+
+    .app-container {
+        margin-left: 0 !important;
+        padding-top: 5rem !important; /* Espaço para a top bar */
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+
+    .sidebar {
+        left: -360px; /* Escondida por padrão */
+        z-index: 1002;
+        transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 20px 0 50px rgba(0, 0, 0, 0.5);
+        background: var(--bg-dark); /* Fundo sólido para mobile para não sobrepor */
+    }
+
+    .sidebar.mobile-active {
+        left: 0;
+    }
+
+    /* Ajustes Dashboard */
+    .dashboard-grid {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important;
+    }
+
+    .search-dashboard-row {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+
+    .global-search-wrapper {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    /* Checklist Layout */
+    .item-left {
+        width: 100%;
+    }
+
+    .item-name.root-name {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .root-stats-column {
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+
+    .item-right {
+        width: 100%;
+        justify-content: flex-start !important;
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+}
+
+/* Mobile Breakpoint Specifics */
+@media (max-width: 768px) {
+    .login-card {
+        max-width: 95% !important;
+        padding: 2.5rem 1.5rem !important;
+    }
+
+    .login-title {
+        font-size: 1.4rem !important;
+    }
+
+    .tabs {
+        overflow-x: auto;
+        white-space: nowrap;
+        padding-bottom: 0.5rem;
+    }
+
+    .tab-btn {
+        padding: 0.6rem 1rem !important;
+        font-size: 0.9rem !important;
+    }
+
+    /* Empilhar botões de controle - APF */
+    .management-controls div {
+        flex-direction: column;
+        align-items: stretch !important;
+        width: 100%;
+    }
+
+    .management-controls .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Pendências Layout */
+    .pendencia-item {
+        flex-direction: column !important;
+        gap: 1rem !important;
+    }
+
+    .pendencia-item .item-right {
+        width: 100% !important;
+        padding-left: 0 !important;
+        border-left: none !important;
+        border-top: 1px dashed rgba(255, 255, 255, 0.1) !important;
+        padding-top: 1rem !important;
+    }
+
+    /* Ajuste de tamanho de botões para facilitar touch */
+    .btn, .icon-btn {
+        min-height: 44px;
+    }
+    
+    .apf-nav-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
 
 
