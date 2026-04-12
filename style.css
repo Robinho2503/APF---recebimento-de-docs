@@ -1399,26 +1399,62 @@ hr {
 
 /* Login Redesign */
 .login-page-backdrop {
-    background: radial-gradient(circle at center, #1a1a1e 0%, #09090b 100%) !important;
+    background: radial-gradient(circle at center, var(--login-bg-1, #1a1a1e) 0%, var(--login-bg-2, #09090b) 100%) !important;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: background 0.5s ease;
+}
+
+:root.light-mode {
+    --login-bg-1: #ffffff;
+    --login-bg-2: #f4f4f5;
 }
 
 .login-card {
     width: 100%;
     max-width: 440px;
     padding: 3.5rem 2.5rem;
-    background: rgba(24, 24, 27, 0.6);
+    background: var(--panel-bg);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--panel-border);
     border-radius: 2rem;
     text-align: center;
     box-shadow: 
-        0 20px 50px rgba(0, 0, 0, 0.4),
+        0 20px 50px rgba(0, 0, 0, 0.2),
         inset 0 0 0 1px rgba(255, 255, 255, 0.05);
     animation: loginCardAppear 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    position: relative;
+    overflow: hidden;
+}
+
+.login-theme-toggle {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background: rgba(var(--primary-rgb), 0.05);
+    border: 1px solid var(--panel-border);
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.login-theme-toggle:hover {
+    background: rgba(var(--primary-rgb), 0.1);
+    transform: rotate(15deg) scale(1.1);
+    border-color: var(--primary);
+}
+
+.login-theme-toggle i {
+    font-size: 1.25rem;
 }
 
 @keyframes loginCardAppear {
@@ -1427,7 +1463,7 @@ hr {
 }
 
 .login-title {
-    color: #ffffff !important;
+    color: var(--text-main) !important;
     font-size: 1.75rem;
     font-weight: 800;
     margin-bottom: 0.5rem;

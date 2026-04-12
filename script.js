@@ -265,14 +265,29 @@ function getItemSector(itemId) {
 }
 
 function updateThemeIcon() {
-    const themeBtn = document.getElementById('btn-theme-toggle');
-    if (themeBtn) {
-        if (document.documentElement.classList.contains('light-mode')) {
-            themeBtn.innerHTML = '<i class="ph ph-moon"></i>';
-        } else {
-            themeBtn.innerHTML = '<i class="ph ph-sun"></i>';
+    const themeButtons = [
+        document.getElementById('btn-theme-toggle'),
+        document.getElementById('btn-login-theme-toggle')
+    ];
+    
+    const isLight = document.documentElement.classList.contains('light-mode');
+    const iconClass = isLight ? 'ph ph-moon' : 'ph ph-sun';
+    const title = isLight ? 'Alternar para Modo Escuro' : 'Alternar para Modo Claro';
+
+    themeButtons.forEach(btn => {
+        if (btn) {
+            btn.innerHTML = `<i class="${iconClass}"></i>`;
+            btn.title = title;
         }
-    }
+    });
+}
+
+function toggleTheme() {
+    const htmlEl = document.documentElement;
+    htmlEl.classList.toggle('light-mode');
+    const isLight = htmlEl.classList.contains('light-mode');
+    localStorage.setItem('apf_theme', isLight ? 'light' : 'dark');
+    updateThemeIcon();
 }
 
 // DOM Elements
@@ -284,7 +299,7 @@ let btnTogglePendencias, pendenciasMgmtPanel, btnAddPendencia, pendenciaStartDat
 let btnShowHistory, historyModal, btnCloseHistory;
 let projectDueDateInp, currentProjectName, projectGlobalCountdown;
 let globalLogin, loginSector;
-let btnLogout, topAuthInfo, authNavTabs;
+let btnLogout, topAuthInfo, authNavTabs, btnLoginThemeToggle;
 
 function initDOMElements() {
     // Auth
@@ -292,6 +307,7 @@ function initDOMElements() {
     loginSector = document.getElementById('login-sector');
     topAuthInfo = document.getElementById('top-auth-info');
     authNavTabs = document.getElementById('auth-nav-tabs');
+    btnLoginThemeToggle = document.getElementById('btn-login-theme-toggle');
 
     // Buttons
     btnNewProject = document.getElementById('btn-new-project');
@@ -357,9 +373,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Theme setup
     if (localStorage.getItem('apf_theme') === 'light') {
         document.documentElement.classList.add('light-mode');
-        const themeBtn = document.getElementById('btn-theme-toggle');
-        if (themeBtn) themeBtn.innerHTML = '<i class="ph ph-moon"></i>';
     }
+    updateThemeIcon();
 
     initEventListeners();
     initDropbox();
@@ -375,17 +390,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 function initEventListeners() {
     const btnThemeToggle = document.getElementById('btn-theme-toggle');
     if (btnThemeToggle) {
-        btnThemeToggle.addEventListener('click', () => {
-            const htmlEl = document.documentElement;
-            htmlEl.classList.toggle('light-mode');
-            if (htmlEl.classList.contains('light-mode')) {
-                localStorage.setItem('apf_theme', 'light');
-                btnThemeToggle.innerHTML = '<i class="ph ph-moon"></i>';
-            } else {
-                localStorage.setItem('apf_theme', 'dark');
-                btnThemeToggle.innerHTML = '<i class="ph ph-sun"></i>';
-            }
-        });
+        btnThemeToggle.addEventListener('click', toggleTheme);
+    }
+    
+    if (btnLoginThemeToggle) {
+        btnLoginThemeToggle.addEventListener('click', toggleTheme);
     }
     
     // Authenticate events
