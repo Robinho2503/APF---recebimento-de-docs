@@ -1420,10 +1420,6 @@ function updateManagementStatsUI() {
             <span class="card-value">${awaitingValidation}</span>
             <span class="card-label">Em Análise APF</span>
         </div>
-        <div class="dashboard-card danger ${treeSearchFilter === 'apontamento' ? 'active' : ''}" style="border-color: var(--danger) !important;" onclick="handleDashboardFilter('apontamento', ${totalPointed})">
-            <span class="card-value" style="color: var(--danger);">${totalPointed}</span>
-            <span class="card-label">Apontamentos APF</span>
-        </div>
     `;
 }
 
@@ -3621,7 +3617,7 @@ function exportPointsReport() {
             </div>
     `;
 
-    Object.keys(grouped).sort().forEach(sector => {
+    Object.keys(grouped).sort((a, b) => a.localeCompare(b)).forEach(sector => {
         reportHtml += `<div class="sector-block">
             <div class="sector-title">${sector}</div>`;
         
