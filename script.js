@@ -3550,19 +3550,22 @@ function renderAuditLog() {
 
         return `
             <div class="audit-entry ${typeClass}">
-                <div class="audit-header">
-                    <span class="audit-badge"><i class="ph ${iconAction}"></i> ${log.action}</span>
-                    <span class="audit-time"><i class="ph ph-clock"></i> ${time}</span>
-                </div>
                 <div class="audit-body">
-                    <div class="audit-meta">
-                        <span class="audit-project"><i class="ph ph-buildings"></i> ${log.projectName}</span>
-                        <span class="audit-user"><i class="ph ph-user-focus"></i> Responsável: <b>${log.sector || 'Sistema'}</b></span>
+                    <div class="audit-row-project">
+                        <i class="ph ph-buildings"></i> <b>${log.projectName}</b>
                     </div>
-                    <div class="audit-desc">
+                    <div class="audit-row-user">
+                        <i class="ph ph-user-focus"></i> Responsável: <b>${log.sector || 'Sistema'}</b>
+                    </div>
+                    <div class="audit-row-action">
+                        <i class="ph ${iconAction}"></i> ${log.action}
+                    </div>
+                    <div class="audit-row-time">
+                        <i class="ph ph-clock"></i> ${time} | ${day}
+                    </div>
+                    <div class="audit-row-desc">
                         ${log.details}
                     </div>
-                    <div class="audit-date-footer">${day}</div>
                 </div>
             </div>
         `;
