@@ -115,6 +115,17 @@ function listenToActiveDevices() {
         });
         
         activeDevicesCount = count;
+        
+        // Renderizar o novo indicador simplificado
+        const indicator = document.getElementById('presence-indicator');
+        if (indicator) {
+            indicator.innerHTML = `
+                <span class="pulse-dot"></span>
+                <span class="presence-text"><b>${activeDevicesCount}</b> dispositivos conectados</span>
+            `;
+            indicator.style.display = 'flex';
+        }
+
         // Se estiver na aba de gestão, atualiza a UI
         if (isMgmtActive()) {
             updateManagementStatsUI();
@@ -1391,10 +1402,6 @@ function updateManagementStatsUI() {
 
     dash.style.display = 'grid';
     dash.innerHTML = `
-        <div class="dashboard-card info">
-            <span class="card-value">${activeDevicesCount}</span>
-            <span class="card-label">Dispositivos Ativos</span>
-        </div>
         <div class="dashboard-card danger ${treeSearchFilter === 'pendente' ? 'active' : ''}" onclick="handleDashboardFilter('pendente', ${totalPending})">
             <span class="card-value">${totalPending}</span>
             <span class="card-label">Documentos Pendentes</span>
