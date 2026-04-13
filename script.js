@@ -1,6 +1,6 @@
 // Firebase Imports
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc, onSnapshot, getDoc } from "firebase/firestore";
+import { getFirestore, doc, setDoc, onSnapshot, getDoc, collection, query, where, serverTimestamp, deleteDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 
 // Firebase Configuration & Initialization
@@ -50,6 +50,77 @@ let localUI = {
 };
 let treeSearchQuery = '';
 let treeSearchFilter = 'all'; // all, pendente, apontamento
+let activeDevicesCount = 1;
+let presenceUnsubscribe = null;
+
+// Presence System
+const DEVICE_ID_KEY = 'apf_device_id';
+function getDeviceId() {
+    let id = localStorage.getItem(DEVICE_ID_KEY);
+    if (!id) {
+        id = generateId();
+        localStorage.setItem(DEVICE_ID_KEY, id);
+    }
+    return id;
+}
+
+async function updatePresence() {
+    const deviceId = getDeviceId();
+    const docRef = doc(db, `presence/${deviceId}`);
+    try {
+        await setDoc(docRef, {
+            lastSeen: serverTimestamp(),
+            sector: authenticatedSector || 'Visitante',
+            projectId: localUI.currentProjectId || 'none'
+        });
+    } catch (e) {
+        console.warn("Erro ao atualizar presença:", e);
+    }
+}
+
+function listenToActiveDevices() {
+    // Apenas APF pode ver o contador (Otimização de leitura)
+    if (authenticatedSector !== 'APF') {
+        if (presenceUnsubscribe) {
+            presenceUnsubscribe();
+            presenceUnsubscribe = null;
+        }
+        return;
+    }
+
+    if (presenceUnsubscribe) return; // Já está escutando
+
+    console.log("Iniciando monitoramento de dispositivos ativos...");
+    const presenceCol = collection(db, 'presence');
+    
+    // Filtro: Atividade no último minuto (aproximado, o onSnapshot local filtrará o resto)
+    // Nota: serverTimestamp() não funciona no where do query local de forma trivial sem o servidor, 
+    // então pegamos todos e filtramos no cliente para maior precisão se necessário, 
+    // mas o ideal é o query do Firestore.
+    const q = query(presenceCol); 
+
+    presenceUnsubscribe = onSnapshot(q, (snapshot) => {
+        const now = Date.now();
+        const threshold = 70 * 1000; // 70 segundos para tolerância do pulso de 60s
+        
+        let count = 0;
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.lastSeen) {
+                const lastSeenTime = data.lastSeen.toMillis ? data.lastSeen.toMillis() : Date.now();
+                if (now - lastSeenTime < threshold) {
+                    count++;
+                }
+            }
+        });
+        
+        activeDevicesCount = count;
+        // Se estiver na aba de gestão, atualiza a UI
+        if (isMgmtActive()) {
+            updateManagementStatsUI();
+        }
+    });
+}
 
 function loadLocalUI() {
     try {
@@ -388,6 +459,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     initAIEngine();
     initSettings();
+
+    // Iniciar sistema de presença
+    updatePresence();
+    setInterval(updatePresence, 60 * 1000);
+    
+    // Limpeza ao sair (opcional, ajuda na precisão)
+    window.addEventListener('beforeunload', () => {
+        const deviceId = getDeviceId();
+        const docRef = doc(db, `presence/${deviceId}`);
+        // Nota: deleteDoc é assíncrono, pode não completar no beforeunload sem beacon, 
+        // mas o timeout de 70s resolverá se falhar.
+        deleteDoc(docRef);
+    });
 });
 
 function initEventListeners() {
@@ -497,6 +581,10 @@ function initEventListeners() {
                 const checklistSection = document.getElementById('tab-checklist');
                 if (checklistSection) {
                     checklistSection.style.display = tab.dataset.tab === 'management' ? 'none' : '';
+                }
+
+                if (tab.dataset.tab === 'management') {
+                    listenToActiveDevices();
                 }
 
                 applyAuthState();
@@ -1303,6 +1391,10 @@ function updateManagementStatsUI() {
 
     dash.style.display = 'grid';
     dash.innerHTML = `
+        <div class="dashboard-card info">
+            <span class="card-value">${activeDevicesCount}</span>
+            <span class="card-label">Dispositivos Ativos</span>
+        </div>
         <div class="dashboard-card danger ${treeSearchFilter === 'pendente' ? 'active' : ''}" onclick="handleDashboardFilter('pendente', ${totalPending})">
             <span class="card-value">${totalPending}</span>
             <span class="card-label">Documentos Pendentes</span>

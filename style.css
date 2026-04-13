@@ -1224,7 +1224,12 @@ hr {
     opacity: 0.8;
 }
 
-.dashboard-card.info { border-color: rgba(59, 130, 246, 0.3); background: rgba(59, 130, 246, 0.04); }
+.dashboard-card.info {
+    border-color: rgba(14, 165, 233, 0.3) !important;
+    background: rgba(14, 165, 233, 0.08) !important;
+    color: #0ea5e9;
+}
+.dashboard-card.info .card-value { color: #0ea5e9 !important; }
 .dashboard-card.active {
     transform: scale(1.08) translateY(-5px);
     z-index: 10;
@@ -1633,6 +1638,7 @@ hr {
         padding: 0.75rem !important;
     }
 
+    
     .dashboard-card .card-value {
         font-size: 1.25rem !important;
     }
