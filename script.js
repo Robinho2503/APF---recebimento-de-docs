@@ -691,6 +691,9 @@ function initEventListeners() {
                 alert('Selecione um empreendimento primeiro.');
                 return;
             }
+
+            const confirmExport = confirm(`Você deseja baixar toda a documentação anexa do empreendimento ${curr.name}?`);
+            if (!confirmExport) return;
             const originalBtnContent = btnExportZip.innerHTML;
             btnExportZip.innerHTML = '<i class="ph ph-spinner ph-spin"></i>';
             btnExportZip.disabled = true;
