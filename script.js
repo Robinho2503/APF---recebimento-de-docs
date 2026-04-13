@@ -672,19 +672,43 @@ function initEventListeners() {
             try {
                 const zip = new JSZip();
                 const rootFolder = zip.folder(curr.name);
-                async function processItem(item, folder) {
+                async function processItem(item, parentFolder) {
                     const children = getItems().filter(i => i.parentId === item.id);
-                    const itemFolder = folder.folder(item.name);
-                    if (item.attachments && item.attachments.length > 0) {
-                        for (const att of item.attachments) {
+                    const attachments = item.attachments || [];
+                    const hasDocs = attachments.length > 0;
+                    const isFolder = children.length > 0;
+
+                    // Se não for nada (nem pasta nem doc), ignora
+                    if (!isFolder && !hasDocs) return;
+
+                    // Criar a pasta para este item
+                    const currentFolder = parentFolder.folder(item.name);
+
+                    // Processar anexos
+                    if (hasDocs) {
+                        for (const att of attachments) {
                             try {
-                                const response = await fetch(att.objectUrl);
+                                const url = att.objectUrl || att.downloadUrl || att.dropboxUrl;
+                                if (!url) {
+                                    console.warn(`URL não encontrada para: ${att.name}`);
+                                    continue;
+                                }
+
+                                const response = await fetch(url);
+                                if (!response.ok) throw new Error(`Status ${response.status}`);
+                                
                                 const blob = await response.blob();
-                                itemFolder.file(att.name, blob);
-                            } catch (e) { console.error(`Erro ao baixar arquivo ${att.name}:`, e); }
+                                currentFolder.file(att.name, blob);
+                            } catch (e) {
+                                console.error(`Erro ao baixar "${att.name}" em "${item.name}":`, e);
+                            }
                         }
                     }
-                    for (const child of children) { await processItem(child, itemFolder); }
+
+                    // Processar filhos recursivamente
+                    for (const child of children) {
+                        await processItem(child, currentFolder);
+                    }
                 }
                 const roots = getChildItems(null);
                 if (roots.length === 0) {
