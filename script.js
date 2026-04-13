@@ -666,7 +666,7 @@ function initEventListeners() {
                 return;
             }
             const originalBtnContent = btnExportZip.innerHTML;
-            btnExportZip.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Gerando ZIP...';
+            btnExportZip.innerHTML = '<i class="ph ph-spinner ph-spin"></i>';
             btnExportZip.disabled = true;
             try {
                 const zip = new JSZip();
