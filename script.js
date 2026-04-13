@@ -373,7 +373,7 @@ function toggleTheme() {
 }
 
 // DOM Elements
-let btnNewProject, btnExportZip, btnToggleEng, btnDeleteProject, btnRenameProject, btnOpenTemplate, btnAddRoot;
+let btnNewProject, btnExportZip, btnExportPoints, btnToggleEng, btnDeleteProject, btnRenameProject, btnOpenTemplate, btnAddRoot;
 let checklistContainer, sidebarApf, btnToggleSidebar, managementContainer, trackingContainer;
 let tabs, tabContents, btnUnlock, btnBackToMain, inputPassword, passwordError, passwordLock, managementContent;
 let btnSettings, btnSaveSettings, btnResetModel, geminiModelInp, geminiKeyInp, btnToggleKey, dbxKeyInp, apfPassInp;
@@ -397,7 +397,7 @@ function initDOMElements() {
     // Buttons
     btnNewProject = document.getElementById('btn-new-project');
     btnExportZip = document.getElementById('btn-export-zip');
-    const btnExportPoints = document.getElementById('btn-export-points');
+    btnExportPoints = document.getElementById('btn-export-points');
     btnToggleEng = document.getElementById('btn-toggle-eng');
     btnDeleteProject = document.getElementById('btn-delete-project');
     btnRenameProject = document.getElementById('btn-rename-project');
