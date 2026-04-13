@@ -1718,11 +1718,7 @@ function renderTracking() {
 function getChildItems(parentId) {
     return getItems()
         .filter(item => item.parentId === parentId)
-        .sort((a, b) => {
-            // Root folders keep their original order; subfolders sorted alphabetically
-            if (a.parentId !== null) return a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' });
-            return 0;
-        });
+        .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }));
 }
 
 function getNodeStats(itemId) {
