@@ -2461,8 +2461,16 @@ function createNode(item, level) {
                 forecastInput.style.maxWidth = '115px';
                 forecastInput.style.padding = '0.2rem 0.4rem';
                 forecastInput.style.fontSize = '0.75rem';
-                if(item.forecastDate) forecastInput.value = item.forecastDate;
-                forecastInput.onchange = (e) => { item.forecastDate = e.target.value; saveState(); };
+                if(item.forecastDate) {
+                    forecastInput.value = item.forecastDate;
+                    forecastInput.classList.add('has-value');
+                }
+                forecastInput.onchange = (e) => { 
+                    item.forecastDate = e.target.value; 
+                    if(e.target.value) e.target.classList.add('has-value');
+                    else e.target.classList.remove('has-value');
+                    saveState(); 
+                };
                 if (!canEdit) forecastInput.disabled = true;
 
                 forecastGroup.innerHTML = '<label style="font-size:0.75rem; color:var(--text-muted);">Prev:</label>';

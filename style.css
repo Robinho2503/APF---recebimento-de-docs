@@ -607,6 +607,12 @@ input[type="date"].input-modern::-webkit-calendar-picker-indicator { filter: inv
 .inline-attachment .icon-btn:hover { color: var(--primary); }
 .inline-attachment .icon-btn.delete:hover { color: var(--danger); }
 
+/* Campo de previsão preenchido */
+.input-modern[type="date"].has-value {
+    background-color: rgba(239, 68, 68, 0.15) !important;
+    border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
 /* Presence Indicator (Top-Right) */
 .presence-indicator {
     position: absolute;
