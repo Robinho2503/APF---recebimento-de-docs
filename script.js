@@ -3539,24 +3539,30 @@ function renderAuditLog() {
 
     container.innerHTML = state.auditLog.map(log => {
         const date = new Date(log.timestamp);
-        const timeStr = date.toLocaleString('pt-BR');
+        const day = date.toLocaleDateString('pt-BR');
+        const time = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        
         let typeClass = '';
-        if (log.type === 'danger') typeClass = 'danger';
-        else if (log.type === 'warning') typeClass = 'warning';
-        else if (log.type === 'success') typeClass = 'success';
+        let iconAction = 'ph-info';
+        if (log.type === 'danger') { typeClass = 'danger'; iconAction = 'ph-warning-circle'; }
+        else if (log.type === 'warning') { typeClass = 'warning'; iconAction = 'ph-warning-diamond'; }
+        else if (log.type === 'success') { typeClass = 'success'; iconAction = 'ph-check-circle'; }
 
         return `
             <div class="audit-entry ${typeClass}">
                 <div class="audit-header">
-                    <span class="audit-action">${log.action}</span>
-                    <span class="audit-time">${timeStr}</span>
+                    <span class="audit-badge"><i class="ph ${iconAction}"></i> ${log.action}</span>
+                    <span class="audit-time"><i class="ph ph-clock"></i> ${time}</span>
                 </div>
-                <div class="audit-details">
-                    <span class="audit-project">${log.projectName}</span>
-                    <span class="audit-user" style="display: block; font-size: 0.65rem; color: var(--text-muted); margin-bottom: 0.25rem;">
-                        <i class="ph ph-user"></i> Usuário: <b>${log.sector || 'Sistema'}</b>
-                    </span>
-                    ${log.details}
+                <div class="audit-body">
+                    <div class="audit-meta">
+                        <span class="audit-project"><i class="ph ph-buildings"></i> ${log.projectName}</span>
+                        <span class="audit-user"><i class="ph ph-user-focus"></i> Responsável: <b>${log.sector || 'Sistema'}</b></span>
+                    </div>
+                    <div class="audit-desc">
+                        ${log.details}
+                    </div>
+                    <div class="audit-date-footer">${day}</div>
                 </div>
             </div>
         `;
