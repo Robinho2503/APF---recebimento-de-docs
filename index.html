@@ -72,7 +72,6 @@
         </aside>
 
         <div class="app-container">
-            <div id="presence-indicator" class="presence-indicator"></div>
 
         <!-- Main Content -->
         <main class="content-area">
@@ -89,7 +88,8 @@
             <div id="main-content-wrapper" style="display: none;">
                 <div class="flex-between mb-2">
                 <div style="flex-grow: 1;"></div>
-                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <div style="display: flex; gap: 0.5rem; align-items: center; position: relative;">
+                    <div id="presence-indicator" class="presence-indicator"></div>
                     <div class="apf-nav-group">
                         <div id="top-auth-info" class="top-auth-info" style="display: none;"></div>
                         <div id="auth-nav-tabs" class="auth-nav-tabs">
