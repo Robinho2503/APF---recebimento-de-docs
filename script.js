@@ -2560,7 +2560,7 @@ function createNode(item, level) {
 
         const btnAddSub = document.createElement('button');
         btnAddSub.className = 'btn btn-outline btn-sm';
-        btnAddSub.innerHTML = '<i class="ph ph-folder-plus"></i> <span style="margin-left:5px">Subpasta</span>';
+        btnAddSub.innerHTML = '<i class="ph ph-folder-plus"></i>';
         btnAddSub.onclick = () => handleAddFolder(item.id);
         actionsDiv.appendChild(btnAddSub);
 
