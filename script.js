@@ -397,6 +397,7 @@ function initDOMElements() {
     // Buttons
     btnNewProject = document.getElementById('btn-new-project');
     btnExportZip = document.getElementById('btn-export-zip');
+    const btnExportPoints = document.getElementById('btn-export-points');
     btnToggleEng = document.getElementById('btn-toggle-eng');
     btnDeleteProject = document.getElementById('btn-delete-project');
     btnRenameProject = document.getElementById('btn-rename-project');
@@ -710,6 +711,10 @@ function initEventListeners() {
                 btnExportZip.disabled = false;
             }
         });
+    }
+
+    if (btnExportPoints) {
+        btnExportPoints.addEventListener('click', exportPointsReport);
     }
 
     if (btnToggleEng) {
@@ -3539,4 +3544,98 @@ function renderAuditLog() {
             </div>
         `;
     }).join('');
+}
+function exportPointsReport() {
+    const curr = getCurrentProject();
+    if (!curr || curr.id === 'none') {
+        alert('Selecione um empreendimento primeiro.');
+        return;
+    }
+
+    // Coletar itens com apontamentos
+    let sourceItems = curr.pendenciaActive ? (curr.pendencias || []) : (curr.items || []);
+    const pointedItems = sourceItems.filter(i => {
+        const isPointed = i.validationStatus === 'Apontamento';
+        const isNotApplicable = i.isNotApplicable;
+        const hasChildren = curr.items && curr.items.some(child => child.parentId === i.id);
+        // Apenas folhas (documentos reais) que são apontamentos
+        return isPointed && !isNotApplicable && !hasChildren;
+    });
+
+    if (pointedItems.length === 0) {
+        alert('Não há documentos com apontamentos para exportar.');
+        return;
+    }
+
+    // Agrupar por setor
+    const grouped = {};
+    pointedItems.forEach(item => {
+        const sector = item.sector || 'Geral';
+        if (!grouped[sector]) grouped[sector] = [];
+        grouped[sector].push(item);
+    });
+
+    // Gerar HTML do relatório
+    const dateStr = new Date().toLocaleDateString('pt-BR');
+    const timeStr = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    
+    let reportHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Relatório de Apontamentos - ${curr.name}</title>
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+            <style>
+                body { font-family: 'Inter', sans-serif; line-height: 1.6; color: #333; padding: 40px; }
+                .header { border-bottom: 2px solid #333; margin-bottom: 30px; padding-bottom: 10px; }
+                .header h1 { margin: 0; font-size: 24px; color: #000; }
+                .header p { margin: 5px 0 0; font-size: 14px; color: #666; }
+                .sector-block { margin-top: 30px; page-break-inside: avoid; }
+                .sector-title { background: #f4f4f5; padding: 8px 15px; border-left: 5px solid #ef4444; font-weight: 700; font-size: 16px; margin-bottom: 15px; text-transform: uppercase; }
+                .item-row { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+                .item-name { font-weight: 600; font-size: 14px; display: block; margin-bottom: 4px; }
+                .item-note { font-size: 13px; color: #444; padding-left: 20px; position: relative; }
+                .item-note::before { content: '•'; position: absolute; left: 5px; color: #ef4444; font-weight: bold; }
+                @media print {
+                    body { padding: 0; }
+                    .no-print { display: none; }
+                }
+                .no-print-btn { background: #1a1a1e; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; margin-bottom: 20px; display: inline-flex; align-items: center; gap: 8px; }
+            </style>
+        </head>
+        <body>
+            <button class="no-print-btn no-print" onclick="window.print()">Imprimir / Salvar PDF</button>
+            <div class="header">
+                <h1>Relatório de Apontamentos</h1>
+                <p>Empreendimento: <strong>${curr.name}</strong></p>
+                <p>Data de Geração: ${dateStr} às ${timeStr}</p>
+            </div>
+    `;
+
+    Object.keys(grouped).sort().forEach(sector => {
+        reportHtml += `<div class="sector-block">
+            <div class="sector-title">${sector}</div>`;
+        
+        grouped[sector].forEach(item => {
+            reportHtml += `
+                <div class="item-row">
+                    <span class="item-name">${item.name || item.docName}</span>
+                    <div class="item-note">${item.observation || 'Nenhuma observação detalhada.'}</div>
+                </div>
+            `;
+        });
+
+        reportHtml += `</div>`;
+    });
+
+    reportHtml += `
+        <div style="margin-top: 50px; font-size: 12px; color: #999; text-align: center; border-top: 1px solid #eee; padding-top: 10px;">
+            Documento gerado automaticamente pelo Sistema APF Checklist.
+        </div>
+    </body>
+    </html>`;
+
+    const printWin = window.open('', '_blank');
+    printWin.document.write(reportHtml);
+    printWin.document.close();
 }

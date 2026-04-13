@@ -607,6 +607,25 @@ input[type="date"].input-modern::-webkit-calendar-picker-indicator { filter: inv
 .inline-attachment .icon-btn:hover { color: var(--primary); }
 .inline-attachment .icon-btn.delete:hover { color: var(--danger); }
 
+/* Estilos para o Relatório de Impressão */
+@media print {
+    body * { visibility: hidden; }
+    .print-report, .print-report * { visibility: visible; }
+    .print-report {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: white !important;
+        color: black !important;
+        padding: 2rem;
+    }
+    .print-report h1, .print-report h2, .print-report h3 { color: black !important; }
+    .print-sector { margin-bottom: 2rem; page-break-inside: avoid; }
+    .print-item { border-bottom: 1px solid #eee; padding: 0.5rem 0; }
+    .print-note { font-style: italic; color: #555 !important; margin-left: 1rem; }
+}
+
 /* Campo de previsão preenchido */
 .input-modern[type="date"].has-value {
     background-color: rgba(239, 68, 68, 0.15) !important;
