@@ -1405,6 +1405,11 @@ function updateManagementStatsUI() {
         return hasAtt && !isValidated && !isPointed;
     }).length;
 
+    const totalPointed = applicableItems.filter(i => {
+        const hasAtt = i.attachments && i.attachments.length > 0;
+        return hasAtt && i.validationStatus === 'Apontamento';
+    }).length;
+
     dash.style.display = 'grid';
     dash.innerHTML = `
         <div class="dashboard-card danger ${treeSearchFilter === 'pendente' ? 'active' : ''}" onclick="handleDashboardFilter('pendente', ${totalPending})">
@@ -1414,6 +1419,10 @@ function updateManagementStatsUI() {
         <div class="dashboard-card warning ${treeSearchFilter === 'analise' ? 'active' : ''}" onclick="handleDashboardFilter('analise', ${awaitingValidation})">
             <span class="card-value">${awaitingValidation}</span>
             <span class="card-label">Em Análise APF</span>
+        </div>
+        <div class="dashboard-card danger ${treeSearchFilter === 'apontamento' ? 'active' : ''}" style="border-color: var(--danger) !important;" onclick="handleDashboardFilter('apontamento', ${totalPointed})">
+            <span class="card-value" style="color: var(--danger);">${totalPointed}</span>
+            <span class="card-label">Apontamentos APF</span>
         </div>
     `;
 }
@@ -3567,10 +3576,10 @@ function exportPointsReport() {
         return;
     }
 
-    // Agrupar por setor
+    // Agrupar por setor (usando getItemSector para garantir o setor responsável pai)
     const grouped = {};
     pointedItems.forEach(item => {
-        const sector = item.sector || 'Geral';
+        const sector = getItemSector(item.id) || item.sector || 'Geral';
         if (!grouped[sector]) grouped[sector] = [];
         grouped[sector].push(item);
     });
