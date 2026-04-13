@@ -687,7 +687,23 @@ function initEventListeners() {
                     if (hasDocs) {
                         for (const att of attachments) {
                             try {
-                                const url = att.downloadUrl || att.objectUrl || att.dropboxUrl;
+                                let url = null;
+
+                                // Tentar obter uma URL fresca se tivermos o caminho do storage (evita expiração de token)
+                                if (att.storagePath) {
+                                    try {
+                                        const storageRef = ref(storage, att.storagePath);
+                                        url = await getDownloadURL(storageRef);
+                                    } catch (urlErr) {
+                                        console.warn(`Não foi possível gerar URL fresca para ${att.name}, tentando fallback...`, urlErr);
+                                    }
+                                }
+
+                                // Fallback para URLs estáticas
+                                if (!url) {
+                                    url = att.downloadUrl || att.objectUrl || att.dropboxUrl;
+                                }
+
                                 if (!url) {
                                     console.warn(`URL não encontrada para: ${att.name}`);
                                     continue;
