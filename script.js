@@ -271,9 +271,9 @@ function saveState() {
                         specification: pend.specification || '',
                         attachments: (pend.attachments || []).map(att => ({
                             ...att,
-                            downloadUrl: att.downloadUrl || '',
-                            objectUrl: att.downloadUrl || '',
-                            source: 'firebase'
+                            downloadUrl: att.downloadUrl || att.objectUrl || att.dropboxUrl || '',
+                            objectUrl: att.downloadUrl || att.objectUrl || att.dropboxUrl || '',
+                            source: att.source || 'firebase'
                         })),
                         observation: pend.observation || ''
                     })),
@@ -284,9 +284,9 @@ function saveState() {
                             ...rest,
                             attachments: (item.attachments || []).map(att => ({
                                 ...att,
-                                downloadUrl: att.downloadUrl || '',
-                                objectUrl: att.downloadUrl || '',
-                                source: 'firebase'
+                                downloadUrl: att.downloadUrl || att.objectUrl || att.dropboxUrl || '',
+                                objectUrl: att.downloadUrl || att.objectUrl || att.dropboxUrl || '',
+                                source: att.source || 'firebase'
                             }))
                         };
                     })
@@ -679,7 +679,7 @@ function initEventListeners() {
                     if (hasDocs) {
                         for (const att of attachments) {
                             try {
-                                const url = att.downloadUrl || att.objectUrl;
+                                const url = att.downloadUrl || att.objectUrl || att.dropboxUrl;
                                 if (!url) {
                                     console.warn(`URL não encontrada para: ${att.name}`);
                                     continue;
