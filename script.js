@@ -138,7 +138,7 @@ function loadLocalUI() {
         const saved = localStorage.getItem('apf_local_ui_v1');
         if (saved) {
             const parsed = JSON.parse(saved);
-            localUI.expandedIds = new Set(parsed.expandedIds || []);
+            localUI.expandedIds = new Set(); // Forçar colapso por padrão ao carregar
             localUI.showFullChecklistDuringPendencia = parsed.showFullChecklistDuringPendencia || false;
             localUI.currentProjectId = parsed.currentProjectId || null;
         }
@@ -1466,15 +1466,7 @@ window.handleDashboardFilter = function(filter, count) {
     } else {
         treeSearchFilter = filter;
         
-        // Auto-expand all folders when applying a filter to show inner results
-        const p = getCurrentProject();
-        if (p) {
-            p.items.forEach(item => {
-                const hasChildren = p.items.some(child => child.parentId === item.id);
-                if (hasChildren) localUI.expandedIds.add(item.id);
-            });
-            saveLocalUI();
-        }
+        // Auto-expand removido para manter as pastas ocultas por padrão conforme solicitado
     }
     
     updateGlobalDateUI();
