@@ -11,7 +11,6 @@
     <link rel="stylesheet" href="/style.css">
     <!-- Firebase SDK v10 (Gerenciado por Vite) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/dropbox.js/10.34.0/Dropbox-sdk.min.js"></script>
 </head>
 <body>
     <!-- Global Login Screen -->
@@ -374,18 +373,6 @@
                     <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem;">As senhas padrão são "1234". Recomendamos alterá-las.</p>
                 </div>
 
-                <!-- Dropbox settings hidden as we migrated to Firebase Storage -->
-                <div class="mb-4" style="display: none;">
-                    <label class="label-modern">
-                        <i class="ph ph-dropbox-logo text-primary"></i> Dropbox App Key
-                    </label>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <input type="password" id="settings-dropbox-key" class="input-modern" style="flex: 1;" placeholder="Ex: 7uwxmlb4hz0im4x">
-                        <button id="btn-toggle-dropbox-key-visibility" class="icon-btn" title="Mostrar/Ocultar Chave">
-                            <i class="ph ph-eye"></i>
-                        </button>
-                    </div>
-                </div>
 
                 <div class="mb-4">
                     <label class="label-modern">

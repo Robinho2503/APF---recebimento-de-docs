@@ -20,7 +20,6 @@ const storage = getStorage(app);
 const GLOBAL_DOC_PATH = "apf_data/v2_global_state";
 
 // Data Models & State Initialization
-let dbx = null;
 const DEFAULT_ITEMS = [
     { id: 'sec1', name: 'Legalização', parentId: null, protected: true, expanded: false, attachments: [] },
     { id: 'sec2', name: 'Arquitetura e Urbanismo', parentId: null, protected: true, expanded: false, attachments: [] },
@@ -152,7 +151,6 @@ function saveLocalUI() {
         currentProjectId: localUI.currentProjectId
     };
     localStorage.setItem('apf_local_ui_v1', JSON.stringify(toSave));
-    localStorage.setItem('apf_last_project_id', localUI.currentProjectId); // Backwards compat
 }
 
 
@@ -273,12 +271,9 @@ function saveState() {
                         specification: pend.specification || '',
                         attachments: (pend.attachments || []).map(att => ({
                             ...att,
-                            dropboxPath: att.dropboxPath || '',
-                            dropboxUrl: att.dropboxUrl || '',
-                            storagePath: att.storagePath || '',
                             downloadUrl: att.downloadUrl || '',
-                            objectUrl: att.downloadUrl || att.dropboxUrl || att.objectUrl || '',
-                            source: att.source || ''
+                            objectUrl: att.downloadUrl || '',
+                            source: 'firebase'
                         })),
                         observation: pend.observation || ''
                     })),
@@ -289,12 +284,9 @@ function saveState() {
                             ...rest,
                             attachments: (item.attachments || []).map(att => ({
                                 ...att,
-                                dropboxPath: att.dropboxPath || '',
-                                dropboxUrl: att.dropboxUrl || '',
-                                storagePath: att.storagePath || '',
                                 downloadUrl: att.downloadUrl || '',
-                                objectUrl: att.downloadUrl || att.dropboxUrl || att.objectUrl || '',
-                                source: att.source || ''
+                                objectUrl: att.downloadUrl || '',
+                                source: 'firebase'
                             }))
                         };
                     })
@@ -376,7 +368,7 @@ function toggleTheme() {
 let btnNewProject, btnExportZip, btnExportPoints, btnToggleEng, btnDeleteProject, btnRenameProject, btnOpenTemplate, btnAddRoot;
 let checklistContainer, sidebarApf, btnToggleSidebar, managementContainer, trackingContainer;
 let tabs, tabContents, btnUnlock, btnBackToMain, inputPassword, passwordError, passwordLock, managementContent;
-let btnSettings, btnSaveSettings, btnResetModel, geminiModelInp, geminiKeyInp, btnToggleKey, dbxKeyInp, apfPassInp;
+let btnSettings, btnSaveSettings, btnResetModel, geminiModelInp, geminiKeyInp, btnToggleKey, apfPassInp;
 let btnTogglePendencias, pendenciasMgmtPanel, btnAddPendencia, pendenciaStartDateInp, modalOverlay, btnCloseModal;
 let btnShowHistory, historyModal, btnCloseHistory;
 let projectDueDateInp, currentProjectName, projectGlobalCountdown;
@@ -463,7 +455,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateThemeIcon();
 
     initEventListeners();
-    initDropbox();
     await loadState(); 
     
     // Check session after state is loaded (to populate sectors)
@@ -688,7 +679,7 @@ function initEventListeners() {
                     if (hasDocs) {
                         for (const att of attachments) {
                             try {
-                                const url = att.objectUrl || att.downloadUrl || att.dropboxUrl;
+                                const url = att.downloadUrl || att.objectUrl;
                                 if (!url) {
                                     console.warn(`URL não encontrada para: ${att.name}`);
                                     continue;
@@ -973,125 +964,6 @@ function initEventListeners() {
     });
 }
 
-const btnDbx = document.getElementById('btn-connect-dropbox');
-// Authentication - Dropbox
-async function initDropbox() {
-    const hash = window.location.hash;
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    const dropboxAppKey = localStorage.getItem('apf_dropbox_app_key');
-    
-    let token = localStorage.getItem('apf_dropbox_token');
-    let refreshToken = localStorage.getItem('apf_dropbox_refresh_token');
-
-    // NEW: Handle authorization code from redirect (Offline flow)
-    if (code) {
-        const codeVerifier = localStorage.getItem('apf_dropbox_verifier');
-        if (codeVerifier && dropboxAppKey) {
-            try {
-                let cleanPath = window.location.pathname.replace(/\/index\.html$/, '/');
-                if (!cleanPath.endsWith('/')) cleanPath += '/';
-                const redirectUri = window.location.origin + cleanPath;
-
-                const response = await fetch('https://api.dropboxapi.com/oauth2/token', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({
-                        code: code,
-                        grant_type: 'authorization_code',
-                        client_id: dropboxAppKey,
-                        code_verifier: codeVerifier,
-                        redirect_uri: redirectUri
-                    })
-                });
-
-                const data = await response.json();
-                if (data.access_token) {
-                    token = data.access_token;
-                    refreshToken = data.refresh_token; 
-                    localStorage.setItem('apf_dropbox_token', token);
-                    if (refreshToken) localStorage.setItem('apf_dropbox_refresh_token', refreshToken);
-                    
-                    // Cleanup URL and verifier
-                    localStorage.removeItem('apf_dropbox_verifier');
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                }
-            } catch (err) {
-                console.error("Erro na troca do token Dropbox:", err);
-            }
-        }
-    }
-
-    // Support access_token in hash (previous implicit flow)
-    if (hash && hash.includes('access_token')) {
-        const params = new URLSearchParams(hash.substring(1));
-        token = params.get('access_token');
-        if (token) {
-            localStorage.setItem('apf_dropbox_token', token);
-            window.location.hash = ''; 
-        }
-    }
-    
-    if (token || refreshToken) {
-        // Initialize with refreshToken to allow automatic renewal
-        dbx = new window.Dropbox.Dropbox({ 
-            accessToken: token,
-            refreshToken: refreshToken,
-            clientId: dropboxAppKey
-        });
-        
-        if(btnDbx) {
-            btnDbx.innerHTML = '<i class="ph ph-check-circle"></i>';
-            btnDbx.title = 'Dropbox Conectado (Permanente)';
-            btnDbx.classList.remove('btn-outline');
-            btnDbx.classList.add('glass-panel');
-            btnDbx.style.color = 'var(--accent)';
-            btnDbx.style.border = '1px solid var(--accent)';
-            btnDbx.onclick = () => {
-                if(confirm('Deseja desconectar sua conta do Dropbox?')) {
-                    localStorage.removeItem('apf_dropbox_token');
-                    localStorage.removeItem('apf_dropbox_refresh_token');
-                    location.reload();
-                }
-            };
-        }
-    } else {
-        if(btnDbx) {
-            btnDbx.onclick = async () => {
-                if (!dropboxAppKey) {
-                    alert("Configuração Pendente: Por favor, insira sua 'Dropbox App Key' nas Configurações (ícone ⚙️) para habilitar a conexão.");
-                    return;
-                }
-
-                if (window.location.protocol === 'file:') {
-                    alert("O Dropbox não permite login de arquivos locais (file://). Use o servidor local.");
-                    return;
-                }
-
-                // PKCE Flow
-                const array = new Uint8Array(32);
-                window.crypto.getRandomValues(array);
-                const verifier = Array.from(array, b => ("00" + b.toString(16)).slice(-2)).join('');
-                localStorage.setItem('apf_dropbox_verifier', verifier);
-
-                // Generate challenge using Web Crypto
-                const encoder = new TextEncoder();
-                const data = encoder.encode(verifier);
-                const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
-                const challenge = btoa(String.fromCharCode(...new Uint8Array(hashBuffer)))
-                    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-
-                let cleanPath = window.location.pathname.replace(/\/index\.html$/, '/');
-                if (!cleanPath.endsWith('/')) cleanPath += '/';
-                const redirectUri = window.location.origin + cleanPath;
-                const scopes = 'files.content.write files.content.read sharing.write sharing.read';
-                
-                const authUrl = `https://www.dropbox.com/oauth2/authorize?client_id=${dropboxAppKey}&response_type=code&token_access_type=offline&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&code_challenge=${challenge}&code_challenge_method=S256`;
-                window.location.href = authUrl;
-            };
-        }
-    }
-}
 
 function showTemporaryMessage(msg, type = 'info') {
     const toast = document.createElement('div');
@@ -2974,7 +2846,7 @@ function renderPendenciasMgmt() {
 
 function sanitizePathSegment(segment) {
     if (!segment) return "";
-    // Remove invalid Dropbox characters: / \ : ? * " < > |
+    // Remove invalid characters for paths
     // Also trim and remove trailing spaces/dots which are problematic for some OS/sync systems
     return segment.replace(/[\/\\:\?\*\"<>\|]/g, '-').trim().replace(/[\. ]+$/, '');
 }
@@ -3090,11 +2962,6 @@ window.handleDeleteFile = async function(itemId, fileId, isPendencia = false) {
                 await deleteObject(storageRef);
                 console.log("Arquivo removido do Firebase Storage.");
             }
-            // Caso 2: Arquivo Legado (Dropbox)
-            else if (att.dropboxPath && dbx) {
-                await dbx.filesDeleteV2({ path: att.dropboxPath });
-                console.log("Arquivo removido do Dropbox (Legado).");
-            }
             
             const deletedFileName = att.name;
             targetItem.attachments = targetItem.attachments.filter(a => a.id !== fileId);
@@ -3114,7 +2981,7 @@ window.handleDeleteFile = async function(itemId, fileId, isPendencia = false) {
 
 // Global modal helpers
 window.openPreview = function(fileObj) {
-    const url = fileObj.downloadUrl || fileObj.dropboxUrl || fileObj.objectUrl;
+    const url = fileObj.downloadUrl || fileObj.objectUrl;
     if (url) {
         window.open(url, '_blank');
     }
@@ -3241,11 +3108,6 @@ function initSettings() {
     const btnSaveSettings = document.getElementById('btn-save-settings');
     const btnResetModel = document.getElementById('btn-reset-model');
     
-    const geminiModelInp = document.getElementById('settings-gemini-model');
-    const geminiKeyInp = document.getElementById('settings-gemini-key');
-    const btnToggleKey = document.getElementById('btn-toggle-key-visibility');
-    
-    const dbxKeyInp = document.getElementById('settings-dropbox-key');
     const apfPassInp = document.getElementById('settings-apf-password');
 
     if (!btnSettings) return;
@@ -3253,7 +3115,6 @@ function initSettings() {
     btnSettings.addEventListener('click', () => {
         geminiModelInp.value = localStorage.getItem('apf_gemini_model') || 'gemini-1.5-flash';
         geminiKeyInp.value = localStorage.getItem('apf_gemini_key') || '';
-        dbxKeyInp.value = localStorage.getItem('apf_dropbox_app_key') || '';
         apfPassInp.value = localStorage.getItem('apf_access_password') || '';
         
         renderSectorPasswordsSettings();
@@ -3293,14 +3154,6 @@ function initSettings() {
         btnToggleKey.innerHTML = `<i class="ph ph-eye${isPass ? '-slash' : ''}"></i>`;
     });
 
-    const btnToggleDbxKey = document.getElementById('btn-toggle-dropbox-key-visibility');
-    if (btnToggleDbxKey) {
-        btnToggleDbxKey.addEventListener('click', () => {
-            const isPass = dbxKeyInp.type === 'password';
-            dbxKeyInp.type = isPass ? 'text' : 'password';
-            btnToggleDbxKey.innerHTML = `<i class="ph ph-eye${isPass ? '-slash' : ''}"></i>`;
-        });
-    }
 
     btnSaveSettings.addEventListener('click', () => {
         const gModel = geminiModelInp.value.trim();
@@ -3317,7 +3170,7 @@ function initSettings() {
 }
 
 window.analyzeDocumentAI = async function(att) {
-    const { objectUrl: url, type: mimeType, name, dropboxPath } = att;
+    const { objectUrl: url, type: mimeType, name } = att;
     document.getElementById('preview-title').textContent = `Leitura Robótica (IA): ${name}`;
     document.getElementById('preview-download-btn').style.display = 'none';
     const body = document.getElementById('preview-body');
@@ -3333,20 +3186,6 @@ window.analyzeDocumentAI = async function(att) {
     try {
         let fileDataBase64 = '';
         
-        // Try to get direct data from Dropbox if possible
-        if (dropboxPath && dbx) {
-            try {
-                const response = await dbx.filesDownload({ path: dropboxPath });
-                const blob = response.result.fileBlob;
-                fileDataBase64 = await new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result.split(',')[1]);
-                    reader.readAsDataURL(blob);
-                });
-            } catch (dbxErr) {
-                console.warn("Falha ao baixar do Dropbox, tentando via URL...", dbxErr);
-            }
-        }
 
         if (!fileDataBase64) {
             // URL direta (Firebase ou Dropbox validado)
@@ -3405,7 +3244,7 @@ window.analyzeDocumentAI = async function(att) {
         body.innerHTML = `<div style="padding:2rem; text-align:center; color:var(--danger)">
             <i class="ph ph-warning-circle" style="font-size: 2.5rem; margin-bottom: 1rem; display: block;"></i>
             <p>${e.message}</p>
-            <p style="font-size: 0.8rem; margin-top: 1rem; opacity: 0.7;">Nota: Se o erro persistir com arquivos no Dropbox, tente recarregar a página ou reconectar o Dropbox.</p>
+            <p style="font-size: 0.8rem; margin-top: 1rem; opacity: 0.7;">Nota: Verifique se sua chave de API do Gemini ainda é válida.</p>
         </div>`;
     }
 }
@@ -3426,20 +3265,6 @@ window.autoAnalyzeDocumentAI = async function(att, itemId, originalFile = null, 
                 reader.readAsDataURL(originalFile);
             });
             console.log("IA usando arquivo original em memória.");
-        }
-        // Legado: Dropbox
-        else if (dropboxPath && dbx) {
-            try {
-                const response = await dbx.filesDownload({ path: dropboxPath });
-                const blob = response.result.fileBlob;
-                fileDataBase64 = await new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result.split(',')[1]);
-                    reader.readAsDataURL(blob);
-                });
-            } catch (e) {
-                console.warn("Falha ao baixar do Dropbox (auto AI)", e);
-            }
         }
 
         // Fallback: Tentativa de baixar da URL (pode sofrer CORS dependendo das regras do Storage)
