@@ -100,32 +100,40 @@ function listenToActiveDevices() {
 
     presenceUnsubscribe = onSnapshot(q, (snapshot) => {
         const now = Date.now();
-        const threshold = 70 * 1000; // 70 segundos para tolerância do pulso de 60s
+        const threshold = 120 * 1000; // 120 segundos (mais tolerante)
         
         let count = 0;
+        const processedIds = new Set();
+
         snapshot.forEach(doc => {
             const data = doc.data();
             if (data.lastSeen) {
-                const lastSeenTime = data.lastSeen.toMillis ? data.lastSeen.toMillis() : Date.now();
+                const lastSeenTime = data.lastSeen.toMillis ? data.lastSeen.toMillis() : now;
                 if (now - lastSeenTime < threshold) {
                     count++;
+                    processedIds.add(doc.id);
                 }
             }
         });
         
+        // Garantir que pelo menos o usuário atual (APF) seja contado se ele estiver ativo
+        const myId = getDeviceId();
+        if (!processedIds.has(myId)) {
+            count++;
+        }
+
         activeDevicesCount = count;
         
-        // Renderizar o novo indicador simplificado
         const indicator = document.getElementById('presence-indicator');
         if (indicator) {
             indicator.innerHTML = `
                 <span class="pulse-dot"></span>
                 <span class="presence-text"><b>${activeDevicesCount}</b> dispositivos conectados</span>
             `;
-            indicator.style.display = 'flex';
+            // Só exibe se estiver na aba de gestão
+            indicator.style.display = isMgmtActive() ? 'flex' : 'none';
         }
 
-        // Se estiver na aba de gestão, atualiza a UI
         if (isMgmtActive()) {
             updateManagementStatsUI();
         }
@@ -1097,6 +1105,9 @@ function applyAuthState(silentRedirect = false) {
     
     if (authNavTabs) {
         authNavTabs.style.display = (authenticatedSector === 'APF') ? 'flex' : 'none';
+        if (authenticatedSector === 'APF' && isMgmt) {
+            listenToActiveDevices();
+        }
         
         // Sync active state of nav tabs
         const currentActiveTab = isMgmt ? 'management' : 'checklist';
