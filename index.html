@@ -242,10 +242,29 @@
                                 <i class="ph ph-warning-diamond"></i> Resolução de pendências
                             </button>
                         </div>
-                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            <button id="btn-export-points" class="btn btn-outline btn-sm" title="Exportar relatório de apontamentos agrupados por setor">
-                                <i class="ph ph-file-text"></i> Relatório de apontamentos
-                            </button>
+                        <div style="display: flex; gap: 0.5rem; align-items: center; position: relative;">
+                            <!-- Menu de Relatórios -->
+                            <div class="reports-wrapper" style="position: relative;">
+                                <button id="btn-reports-menu" class="btn btn-outline btn-sm" title="Ver opções de relatórios">
+                                    <i class="ph ph-file-text"></i> Relatórios <i class="ph ph-caret-down" style="font-size: 0.7rem;"></i>
+                                </button>
+                                <div id="reports-dropdown" class="reports-dropdown glass-panel hidden">
+                                    <button class="report-opt" data-mode="only_points">
+                                        <i class="ph ph-革 ph-warning-circle"></i> Relatório de apontamentos
+                                    </button>
+                                    <button class="report-opt" data-mode="eng_pendencies">
+                                        <i class="ph ph-hard-hat"></i> Pendências de engenharia
+                                    </button>
+                                    <button class="report-opt" data-mode="all_pendent_pointed">
+                                        <i class="ph ph-stack"></i> Pendentes e Apontamentos
+                                    </button>
+                                    <button class="report-opt" data-mode="only_pendent">
+                                        <i class="ph ph-clock"></i> Documentos pendentes
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Botão Exportar Tudo (ZIP) -->
                             <button id="btn-export-zip" class="btn btn-primary btn-sm" title="Exportar todas as pastas e arquivos deste projeto em ZIP" style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;">
                                 <i class="ph ph-archive-box" style="font-size: 1.1rem;"></i>
                             </button>

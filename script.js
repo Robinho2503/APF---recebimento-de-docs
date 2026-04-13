@@ -397,7 +397,8 @@ function initDOMElements() {
     // Buttons
     btnNewProject = document.getElementById('btn-new-project');
     btnExportZip = document.getElementById('btn-export-zip');
-    btnExportPoints = document.getElementById('btn-export-points');
+    const btnReportsMenu = document.getElementById('btn-reports-menu');
+    const reportsDropdown = document.getElementById('reports-dropdown');
     btnToggleEng = document.getElementById('btn-toggle-eng');
     btnDeleteProject = document.getElementById('btn-delete-project');
     btnRenameProject = document.getElementById('btn-rename-project');
@@ -607,6 +608,31 @@ function initEventListeners() {
     }
 
     // Sidebar & Project Management Listeners
+    if (document.getElementById('btn-reports-menu')) {
+        const btn = document.getElementById('btn-reports-menu');
+        const dropdown = document.getElementById('reports-dropdown');
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            dropdown.classList.toggle('hidden');
+        };
+        
+        // Clique fora para fechar
+        document.addEventListener('click', (e) => {
+            if (!dropdown.classList.contains('hidden') && !dropdown.contains(e.target) && e.target !== btn) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        // Opções de relatório
+        document.querySelectorAll('.report-opt').forEach(opt => {
+            opt.onclick = () => {
+                const mode = opt.dataset.mode;
+                dropdown.classList.add('hidden');
+                generateProjectReport(mode);
+            };
+        });
+    }
+
     if (projectDueDateInp) {
         projectDueDateInp.addEventListener('change', (e) => {
             const curr = getCurrentProject();
@@ -3423,37 +3449,69 @@ function renderAuditLog() {
         `;
     }).join('');
 }
-function exportPointsReport() {
+function generateProjectReport(mode = 'only_points') {
     const curr = getCurrentProject();
     if (!curr || curr.id === 'none') {
         alert('Selecione um empreendimento primeiro.');
         return;
     }
 
-    // Coletar itens com apontamentos
-    let sourceItems = curr.pendenciaActive ? (curr.pendencias || []) : (curr.items || []);
-    const pointedItems = sourceItems.filter(i => {
-        const isPointed = i.validationStatus === 'Apontamento';
-        const isNotApplicable = i.isNotApplicable;
-        const hasChildren = curr.items && curr.items.some(child => child.parentId === i.id);
-        // Apenas folhas (documentos reais) que são apontamentos
-        return isPointed && !isNotApplicable && !hasChildren;
-    });
+    let reportTitle = "Relatório";
+    let reportData = [];
 
-    if (pointedItems.length === 0) {
-        alert('Não há documentos com apontamentos para exportar.');
+    // Lógica de filtragem baseada no modo
+    if (mode === 'eng_pendencies') {
+        reportTitle = "Pendências de Engenharia";
+        reportData = (curr.pendencias || []).map(p => ({
+            id: p.id,
+            name: p.docName,
+            sector: p.sector,
+            observation: p.observation || p.specification || 'Pendente de resolução...'
+        }));
+    } else {
+        const allItems = curr.items || [];
+        reportData = allItems.filter(i => {
+            const hasChildren = allItems.some(child => child.parentId === i.id);
+            if (i.parentId === null || hasChildren) return false; // Apenas folhas (documentos)
+            if (i.isNotApplicable) return false;
+
+            const isPointed = i.validationStatus === 'Apontamento';
+            const isPendent = !i.attachments || i.attachments.length === 0;
+
+            if (mode === 'only_points') {
+                reportTitle = "Relatório de Apontamentos";
+                return isPointed;
+            } else if (mode === 'only_pendent') {
+                reportTitle = "Documentos Pendentes";
+                return isPendent;
+            } else if (mode === 'all_pendent_pointed') {
+                reportTitle = "Documentos Pendentes e Apontamentos";
+                return isPendent || isPointed;
+            }
+            return false;
+        });
+    }
+
+    if (reportData.length === 0) {
+        alert('Não há dados para gerar este relatório com os filtros atuais.');
         return;
     }
 
     // Agrupar por setor (usando getItemSector para garantir o setor responsável pai)
     const grouped = {};
-    pointedItems.forEach(item => {
-        const sector = getItemSector(item.id) || item.sector || 'Geral';
+    reportData.forEach(item => {
+        let sector = 'Geral';
+        if (mode === 'eng_pendencies') {
+            sector = item.sector || 'Geral';
+        } else {
+            sector = getItemSector(item.id) || item.sector || 'Geral';
+        }
+        
         if (!grouped[sector]) grouped[sector] = [];
         grouped[sector].push(item);
     });
 
-    // Gerar HTML do relatório
+    // Gerar HTML do relatório (Mantendo layout atual)
     const dateStr = new Date().toLocaleDateString('pt-BR');
     const timeStr = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     
@@ -3461,7 +3519,7 @@ function exportPointsReport() {
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Relatório de Apontamentos - ${curr.name}</title>
+            <title>${reportTitle} - ${curr.name}</title>
             <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
             <style>
                 body { font-family: 'Inter', sans-serif; line-height: 1.6; color: #333; padding: 40px; }
@@ -3469,7 +3527,7 @@ function exportPointsReport() {
                 .header h1 { margin: 0; font-size: 24px; color: #000; }
                 .header p { margin: 5px 0 0; font-size: 14px; color: #666; }
                 .sector-block { margin-top: 30px; page-break-inside: avoid; }
-                .sector-title { background: #f4f4f5; padding: 8px 15px; border-left: 5px solid #ef4444; font-weight: 700; font-size: 16px; margin-bottom: 15px; text-transform: uppercase; }
+                .sector-title { background: #f4f4f5; padding: 8px 15px; border-left: 5px solid var(--primary, #1a1a1e); font-weight: 700; font-size: 16px; margin-bottom: 15px; text-transform: uppercase; }
                 .item-row { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
                 .item-name { font-weight: 600; font-size: 14px; display: block; margin-bottom: 4px; }
                 .item-note { font-size: 13px; color: #444; padding-left: 20px; position: relative; }
@@ -3484,7 +3542,7 @@ function exportPointsReport() {
         <body>
             <button class="no-print-btn no-print" onclick="window.print()">Imprimir / Salvar PDF</button>
             <div class="header">
-                <h1>Relatório de Apontamentos</h1>
+                <h1>${reportTitle}</h1>
                 <p>Empreendimento: <strong>${curr.name}</strong></p>
                 <p>Data de Geração: ${dateStr} às ${timeStr}</p>
             </div>
@@ -3497,7 +3555,7 @@ function exportPointsReport() {
         grouped[sector].forEach(item => {
             reportHtml += `
                 <div class="item-row">
-                    <span class="item-name">${item.name || item.docName}</span>
+                    <span class="item-name">${item.name}</span>
                     <div class="item-note">${item.observation || 'Nenhuma observação detalhada.'}</div>
                 </div>
             `;
