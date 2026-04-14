@@ -611,6 +611,22 @@ function initEventListeners() {
         });
     }
 
+    if (btnForgotPassword) {
+        btnForgotPassword.onclick = () => {
+            if (forgotPasswordModal) forgotPasswordModal.classList.remove('hidden');
+        };
+    }
+
+    if (btnCloseForgot) {
+        btnCloseForgot.onclick = () => {
+            if (forgotPasswordModal) forgotPasswordModal.classList.add('hidden');
+        };
+    }
+
+    if (forgotPasswordModal) {
+        forgotPasswordModal.onclick = (e) => { if(e.target === forgotPasswordModal) forgotPasswordModal.classList.add('hidden'); };
+    }
+
     // Sidebar & Project Management Listeners
     if (document.getElementById('btn-reports-menu')) {
         const btn = document.getElementById('btn-reports-menu');
