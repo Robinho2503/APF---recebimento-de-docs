@@ -3183,6 +3183,7 @@ function initSettings() {
         if (geminiKeyInp) geminiKeyInp.value = localStorage.getItem('apf_gemini_key') || '';
         
         renderSectorPasswordsSettings();
+        if (settingsModal) settingsModal.classList.remove('hidden');
     }
 
     // History Modal Events
