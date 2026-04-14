@@ -383,6 +383,7 @@ let projectDueDateInp, currentProjectName, projectGlobalCountdown;
 let globalLogin, loginSector;
 let btnLogout, topAuthInfo, authNavTabs, btnLoginThemeToggle;
 let btnMobileMenu, sidebarBackdrop;
+let btnForgotPassword, forgotPasswordModal, btnCloseForgot;
 
 function initDOMElements() {
     // Auth
@@ -393,6 +394,9 @@ function initDOMElements() {
     btnLoginThemeToggle = document.getElementById('btn-login-theme-toggle');
     btnMobileMenu = document.getElementById('btn-mobile-menu');
     sidebarBackdrop = document.getElementById('sidebar-backdrop');
+    btnForgotPassword = document.getElementById('btn-forgot-password');
+    forgotPasswordModal = document.getElementById('forgot-password-modal');
+    btnCloseForgot = document.getElementById('btn-close-forgot');
 
     // Buttons
     btnNewProject = document.getElementById('btn-new-project');

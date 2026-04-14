@@ -1952,3 +1952,25 @@ hr {
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+
+.login-footer-links {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: center;
+}
+
+.link-btn {
+    background: none;
+    border: none;
+    color: var(--primary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    text-decoration: underline;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.link-btn:hover {
+    opacity: 1;
+}
