@@ -2738,11 +2738,19 @@ function renderSectorPasswordsSettings() {
         input.type = 'text';
         input.className = 'input-modern btn-sm';
         input.style.flex = '1';
-        input.value = state.settings.sectorPasswords[s] || '1234';
+        input.value = (state.settings.sectorPasswords[s]) || '1234';
         input.onchange = (e) => {
-            state.settings.sectorPasswords[s] = e.target.value;
+            const val = e.target.value;
+            state.settings.sectorPasswords[s] = val;
+            
+            // Se for APF, sincroniza com a senha da aba de gestão no localStorage
+            if (s === 'APF') {
+                localStorage.setItem('apf_access_password', val);
+            }
+            
             saveState();
             addAuditLog('Senha Alterada', `Senha do setor <strong>${s}</strong> foi alterada.`, 'warning');
+            showTemporaryMessage(`Senha de ${s} atualizada.`);
         };
 
         row.appendChild(label);
@@ -3168,21 +3176,13 @@ function initSettings() {
     const btnSaveSettings = document.getElementById('btn-save-settings');
     const btnResetModel = document.getElementById('btn-reset-model');
     
-    const apfPassInp = document.getElementById('settings-apf-password');
-
     if (!btnSettings) return;
 
-    btnSettings.addEventListener('click', () => {
-        geminiModelInp.value = localStorage.getItem('apf_gemini_model') || 'gemini-1.5-flash';
-        geminiKeyInp.value = localStorage.getItem('apf_gemini_key') || '';
-        apfPassInp.value = localStorage.getItem('apf_access_password') || '';
+    btnSettings.onclick = () => {
+        if (geminiModelInp) geminiModelInp.value = localStorage.getItem('apf_gemini_model') || 'gemini-1.5-flash';
+        if (geminiKeyInp) geminiKeyInp.value = localStorage.getItem('apf_gemini_key') || '';
         
         renderSectorPasswordsSettings();
-        settingsModal.classList.remove('hidden');
-    });
-
-    if (btnSettings) {
-        btnSettings.onclick = () => settingsModal.classList.remove('hidden');
     }
 
     // History Modal Events
