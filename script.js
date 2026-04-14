@@ -1155,7 +1155,10 @@ function applyAuthState(silentRedirect = false) {
             tabContents.forEach(tc => tc.classList.remove('active'));
             
             const checklistTab = document.getElementById('tab-checklist');
-            if (checklistTab) checklistTab.classList.add('active');
+            if (checklistTab) {
+                checklistTab.classList.add('active');
+                checklistTab.style.display = ''; // Garante visibilidade
+            }
             
             const checklistBtn = document.querySelector('[data-tab="checklist"]');
             if (checklistBtn) checklistBtn.classList.add('active');
