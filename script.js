@@ -2465,6 +2465,22 @@ function createNode(item, level) {
                 justInput.style.height = '60px';
                 justInput.placeholder = 'Justificativa...';
                 if(item.justification) justInput.value = item.justification;
+                const updateJustifyBtnStyle = () => {
+                    if(item.justification && item.justification.trim() !== '') {
+                        btnJustify.style.borderColor = 'var(--danger)';
+                        btnJustify.style.color = 'var(--danger)';
+                    } else {
+                        btnJustify.style.borderColor = '';
+                        btnJustify.style.color = '';
+                    }
+                };
+                updateJustifyBtnStyle();
+
+                justInput.oninput = (e) => { 
+                    item.justification = e.target.value; 
+                    updateJustifyBtnStyle(); 
+                    if (typeof debouncedSave === 'function') debouncedSave();
+                };
                 justInput.onchange = (e) => { 
                     const oldVal = item.justification || '';
                     item.justification = e.target.value; 
@@ -2476,10 +2492,6 @@ function createNode(item, level) {
                 if (!canEdit) justInput.disabled = true;
                 justBox.appendChild(justInput);
 
-                if(item.justification && item.justification.trim() !== '') {
-                    btnJustify.style.borderColor = 'var(--primary)';
-                    btnJustify.style.color = 'var(--primary)';
-                }
                 btnJustify.onclick = () => justBox.classList.toggle('open');
 
                 pendingBar.appendChild(forecastGroup);
