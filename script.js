@@ -1203,12 +1203,18 @@ function applyAuthState(silentRedirect = false) {
             topAuthInfo.style.display = 'flex';
             topAuthInfo.innerHTML = `
                 <span class="auth-text-small">Você está logado no acesso (${authenticatedSector})</span>
+                <button id="btn-change-auth-pass" class="icon-btn-simple" title="Alterar Minha Senha" style="font-size: 0.75rem; margin-left: 0.5rem;">
+                    <i class="ph ph-lock-key"></i>
+                </button>
                 <button id="btn-logout-sidebar" class="icon-btn-simple" title="Sair da Sessão" style="font-size: 0.75rem; margin-left: 0.25rem;">
                     <i class="ph ph-sign-out"></i>
                 </button>
             `;
             const slout = document.getElementById('btn-logout-sidebar');
             if (slout) slout.onclick = logout;
+
+            const cpBtn = document.getElementById('btn-change-auth-pass');
+            if (cpBtn) cpBtn.onclick = openChangePasswordModal;
         } else {
             topAuthInfo.style.display = 'none';
         }
@@ -3614,3 +3620,84 @@ function generateProjectReport(mode = 'only_points') {
     printWin.document.write(reportHtml);
     printWin.document.close();
 }
+
+// --- PASSWORD CHANGE SYSTEM ---
+function openChangePasswordModal() {
+    const modal = document.getElementById('change-password-modal');
+    if (modal) {
+        document.getElementById('change-pass-current').value = '';
+        document.getElementById('change-pass-new').value = '';
+        document.getElementById('change-pass-confirm').value = '';
+        modal.classList.remove('hidden');
+    }
+}
+
+function closeChangePasswordModal() {
+    const modal = document.getElementById('change-password-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
+async function processPasswordChange() {
+    const currentInp = document.getElementById('change-pass-current');
+    const newInp = document.getElementById('change-pass-new');
+    const confirmInp = document.getElementById('change-pass-confirm');
+    
+    const currentPass = currentInp.value.trim();
+    const newPass = newInp.value.trim();
+    const confirmPass = confirmInp.value.trim();
+    
+    if (!currentPass || !newPass || !confirmPass) {
+        showTemporaryMessage("Por favor, preencha todos os campos.", "danger");
+        return;
+    }
+    
+    if (newPass.length < 4) {
+        showTemporaryMessage("A nova senha deve ter pelo menos 4 caracteres.", "danger");
+        return;
+    }
+    
+    if (newPass !== confirmPass) {
+        showTemporaryMessage("A nova senha e a confirmação não coincidem.", "danger");
+        return;
+    }
+    
+    const storedPasswords = state.settings?.sectorPasswords || {};
+    const correctCurrent = storedPasswords[authenticatedSector] || "1234";
+    
+    if (currentPass !== correctCurrent) {
+        showTemporaryMessage("A senha atual digitada está incorreta.", "danger");
+        currentInp.style.borderColor = 'var(--danger)';
+        setTimeout(() => currentInp.style.borderColor = '', 1500);
+        currentInp.focus();
+        return;
+    }
+    
+    try {
+        if (!state.settings) state.settings = {};
+        if (!state.settings.sectorPasswords) state.settings.sectorPasswords = {};
+        
+        state.settings.sectorPasswords[authenticatedSector] = newPass;
+        saveState();
+        
+        addAuditLog('Senha Alterada', `O setor <strong>${authenticatedSector}</strong> alterou sua própria senha de acesso.`, 'warning');
+        showTemporaryMessage("Sua senha foi alterada com sucesso!", "success");
+        closeChangePasswordModal();
+    } catch (e) {
+        console.error("Erro ao alterar senha:", e);
+        showTemporaryMessage("Erro técnico ao salvar senha. Tente novamente.", "danger");
+    }
+}
+
+// Inicializar eventos do novo modal (chamado após o carregamento do DOM)
+document.addEventListener('DOMContentLoaded', () => {
+    const btnClose = document.getElementById('btn-close-change-pass');
+    if (btnClose) btnClose.onclick = closeChangePasswordModal;
+
+    const btnSave = document.getElementById('btn-save-change-pass');
+    if (btnSave) btnSave.onclick = processPasswordChange;
+
+    const modal = document.getElementById('change-password-modal');
+    if (modal) {
+        modal.onclick = (e) => { if (e.target === modal) closeChangePasswordModal(); };
+    }
+});

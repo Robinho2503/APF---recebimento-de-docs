@@ -415,6 +415,35 @@
     </div>
     <script type="module" src="/script.js"></script>
 
+    <!-- Change Password Modal -->
+    <div id="change-password-modal" class="modal-backdrop hidden" style="z-index: 10000;">
+        <div class="modal glass-panel" style="max-width: 400px; padding: 2rem;">
+            <div class="modal-header" style="margin-bottom: 1.5rem;">
+                <h3><i class="ph ph-lock-key"></i> Alterar Minha Senha</h3>
+                <button id="btn-close-change-pass" class="icon-btn" title="Fechar"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem;">
+                <div>
+                    <label class="label-modern" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.4rem; display: block;">Senha Atual</label>
+                    <input type="password" id="change-pass-current" class="input-modern" style="width: 100%; max-width: none;" placeholder="Digite a senha atual">
+                </div>
+                <div style="border-top: 1px solid var(--panel-border); pt-4; margin-top: 0.5rem; padding-top: 1rem;">
+                    <label class="label-modern" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.4rem; display: block;">Nova Senha</label>
+                    <input type="password" id="change-pass-new" class="input-modern" style="width: 100%; max-width: none;" placeholder="Nova senha">
+                </div>
+                <div>
+                    <label class="label-modern" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.4rem; display: block;">Confirmar Nova Senha</label>
+                    <input type="password" id="change-pass-confirm" class="input-modern" style="width: 100%; max-width: none;" placeholder="Repita a nova senha">
+                </div>
+            </div>
+            <div class="modal-footer" style="margin-top: 2rem;">
+                <button id="btn-save-change-pass" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                    <i class="ph ph-check"></i> Salvar Nova Senha
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Forgot Password Modal -->
     <div id="forgot-password-modal" class="modal-backdrop hidden" style="z-index: 10000;">
         <div class="modal glass-panel" style="max-width: 400px; text-align: center; padding: 2rem;">
