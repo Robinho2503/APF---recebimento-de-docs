@@ -850,7 +850,15 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
     -webkit-mask: radial-gradient(transparent 55%, black 57%);
     mask: radial-gradient(transparent 55%, black 57%);
 }
-.circular-progress-container .progress-text {/* Audit Log Styles */
+.circular-progress-container .progress-text {
+    position: relative;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-main);
+    z-index: 2;
+}
+
+/* Audit Log Styles */
 #audit-log-container {
     scrollbar-width: thin;
     scrollbar-color: var(--panel-border) transparent;
