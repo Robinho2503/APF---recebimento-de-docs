@@ -502,6 +502,22 @@
             <button id="btn-close-forgot" class="btn btn-primary" style="width: 100%;">Fechar</button>
         </div>
     </div>
+    <!-- Global Custom Confirmation Modal -->
+    <div id="confirm-modal" class="modal-backdrop hidden" style="z-index: 12000;">
+        <div class="modal glass-panel" style="max-width: 400px; padding: 2rem; text-align: center;">
+            <div id="confirm-modal-icon-container" style="margin-bottom: 1.25rem;">
+                <i class="ph ph-warning-circle" style="font-size: 3.5rem; color: var(--danger);"></i>
+            </div>
+            <h3 id="confirm-modal-title" style="font-size: 1.25rem; margin-bottom: 0.75rem;">Confirmar Ação</h3>
+            <p id="confirm-modal-message" style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 2rem;">Tem certeza que deseja realizar esta ação? Esta operação pode ser irreversível.</p>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <button id="btn-confirm-no" class="btn btn-outline" style="justify-content: center;">Não, cancelar</button>
+                <button id="btn-confirm-yes" class="btn btn-danger" style="justify-content: center;">Sim, confirmar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Floating Upload Toast -->
     <div id="upload-toast" class="upload-toast hidden">
         <div class="toast-content" style="display: flex; align-items: center; gap: 1rem;">

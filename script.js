@@ -180,6 +180,36 @@ function debounce(func, wait) {
     };
 }
 
+// Função Global de Confirmação Customizada
+window.showConfirm = function({ title, message, confirmText, cancelText, type, onConfirm }) {
+    if (!confirmModal) return;
+    
+    confirmModalTitle.textContent = title || 'Confirmar Ação';
+    confirmModalMessage.textContent = message || 'Tem certeza que deseja continuar?';
+    btnConfirmYes.textContent = confirmText || 'Sim, confirmar';
+    btnConfirmNo.textContent = cancelText || 'Não, cancelar';
+    
+    // Icon e Estilo do Botão
+    if (type === 'danger') {
+        btnConfirmYes.className = 'btn btn-danger';
+        confirmModalIconContainer.innerHTML = '<i class="ph ph-warning-circle" style="font-size: 3.5rem; color: var(--danger);"></i>';
+    } else {
+        btnConfirmYes.className = 'btn btn-primary';
+        confirmModalIconContainer.innerHTML = '<i class="ph ph-question" style="font-size: 3.5rem; color: var(--primary);"></i>';
+    }
+    
+    confirmModal.classList.remove('hidden');
+    
+    const cleanup = () => {
+        confirmModal.classList.add('hidden');
+        btnConfirmYes.onclick = null;
+        btnConfirmNo.onclick = null;
+    };
+    
+    btnConfirmYes.onclick = () => { cleanup(); if (onConfirm) onConfirm(); };
+    btnConfirmNo.onclick = () => { cleanup(); };
+};
+
 // Persistence
 const CACHE_KEY = 'apf_global_state_cache_v2';
 
@@ -388,6 +418,7 @@ let newProjectModal, btnCloseNewProject, btnConfirmNewProject, newProjNameInp, n
 let newProjectModalTitle, btnConfirmNewProjectText, newProjectModalInfo;
 let editingProjectId = null;
 let uploadToast, uploadToastText, uploadToastSub, uploadToastIcon;
+let confirmModal, confirmModalTitle, confirmModalMessage, confirmModalIconContainer, btnConfirmYes, btnConfirmNo;
 
 function initDOMElements() {
     // Auth
@@ -451,11 +482,18 @@ function initDOMElements() {
     const btnClearLogs = document.getElementById('btn-clear-logs');
     if (btnClearLogs) {
         btnClearLogs.onclick = () => {
-            if (confirm('Tem certeza que deseja limpar permanentemente o histórico de ações?')) {
-                state.auditLog = [];
-                saveState();
-                renderAuditLog();
-            }
+            showConfirm({
+                title: 'Limpar Histórico',
+                message: 'Tem certeza que deseja limpar permanentemente o histórico de ações? Esta operação não pode ser desfeita.',
+                type: 'danger',
+                confirmText: 'Limpar tudo',
+                onConfirm: () => {
+                    state.auditLog = [];
+                    saveState();
+                    renderAuditLog();
+                    showTemporaryMessage("Histórico limpo com sucesso.");
+                }
+            });
         };
     }
 
@@ -475,6 +513,14 @@ function initDOMElements() {
     uploadToastText = document.getElementById('upload-toast-text');
     uploadToastSub = document.getElementById('upload-toast-sub');
     uploadToastIcon = document.getElementById('upload-toast-icon');
+
+    // Confirm Modal
+    confirmModal = document.getElementById('confirm-modal');
+    confirmModalTitle = document.getElementById('confirm-modal-title');
+    confirmModalMessage = document.getElementById('confirm-modal-message');
+    confirmModalIconContainer = document.getElementById('confirm-modal-icon-container');
+    btnConfirmYes = document.getElementById('btn-confirm-yes');
+    btnConfirmNo = document.getElementById('btn-confirm-no');
 }
 
 // Init
@@ -578,7 +624,16 @@ function initEventListeners() {
     }
 
     if (btnLogout) {
-        btnLogout.addEventListener('click', logout);
+        btnLogout.onclick = () => {
+            showConfirm({
+                title: 'Sair do Sistema',
+                message: 'Deseja realmente encerrar sua sessão atual?',
+                confirmText: 'Sair agora',
+                onConfirm: () => {
+                    logout();
+                }
+            });
+        };
     }
 
     // Tab Navigation initialization
@@ -785,92 +840,97 @@ function initEventListeners() {
                 return;
             }
 
-            const confirmExport = confirm(`Você deseja baixar toda a documentação anexa do empreendimento ${curr.name}?`);
-            if (!confirmExport) return;
-            const originalBtnContent = btnExportZip.innerHTML;
-            btnExportZip.innerHTML = '<i class="ph ph-spinner ph-spin"></i>';
-            btnExportZip.disabled = true;
-            try {
-                const zip = new JSZip();
-                const rootFolder = zip.folder(curr.name);
-                async function processItem(item, parentFolder) {
-                    const children = getItems().filter(i => i.parentId === item.id);
-                    const attachments = item.attachments || [];
-                    const hasDocs = attachments.length > 0;
-                    const isFolder = children.length > 0;
+            showConfirm({
+                title: 'Baixar Documentação',
+                message: `Você deseja baixar toda a documentação anexa do empreendimento ${curr.name}? O sistema irá processar os arquivos em um ZIP.`,
+                confirmText: 'Baixar ZIP',
+                onConfirm: async () => {
+                    const originalBtnContent = btnExportZip.innerHTML;
+                    btnExportZip.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Gerando ZIP...';
+                    btnExportZip.disabled = true;
+                    try {
+                        const zip = new JSZip();
+                        const rootFolder = zip.folder(curr.name);
+                        async function processItem(item, parentFolder) {
+                            const children = getItems().filter(i => i.parentId === item.id);
+                            const attachments = item.attachments || [];
+                            const hasDocs = attachments.length > 0;
+                            const isFolder = children.length > 0;
 
-                    // Se não for nada (nem pasta nem doc), ignora
-                    if (!isFolder && !hasDocs) return;
+                            // Se não for nada (nem pasta nem doc), ignora
+                            if (!isFolder && !hasDocs) return;
 
-                    // Criar a pasta para este item
-                    const currentFolder = parentFolder.folder(item.name);
+                            // Criar a pasta para este item
+                            const currentFolder = parentFolder.folder(item.name);
 
-                    // Processar anexos
-                    if (hasDocs) {
-                        for (const att of attachments) {
-                            try {
-                                let url = null;
-
-                                // Tentar obter uma URL fresca se tivermos o caminho do storage (evita expiração de token)
-                                if (att.storagePath) {
+                            // Processar anexos
+                            if (hasDocs) {
+                                for (const att of attachments) {
                                     try {
-                                        const storageRef = ref(storage, att.storagePath);
-                                        url = await getDownloadURL(storageRef);
-                                    } catch (urlErr) {
-                                        console.warn(`Não foi possível gerar URL fresca para ${att.name}, tentando fallback...`, urlErr);
+                                        let url = null;
+
+                                        // Tentar obter uma URL fresca se tivermos o caminho do storage (evita expiração de token)
+                                        if (att.storagePath) {
+                                            try {
+                                                const storageRef = ref(storage, att.storagePath);
+                                                url = await getDownloadURL(storageRef);
+                                            } catch (urlErr) {
+                                                console.warn(`Não foi possível gerar URL fresca para ${att.name}, tentando fallback...`, urlErr);
+                                            }
+                                        }
+
+                                        // Fallback para URLs estáticas
+                                        if (!url) {
+                                            url = att.downloadUrl || att.objectUrl || att.dropboxUrl;
+                                        }
+
+                                        if (!url) {
+                                            console.warn(`URL não encontrada para: ${att.name}`);
+                                            continue;
+                                        }
+
+                                        const response = await fetch(url);
+                                        if (!response.ok) throw new Error(`Status ${response.status}`);
+                                        
+                                        const blob = await response.blob();
+                                        currentFolder.file(att.name, blob);
+                                    } catch (e) {
+                                        console.error(`Erro ao baixar "${att.name}" em "${item.name}":`, e);
                                     }
                                 }
+                            }
 
-                                // Fallback para URLs estáticas
-                                if (!url) {
-                                    url = att.downloadUrl || att.objectUrl || att.dropboxUrl;
-                                }
-
-                                if (!url) {
-                                    console.warn(`URL não encontrada para: ${att.name}`);
-                                    continue;
-                                }
-
-                                const response = await fetch(url);
-                                if (!response.ok) throw new Error(`Status ${response.status}`);
-                                
-                                const blob = await response.blob();
-                                currentFolder.file(att.name, blob);
-                            } catch (e) {
-                                console.error(`Erro ao baixar "${att.name}" em "${item.name}":`, e);
+                            // Processar filhos recursivamente
+                            for (const child of children) {
+                                await processItem(child, currentFolder);
                             }
                         }
-                    }
-
-                    // Processar filhos recursivamente
-                    for (const child of children) {
-                        await processItem(child, currentFolder);
+                        const roots = getChildItems(null);
+                        if (roots.length === 0) {
+                            alert('Não há itens para exportar.');
+                            btnExportZip.innerHTML = originalBtnContent;
+                            btnExportZip.disabled = false;
+                            return;
+                        }
+                        for (const root of roots) { await processItem(root, rootFolder); }
+                        const content = await zip.generateAsync({ type: 'blob' });
+                        const zipUrl = URL.createObjectURL(content);
+                        const link = document.createElement('a');
+                        link.href = zipUrl;
+                        link.download = `${curr.name}_Export.zip`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(zipUrl);
+                    } catch (error) {
+                        console.error('Erro na exportação ZIP:', error);
+                        alert('Ocorreu um erro ao gerar o arquivo ZIP.');
+                    } finally {
+                        btnExportZip.innerHTML = originalBtnContent;
+                        btnExportZip.disabled = false;
                     }
                 }
-                const roots = getChildItems(null);
-                if (roots.length === 0) {
-                    alert('Não há itens para exportar.');
-                    btnExportZip.innerHTML = originalBtnContent;
-                    btnExportZip.disabled = false;
-                    return;
-                }
-                for (const root of roots) { await processItem(root, rootFolder); }
-                const content = await zip.generateAsync({ type: 'blob' });
-                const zipUrl = URL.createObjectURL(content);
-                const link = document.createElement('a');
-                link.href = zipUrl;
-                link.download = `${curr.name}_Export.zip`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(zipUrl);
-            } catch (error) {
-                console.error('Erro na exportação ZIP:', error);
-                alert('Ocorreu um erro ao gerar o arquivo ZIP.');
-            } finally {
-                btnExportZip.innerHTML = originalBtnContent;
-                btnExportZip.disabled = false;
-            }
+            });
         });
     }
 
@@ -897,16 +957,23 @@ function initEventListeners() {
                 alert("Não é possível excluir o Modelo de Entrega.");
                 return;
             }
-            if (confirm(`Tem certeza que deseja excluir o empreendimento "${curr.name}"?`)) {
-                const nextProj = state.projects.find(p => p.id !== localUI.currentProjectId) || state.projects[0];
-                state.projects = state.projects.filter(p => p.id !== localUI.currentProjectId);
-                localUI.currentProjectId = nextProj.id;
-                saveLocalUI();
-                saveState();
-                updateGlobalDateUI();
-                renderTree();
-                renderTracking();
-            }
+            showConfirm({
+                title: 'Excluir Empreendimento',
+                message: `Tem certeza que deseja excluir permanentemente o empreendimento "${curr.name}" e todos os seus documentos?`,
+                type: 'danger',
+                confirmText: 'Excluir permanentemente',
+                onConfirm: () => {
+                    const nextProj = state.projects.find(p => p.id !== localUI.currentProjectId) || state.projects[0];
+                    state.projects = state.projects.filter(p => p.id !== localUI.currentProjectId);
+                    localUI.currentProjectId = nextProj.id;
+                    saveLocalUI();
+                    saveState();
+                    updateGlobalDateUI();
+                    renderTree();
+                    renderTracking();
+                    showTemporaryMessage(`Empreendimento removido.`);
+                }
+            });
         });
     }
 
@@ -1290,7 +1357,16 @@ function applyAuthState(silentRedirect = false) {
                 </button>
             `;
             const slout = document.getElementById('btn-logout-sidebar');
-            if (slout) slout.onclick = logout;
+            if (slout) slout.onclick = () => {
+                showConfirm({
+                    title: 'Sair do Sistema',
+                    message: 'Deseja realmente encerrar sua sessão atual?',
+                    confirmText: 'Sair agora',
+                    onConfirm: () => {
+                        logout();
+                    }
+                });
+            };
 
             const cpBtn = document.getElementById('btn-change-auth-pass');
             if (cpBtn) cpBtn.onclick = openChangePasswordModal;
@@ -1301,11 +1377,6 @@ function applyAuthState(silentRedirect = false) {
 }
 
 function logout() {
-    if (confirm('Deseja realmente sair da sessão atual?')) {
-        isAuthenticated = false;
-        authenticatedSector = null;
-        sessionStorage.removeItem('apf_session_sector');
-        
         // Return to login screen
         if (globalLogin) globalLogin.style.display = 'flex';
         if (authStatusBanner) authStatusBanner.style.display = 'none';
@@ -2817,21 +2888,28 @@ function handleAddFolder(parentId) {
 }
 
 function handleDeleteFolder(id) {
-    if(confirm('Tem certeza que deseja excluir esta pasta e tudo dentro dela?')){
-        const ids = new Set([id]);
-        let foundNew;
-        do {
-            foundNew = false;
-            getItems().forEach(i => {
-                if(ids.has(i.parentId) && !ids.has(i.id)) { ids.add(i.id); foundNew = true; }
-            });
-        } while(foundNew);
-        
-        const proj = getCurrentProject();
-        proj.items = proj.items.filter(i => !ids.has(i.id));
-        saveState();
-        renderTree();
-    }
+    showConfirm({
+        title: 'Excluir Pasta',
+        message: 'Tem certeza que deseja excluir esta pasta e todo o seu conteúdo permanentemente?',
+        type: 'danger',
+        confirmText: 'Excluir tudo',
+        onConfirm: () => {
+            const ids = new Set([id]);
+            let foundNew;
+            do {
+                foundNew = false;
+                getItems().forEach(i => {
+                    if(ids.has(i.parentId) && !ids.has(i.id)) { ids.add(i.id); foundNew = true; }
+                });
+            } while(foundNew);
+            
+            const proj = getCurrentProject();
+            proj.items = proj.items.filter(i => !ids.has(i.id));
+            saveState();
+            renderTree();
+            showTemporaryMessage("Pasta removida com sucesso.");
+        }
+    });
 }
 
 function handleRenameFolder(id) {
@@ -3004,21 +3082,28 @@ function renderPendenciasMgmt() {
         };
 
         row.querySelector('.delete').onclick = () => {
-            if (confirm('Deseja remover esta pendência?')) {
-                if (editingPendenciaId === p.id) {
-                     editingPendenciaId = null;
-                     btnAddPendencia.innerHTML = '<i class="ph ph-plus"></i> Adicionar';
-                     btnAddPendencia.classList.remove('btn-warning');
-                     btnAddPendencia.classList.add('btn-danger');
-                     document.getElementById('new-pendencia-name').value = '';
-                     document.getElementById('new-pendencia-sector').value = '';
-                     document.getElementById('new-pendencia-spec').value = '';
+            showConfirm({
+                title: 'Remover Pendência',
+                message: `Deseja remover a pendência "${p.docName}"?`,
+                type: 'danger',
+                confirmText: 'Remover',
+                onConfirm: () => {
+                    if (editingPendenciaId === p.id) {
+                         editingPendenciaId = null;
+                         btnAddPendencia.innerHTML = '<i class="ph ph-plus"></i> Adicionar';
+                         btnAddPendencia.classList.remove('btn-warning');
+                         btnAddPendencia.classList.add('btn-danger');
+                         document.getElementById('new-pendencia-name').value = '';
+                         document.getElementById('new-pendencia-sector').value = '';
+                         document.getElementById('new-pendencia-spec').value = '';
+                    }
+                    curr.pendencias = curr.pendencias.filter(item => item.id !== p.id);
+                    saveState();
+                    renderPendenciasMgmt();
+                    renderTree();
+                    showTemporaryMessage("Pendência removida.");
                 }
-                curr.pendencias = curr.pendencias.filter(item => item.id !== p.id);
-                saveState();
-                renderPendenciasMgmt();
-                renderTree();
-            }
+            });
         };
         listCont.appendChild(row);
 
@@ -3194,29 +3279,31 @@ window.handleDeleteFile = async function(itemId, fileId, isPendencia = false) {
         const att = targetItem.attachments.find(a => a.id === fileId);
         if (!att) return;
 
-        if (!confirm(`Você tem certeza que deseja excluir o documento "${att.name}"?`)) return;
-
-        try {
-            // Caso 1: Arquivo Novo (Firebase Storage)
-            if (att.storagePath) {
-                const storageRef = ref(storage, att.storagePath);
-                await deleteObject(storageRef);
-                console.log("Arquivo removido do Firebase Storage.");
+        showConfirm({
+            title: 'Excluir documento',
+            message: `Você tem certeza que deseja excluir permanentemente o documento "${att.name}"?`,
+            type: 'danger',
+            confirmText: 'Excluir arquivo',
+            onConfirm: async () => {
+                try {
+                    if (att.storagePath) {
+                        const storageRef = ref(storage, att.storagePath);
+                        await deleteObject(storageRef);
+                    }
+                    const deletedFileName = att.name;
+                    targetItem.attachments = targetItem.attachments.filter(a => a.id !== fileId);
+                    saveState();
+                    renderTree();
+                    addAuditLog('Documento Excluído', `Removido <strong>${deletedFileName}</strong> de <strong>${targetItem.docName || targetItem.name}</strong>`, 'danger');
+                    showTemporaryMessage("Arquivo excluído.");
+                } catch (err) {
+                    console.error("Erro ao excluir arquivo", err);
+                    targetItem.attachments = targetItem.attachments.filter(a => a.id !== fileId);
+                    saveState();
+                    renderTree();
+                }
             }
-            
-            const deletedFileName = att.name;
-            targetItem.attachments = targetItem.attachments.filter(a => a.id !== fileId);
-            saveState();
-            renderTree();
-            
-            addAuditLog('Documento Excluído', `Removido <strong>${deletedFileName}</strong> de <strong>${targetItem.docName || targetItem.name}</strong>`, 'danger');
-        } catch (err) {
-            console.error("Erro ao excluir arquivo", err);
-            // Mesmo com erro no storage, removemos do estado para não travar o UI
-            targetItem.attachments = targetItem.attachments.filter(a => a.id !== fileId);
-            saveState();
-            renderTree();
-        }
+        });
     }
 }
 

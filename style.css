@@ -2051,3 +2051,31 @@ hr {
 .toast-content {
     animation: fadeIn 0.4s ease-out;
 }
+
+/* Global Confirmation Modal Styles */
+#confirm-modal .modal {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+}
+
+#confirm-modal .btn-danger {
+    background: var(--danger);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+}
+
+#confirm-modal .btn-danger:hover {
+    background: #dc2626;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+}
+
+#confirm-modal .btn-outline:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+#confirm-modal-icon-container i {
+    filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.2));
+}
