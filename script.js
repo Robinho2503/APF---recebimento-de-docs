@@ -3880,7 +3880,7 @@ Documentos com Apontamento (Refazer/Corrigir): ${apontamento}
 Documentos completamente Pendentes (Faltosos): ${pendent}
 Status do Prazo: ${dueMsg}`;
 
-        const aiUrl = \`https://generativelanguage.googleapis.com/v1/models/\${modelName}:generateContent?key=\${apiKey}\`;
+        const aiUrl = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${apiKey}`;
         
         const payload = {
             contents: [{
@@ -3900,16 +3900,16 @@ Status do Prazo: ${dueMsg}`;
         const data = await aiRes.json();
         const textOut = data.candidates[0].content.parts[0].text;
         
-        const formattedHtml = textOut.replace(/\\*\\*(.*?)\\*\\*/g, '<strong style="color:var(--accent);">$1</strong>').replace(/\\n/g, '<br>');
+        const formattedHtml = textOut.replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--accent);">$1</strong>').replace(/\n/g, '<br>');
 
-        body.innerHTML = \`<div style="text-align:left; color:white; font-size:0.95rem; line-height:1.6; padding: 1rem; width: 100%; white-space: break-spaces;">\${formattedHtml}</div>\`;
+        body.innerHTML = `<div style="text-align:left; color:white; font-size:0.95rem; line-height:1.6; padding: 1rem; width: 100%; white-space: break-spaces;">${formattedHtml}</div>`;
 
     } catch(e) {
         console.error(e);
-        body.innerHTML = \`<div style="padding:2rem; text-align:center; color:var(--danger)">
+        body.innerHTML = `<div style="padding:2rem; text-align:center; color:var(--danger)">
             <i class="ph ph-warning-circle" style="font-size: 2.5rem; margin-bottom: 1rem; display: block;"></i>
-            <p>\${e.message}</p>
-        </div>\`;
+            <p>${e.message}</p>
+        </div>`;
     }
 }
 function generateProjectReport(mode = 'only_points') {
