@@ -415,6 +415,51 @@
     </div>
     <script type="module" src="/script.js"></script>
 
+    <!-- New Project Modal -->
+    <div id="new-project-modal" class="modal-backdrop hidden" style="z-index: 10000;">
+        <div class="modal glass-panel" style="max-width: 450px; padding: 2rem;">
+            <div class="modal-header" style="margin-bottom: 1.5rem;">
+                <h3><i class="ph ph-plus-circle"></i> Novo Empreendimento</h3>
+                <button id="btn-close-new-project" class="icon-btn" title="Fechar"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                <div>
+                    <label class="label-modern">Nome do Empreendimento</label>
+                    <input type="text" id="new-proj-name" class="input-modern" style="width: 100%; max-width: none;" placeholder="Ex: Residencial Vista Mar">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1rem;">
+                    <div>
+                        <label class="label-modern">UF</label>
+                        <select id="new-proj-uf" class="input-modern" style="width: 100%; max-width: none; appearance: auto;">
+                            <option value="">UF</option>
+                            <option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option>
+                            <option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option>
+                            <option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option>
+                            <option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option>
+                            <option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option>
+                            <option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option>
+                            <option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option>
+                            <option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option>
+                            <option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label-modern">Cidade</label>
+                        <input type="text" id="new-proj-city" class="input-modern" style="width: 100%; max-width: none;" placeholder="Ex: São Paulo">
+                    </div>
+                </div>
+                <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
+                    <i class="ph ph-info"></i> O novo empreendimento herdará automaticamente a estrutura de pastas do Modelo de Entrega.
+                </p>
+            </div>
+            <div class="modal-footer" style="margin-top: 2rem;">
+                <button id="btn-confirm-new-project" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                    <i class="ph ph-check"></i> Criar Empreendimento
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Change Password Modal -->
     <div id="change-password-modal" class="modal-backdrop hidden" style="z-index: 10000;">
         <div class="modal glass-panel" style="max-width: 400px; padding: 2rem;">

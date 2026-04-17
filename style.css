@@ -785,6 +785,16 @@ input[type="date"].input-modern::-webkit-calendar-picker-indicator { filter: inv
 .item-name i.ph-caret-down { transition: transform 0.2s; font-size: 0.8rem; }
 .obs-text { font-size: 0.8rem; color: var(--warning); font-style: italic; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+.tk-location {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin: -0.25rem 0 0.5rem 1.65rem;
+    opacity: 0.8;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
 /* Tracking Cards */
 .tracking-card {
     display: flex; gap: 1.5rem; padding: 1.5rem;

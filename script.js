@@ -384,6 +384,7 @@ let globalLogin, loginSector;
 let btnLogout, topAuthInfo, authNavTabs, btnLoginThemeToggle;
 let btnMobileMenu, sidebarBackdrop;
 let btnForgotPassword, forgotPasswordModal, btnCloseForgot;
+let newProjectModal, btnCloseNewProject, btnConfirmNewProject, newProjNameInp, newProjUfInp, newProjCityInp;
 
 function initDOMElements() {
     // Auth
@@ -454,6 +455,14 @@ function initDOMElements() {
             }
         };
     }
+
+    // New Project Modal
+    newProjectModal = document.getElementById('new-project-modal');
+    btnCloseNewProject = document.getElementById('btn-close-new-project');
+    btnConfirmNewProject = document.getElementById('btn-confirm-new-project');
+    newProjNameInp = document.getElementById('new-proj-name');
+    newProjUfInp = document.getElementById('new-proj-uf');
+    newProjCityInp = document.getElementById('new-proj-city');
 }
 
 // Init
@@ -665,42 +674,79 @@ function initEventListeners() {
         });
     }
 
+    if (btnCloseNewProject) {
+        btnCloseNewProject.onclick = () => newProjectModal.classList.add('hidden');
+    }
+
+    if (newProjectModal) {
+        newProjectModal.onclick = (e) => { if(e.target === newProjectModal) newProjectModal.classList.add('hidden'); };
+    }
+
     if (btnNewProject) {
         btnNewProject.addEventListener('click', () => {
-            const name = prompt('Nome do novo empreendimento (que herdará as pastas do Modelo de Entrega):');
-            if(name && name.trim()){
-                const baseProj = state.projects.find(p => p.id === 'p_default') || state.projects[0];
-                const duplicatedItems = JSON.parse(JSON.stringify(baseProj.items)).map(item => {
-                    item.attachments = [];
-                    item.validationStatus = 'Em Análise';
-                    item.observation = '';
-                    item.expanded = false;
-                    return item;
-                });
-                const newProj = {
-                    id: 'p_' + generateId(),
-                    name: name.trim(),
-                    dueDate: '',
-                    engAnalysisOpened: false,
-                    createdAt: new Date().toISOString().split('T')[0],
-                    pendenciaActive: false,
-                    pendencias: [],
-                    items: duplicatedItems
-                };
-                state.projects.push(newProj);
-                localUI.currentProjectId = newProj.id;
-                localUI.expandedIds.clear(); // Garantir que novos projetos iniciem colapsados
-                saveLocalUI();
-                saveState();
-                updateGlobalDateUI();
-                renderTree();
-                renderTracking();
-                tabs.forEach(t => t.classList.remove('active'));
-                tabContents.forEach(c => c.classList.remove('active'));
-                document.querySelector('[data-tab="management"]').classList.add('active');
-                document.getElementById('tab-management').classList.add('active');
-                applyAuthState();
+            if (newProjectModal) {
+                // Clear previous values
+                if (newProjNameInp) newProjNameInp.value = '';
+                if (newProjUfInp) newProjUfInp.value = '';
+                if (newProjCityInp) newProjCityInp.value = '';
+                newProjectModal.classList.remove('hidden');
+                if (newProjNameInp) newProjNameInp.focus();
             }
+        });
+    }
+
+    if (btnConfirmNewProject) {
+        btnConfirmNewProject.addEventListener('click', () => {
+            const name = newProjNameInp.value.trim();
+            const uf = newProjUfInp.value;
+            const city = newProjCityInp.value.trim();
+
+            if (!name) {
+                alert('O nome do empreendimento é obrigatório.');
+                return;
+            }
+
+            const baseProj = state.projects.find(p => p.id === 'p_default') || state.projects[0];
+            const duplicatedItems = JSON.parse(JSON.stringify(baseProj.items)).map(item => {
+                item.attachments = [];
+                item.validationStatus = 'Em Análise';
+                item.observation = '';
+                item.expanded = false;
+                return item;
+            });
+
+            const newProj = {
+                id: 'p_' + generateId(),
+                name: name,
+                uf: uf,
+                cidade: city,
+                dueDate: '',
+                engAnalysisOpened: false,
+                createdAt: new Date().toISOString().split('T')[0],
+                pendenciaActive: false,
+                pendencias: [],
+                items: duplicatedItems
+            };
+
+            state.projects.push(newProj);
+            localUI.currentProjectId = newProj.id;
+            localUI.expandedIds.clear();
+            
+            newProjectModal.classList.add('hidden');
+            
+            saveLocalUI();
+            saveState();
+            updateGlobalDateUI();
+            renderTree();
+            renderTracking();
+            
+            tabs.forEach(t => t.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+            document.querySelector('[data-tab="management"]').classList.add('active');
+            document.getElementById('tab-management').classList.add('active');
+            applyAuthState();
+            
+            showTemporaryMessage(`Empreendimento ${name} criado com sucesso!`);
         });
     }
 
@@ -1676,6 +1722,7 @@ function renderTracking() {
                 <div class="mb-1 flex-between" style="align-items: center; gap: 0.5rem;">
                     <h3 style="font-weight:700; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; margin: 0; ${titleStyle}" title="${p.name}"><i class="ph ph-buildings" style="${iconStyle}"></i> ${p.name}</h3>
                 </div>
+                ${(p.cidade || p.uf) ? `<div class="tk-location"><i class="ph ph-map-pin"></i> ${p.cidade || ''}${p.cidade && p.uf ? ' - ' : ''}${p.uf || ''}</div>` : ''}
                 <div class="mb-1" style="font-size: 0.75rem; width: 100%; margin-top: 0.25rem;">
                     ${trackingLine}
                 </div>
