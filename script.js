@@ -2427,6 +2427,29 @@ function createNode(item, level) {
     else icon.className = (item.attachments && item.attachments.length > 0) ? 'ph ph-file-text item-icon' : 'ph ph-folder item-icon';
     if(item.protected && isMgmt && !isRootFolder) icon.className = 'ph ph-folder-lock item-icon';
 
+    // APLICAR COR DE STATUS AO ÍCONE (Para documentos/pastas finais)
+    if (!isRootFolder && !hasChildren) {
+        let iconColor = 'var(--text-main)';
+        const hasAtt = item.attachments && item.attachments.length > 0;
+
+        if (item.isNotApplicable) {
+            iconColor = 'var(--text-muted)';
+        } else if (hasAtt) {
+            if (item.validationStatus === 'Validado' || item.validationStatus === 'APF check') {
+                iconColor = 'var(--accent)';
+            } else if (item.validationStatus === 'Apontamento') {
+                iconColor = 'var(--danger)';
+            } else {
+                // Em Análise ou Sem Status definido ainda com anexo
+                iconColor = 'var(--warning)';
+            }
+        } else {
+            // Pendente (Sem anexo e não é N/A) -> Vermelho conforme solicitado
+            iconColor = 'var(--danger)';
+        }
+        icon.style.color = iconColor;
+    }
+
     const nameSpan = document.createElement('span');
     nameSpan.className = 'item-name text-truncate';
     if(isRootFolder) nameSpan.classList.add('root-name'); 
@@ -2511,40 +2534,12 @@ function createNode(item, level) {
             const statusRow = document.createElement('div');
             statusRow.className = 'item-status-row';
 
-            const badgesWrap = document.createElement('div');
-            badgesWrap.style.display = 'flex';
-            badgesWrap.style.gap = '0.3rem';
-            badgesWrap.style.flexWrap = 'wrap';
-            badgesWrap.style.alignItems = 'center';
-
-            const statusBadge = document.createElement('span');
             if (item.isNotApplicable) {
-                statusBadge.className = 'badge badge-na badge-sm';
-                statusBadge.textContent = 'Não Necessário';
-            } else {
-                statusBadge.className = hasAtt ? 'badge badge-entregue badge-sm' : 'badge badge-pendente badge-sm';
-                statusBadge.textContent = hasAtt ? 'Entregue' : 'Pendente';
+                const naBadge = document.createElement('span');
+                naBadge.className = 'badge badge-na badge-sm';
+                naBadge.textContent = 'Não Necessário';
+                statusRow.appendChild(naBadge);
             }
-            badgesWrap.appendChild(statusBadge);
-
-            if(hasAtt && item.validationStatus) {
-                const valBadge = document.createElement('span');
-                if(item.validationStatus === 'APF check' || item.validationStatus === 'Validado') {
-                    valBadge.className = 'badge badge-validado badge-sm';
-                    valBadge.textContent = 'Validado';
-                }
-                else if(item.validationStatus === 'Apontamento') {
-                    valBadge.className = 'badge badge-apontamento badge-sm';
-                    valBadge.textContent = 'Apontamento';
-                }
-                else {
-                    valBadge.className = 'badge badge-analise badge-sm';
-                    valBadge.textContent = item.validationStatus || 'Em Análise';
-                }
-                badgesWrap.appendChild(valBadge);
-            }
-
-            statusRow.appendChild(badgesWrap);
 
             const btnAttach = document.createElement('button');
             btnAttach.className = 'icon-btn attach-icon-btn';
