@@ -387,7 +387,7 @@ let btnForgotPassword, forgotPasswordModal, btnCloseForgot;
 let newProjectModal, btnCloseNewProject, btnConfirmNewProject, newProjNameInp, newProjUfInp, newProjCityInp;
 let newProjectModalTitle, btnConfirmNewProjectText, newProjectModalInfo;
 let editingProjectId = null;
-let uploadToast, uploadToastText;
+let uploadToast, uploadToastText, uploadToastSub, uploadToastIcon;
 
 function initDOMElements() {
     // Auth
@@ -473,6 +473,8 @@ function initDOMElements() {
     // Upload Toast
     uploadToast = document.getElementById('upload-toast');
     uploadToastText = document.getElementById('upload-toast-text');
+    uploadToastSub = document.getElementById('upload-toast-sub');
+    uploadToastIcon = document.getElementById('upload-toast-icon');
 }
 
 // Init
@@ -3083,9 +3085,32 @@ window.handleFileUpload = async function(itemId, files, isPendencia = false) {
         const sanitizedProjName = sanitizePathSegment(currProject.name);
         const folderPath = isPendencia ? 'PENDENCIAS' : getItemPath(itemId, true);
         
-        // Exibir notificação de upload
-        if (uploadToast) uploadToast.classList.remove('hidden');
+        // Função auxiliar interna para atualizar o toast
+        const updateToast = (state, title, subtitle) => {
+            if (!uploadToast) return;
+            uploadToast.classList.remove('hidden');
+            if (uploadToastText) uploadToastText.textContent = title;
+            if (uploadToastSub) uploadToastSub.textContent = subtitle;
+            if (uploadToastIcon) {
+                if (state === 'loading') {
+                    uploadToastIcon.className = 'toast-spinner-mini';
+                    uploadToastIcon.innerHTML = '';
+                    uploadToast.style.borderColor = 'var(--primary)';
+                } else if (state === 'success') {
+                    uploadToastIcon.className = '';
+                    uploadToastIcon.innerHTML = '<i class="ph ph-check-circle ph-bold" style="color: #10b981; font-size: 1.5rem;"></i>';
+                    uploadToast.style.borderColor = '#10b981';
+                } else if (state === 'error') {
+                    uploadToastIcon.className = '';
+                    uploadToastIcon.innerHTML = '<i class="ph ph-warning-circle ph-bold" style="color: #ef4444; font-size: 1.5rem;"></i>';
+                    uploadToast.style.borderColor = '#ef4444';
+                }
+            }
+        };
+
+        updateToast('loading', 'Realizando upload...', 'Por favor, aguarde a conclusão.');
         
+        let success = true;
         try {
             if(!targetItem.attachments) targetItem.attachments = [];
             
@@ -3120,6 +3145,7 @@ window.handleFileUpload = async function(itemId, files, isPendencia = false) {
                     targetItem.validationStatus = 'Em Análise de APF';
                 } catch (err) {
                     console.error("Erro no upload para o Firebase Storage", err);
+                    success = false;
                     alert(`Falha ao enviar '${file.name}' ao Firebase.`);
                 }
             }
@@ -3138,9 +3164,17 @@ window.handleFileUpload = async function(itemId, files, isPendencia = false) {
                     window.autoAnalyzeDocumentAI(att, itemId, originalFile, isPendencia);
                 });
             }
+        } catch (globalErr) {
+            success = false;
+            console.error("Erro global no upload", globalErr);
         } finally {
-            // Ocultar notificação de upload
-            if (uploadToast) uploadToast.classList.add('hidden');
+            if (success) {
+                updateToast('success', 'Upload concluído!', 'Arquivos salvos com sucesso.');
+                setTimeout(() => uploadToast?.classList.add('hidden'), 3000);
+            } else {
+                updateToast('error', 'Erro no upload', 'Ocorreu um problema ao enviar os arquivos.');
+                setTimeout(() => uploadToast?.classList.add('hidden'), 5000);
+            }
         }
     }
 }
