@@ -3260,7 +3260,7 @@ function renderAnalysisPanels() {
         return { g: 'F', color: 'var(--danger)', label: 'Crítico', bg: 'rgba(239,68,68,0.12)' };
     }
 
-    const roots = curr.items.filter(i => i.parentId === null);
+    const roots = curr.items.filter(i => i.parentId === null).sort((a, b) => a.name.localeCompare(b.name));
     if (roots.length === 0) {
         sectorsEl.innerHTML = '<div style="text-align:center; padding:1rem; color:var(--text-muted); font-size:0.82rem;">Nenhum setor encontrado.</div>';
         return;
