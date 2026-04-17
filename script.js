@@ -1364,9 +1364,6 @@ function applyAuthState(silentRedirect = false) {
             topAuthInfo.style.display = 'flex';
             topAuthInfo.innerHTML = `
                 <span class="auth-text-small">Você está logado no acesso (${authenticatedSector})</span>
-                <button id="btn-change-auth-pass" class="icon-btn-simple" title="Alterar Minha Senha" style="font-size: 0.75rem; margin-left: 0.5rem;">
-                    <i class="ph ph-lock-key"></i>
-                </button>
                 <button id="btn-logout-sidebar" class="icon-btn-simple" title="Sair da Sessão" style="font-size: 0.75rem; margin-left: 0.25rem;">
                     <i class="ph ph-sign-out"></i>
                 </button>
@@ -2509,6 +2506,21 @@ function createNode(item, level) {
     itemLeft.appendChild(nameSpan);
     const itemRight = document.createElement('div');
     itemRight.className = 'item-right';
+
+    // RESTAURADO: LOCK ICON FOR ROOT FOLDERS - Right Aligned
+    if(isRootFolder && localUI.currentProjectId !== 'p_default') {
+        const isLocked = authenticatedSector && authenticatedSector !== 'APF' && authenticatedSector.trim() !== item.name.trim();
+        if (isLocked) {
+            const lockIcon = document.createElement('i');
+            lockIcon.className = 'ph ph-lock-simple';
+            lockIcon.style.color = 'var(--text-muted)';
+            lockIcon.style.opacity = '0.6';
+            lockIcon.style.fontSize = '1.1rem';
+            lockIcon.style.marginRight = '0.5rem';
+            lockIcon.title = 'Acesso Restrito';
+            itemRight.appendChild(lockIcon);
+        }
+    }
 
     if(!isMgmt) {
         if(!isRootFolder && !hasChildren) {
