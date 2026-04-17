@@ -2978,6 +2978,9 @@ function renderSectorPasswordsSettings() {
         input.type = 'text';
         input.className = 'input-modern btn-sm';
         input.style.flex = '1';
+        input.style.opacity = '0.6';
+        input.style.cursor = 'not-allowed';
+        input.readOnly = true;
         input.value = (state.settings.sectorPasswords[s]) || '1234';
         input.onchange = (e) => {
             const val = e.target.value;
@@ -2993,8 +2996,32 @@ function renderSectorPasswordsSettings() {
             showTemporaryMessage(`Senha de ${s} atualizada com sucesso!`, "success");
         };
 
+        const btnEdit = document.createElement('button');
+        btnEdit.className = 'icon-btn';
+        btnEdit.style.padding = '0.25rem';
+        btnEdit.title = 'Editar senha';
+        btnEdit.innerHTML = '<i class="ph ph-pencil-simple"></i>';
+        
+        btnEdit.onclick = () => {
+            const isLocked = input.readOnly;
+            input.readOnly = !isLocked;
+            if (!input.readOnly) {
+                input.style.opacity = '1';
+                input.style.cursor = 'text';
+                input.focus();
+                btnEdit.innerHTML = '<i class="ph ph-check" style="color:var(--accent)"></i>';
+                btnEdit.title = 'Concluir edição';
+            } else {
+                input.style.opacity = '0.6';
+                input.style.cursor = 'not-allowed';
+                btnEdit.innerHTML = '<i class="ph ph-pencil-simple"></i>';
+                btnEdit.title = 'Editar senha';
+            }
+        };
+
         row.appendChild(label);
         row.appendChild(input);
+        row.appendChild(btnEdit);
         listCont.appendChild(row);
     });
 }
