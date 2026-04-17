@@ -2009,3 +2009,45 @@ hr {
 .link-btn:hover {
     opacity: 1;
 }
+
+/* Floating Upload Toast */
+.upload-toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--panel-bg);
+    border: 1px solid var(--primary);
+    padding: 1rem 1.75rem;
+    border-radius: 1rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    z-index: 11000;
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+    transform: translateX(120%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.upload-toast:not(.hidden) {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.toast-spinner-mini {
+    width: 22px;
+    height: 22px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top: 3px solid var(--primary);
+    border-radius: 50%;
+    animation: spin-toast 0.8s linear infinite;
+}
+
+@keyframes spin-toast {
+    to { transform: rotate(360deg); }
+}
+
+.toast-content {
+    animation: fadeIn 0.3s ease-out;
+}

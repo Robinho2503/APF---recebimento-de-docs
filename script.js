@@ -387,6 +387,7 @@ let btnForgotPassword, forgotPasswordModal, btnCloseForgot;
 let newProjectModal, btnCloseNewProject, btnConfirmNewProject, newProjNameInp, newProjUfInp, newProjCityInp;
 let newProjectModalTitle, btnConfirmNewProjectText, newProjectModalInfo;
 let editingProjectId = null;
+let uploadToast, uploadToastText;
 
 function initDOMElements() {
     // Auth
@@ -468,6 +469,10 @@ function initDOMElements() {
     newProjectModalTitle = document.getElementById('new-project-modal-title');
     btnConfirmNewProjectText = document.getElementById('btn-confirm-new-project-text');
     newProjectModalInfo = document.getElementById('new-project-modal-info');
+
+    // Upload Toast
+    uploadToast = document.getElementById('upload-toast');
+    uploadToastText = document.getElementById('upload-toast-text');
 }
 
 // Init
@@ -3077,7 +3082,9 @@ window.handleFileUpload = async function(itemId, files, isPendencia = false) {
     if(targetItem && currProject) {
         const sanitizedProjName = sanitizePathSegment(currProject.name);
         const folderPath = isPendencia ? 'PENDENCIAS' : getItemPath(itemId, true);
-        document.body.style.cursor = 'wait';
+        
+        // Exibir notificação de upload
+        if (uploadToast) uploadToast.classList.remove('hidden');
         
         try {
             if(!targetItem.attachments) targetItem.attachments = [];
@@ -3132,7 +3139,8 @@ window.handleFileUpload = async function(itemId, files, isPendencia = false) {
                 });
             }
         } finally {
-            document.body.style.cursor = 'default';
+            // Ocultar notificação de upload
+            if (uploadToast) uploadToast.classList.add('hidden');
         }
     }
 }
