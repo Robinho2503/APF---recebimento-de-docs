@@ -1364,6 +1364,11 @@ function applyAuthState(silentRedirect = false) {
             topAuthInfo.style.display = 'flex';
             topAuthInfo.innerHTML = `
                 <span class="auth-text-small">Você está logado no acesso (${authenticatedSector})</span>
+                ${authenticatedSector !== 'APF' ? `
+                <button id="btn-change-auth-pass" class="icon-btn-simple" title="Alterar Minha Senha" style="font-size: 0.75rem; margin-left: 0.5rem;">
+                    <i class="ph ph-lock-key"></i>
+                </button>
+                ` : ''}
                 <button id="btn-logout-sidebar" class="icon-btn-simple" title="Sair da Sessão" style="font-size: 0.75rem; margin-left: 0.25rem;">
                     <i class="ph ph-sign-out"></i>
                 </button>
