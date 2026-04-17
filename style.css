@@ -397,19 +397,38 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
 
 /* Form Controls */
 .input-modern {
-    background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.15);
     color: var(--text-main); padding: 0.6rem 1rem; border-radius: 0.5rem;
     font-size: 0.95rem; outline: none; transition: all 0.2s; width: 100%; max-width: 300px;
+    cursor: pointer;
 }
-.input-modern:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.2); }
-input[type="date"].input-modern::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+.input-modern:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2); }
+
+/* Melhoria de contraste para opções de dropdown nativo */
+.input-modern option {
+    background-color: #1a1a1e !important;
+    color: #ffffff !important;
+    padding: 10px;
+}
+
+.light-mode .input-modern {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.2);
+    color: #18181b;
+}
+
+.light-mode .input-modern option {
+    background-color: #ffffff !important;
+    color: #18181b !important;
+}
 
 .label-modern {
     display: block;
     font-size: 0.85rem;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text-muted);
     margin-bottom: 0.5rem;
+    letter-spacing: 0.02em;
 }
 
 /* Buttons */
@@ -845,18 +864,19 @@ input[type="date"].input-modern::-webkit-calendar-picker-indicator { filter: inv
 }
 
 .audit-entry {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-left: 4px solid var(--primary);
-    padding: 1rem;
-    border-radius: 8px;
-    font-size: 0.85rem;
+    padding: 1.25rem;
+    border-radius: 12px;
+    font-size: 0.9rem;
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: 0.4rem;
     margin-bottom: 1rem;
     animation: fadeIn 0.3s ease;
-    transition: all 0.2s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .audit-entry:hover {
@@ -1939,16 +1959,20 @@ hr {
 /* Reports Dropdown */
 .reports-dropdown {
     position: absolute;
-    top: calc(100% + 0.5rem);
+    top: calc(100% + 0.6rem);
     right: 0;
-    min-width: 260px;
+    min-width: 280px;
     z-index: 1000;
     display: flex;
     flex-direction: column;
-    padding: 0.5rem;
-    gap: 0.25rem;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-    animation: slideInDown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    padding: 0.6rem;
+    gap: 0.4rem;
+    background: rgba(24, 24, 27, 0.98); /* Fundo quase sólido para máximo contraste */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 1rem;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    backdrop-filter: blur(20px);
+    animation: slideInDown 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .reports-dropdown.hidden {
@@ -1956,31 +1980,37 @@ hr {
 }
 
 .report-opt {
-    background: transparent;
-    border: none;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     color: var(--text-main);
-    padding: 0.65rem 0.85rem;
-    border-radius: 0.4rem;
+    padding: 0.85rem 1.15rem;
+    border-radius: 0.6rem;
     text-align: left;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
+    font-weight: 500;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 1rem;
     transition: all 0.2s ease;
     white-space: nowrap;
 }
 
 .report-opt:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--primary);
-    transform: translateX(3px);
+    background: var(--primary);
+    color: var(--bg-dark);
+    transform: translateX(5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .report-opt i {
-    font-size: 1.1rem;
+    font-size: 1.2rem;
     color: var(--primary);
-    opacity: 0.8;
+    transition: color 0.2s ease;
+}
+
+.report-opt:hover i {
+    color: var(--bg-dark);
 }
 
 @keyframes slideInDown {
