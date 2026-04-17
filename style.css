@@ -1661,17 +1661,36 @@ hr {
 .login-input {
     max-width: none !important;
     width: 100%;
-    background: rgba(0, 0, 0, 0.3) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    padding: 1rem 1.25rem !important;
+    background: rgba(0, 0, 0, 0.45) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    padding: 1.1rem 1.25rem !important;
     font-size: 1rem !important;
     border-radius: 1rem !important;
-    transition: all 0.3s ease !important;
-    color: var(--text-main) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    color: #ffffff !important;
+}
+
+.light-mode .login-input {
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.15) !important;
+    color: #18181b !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.login-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.light-mode .login-input::placeholder {
+    color: rgba(0, 0, 0, 0.5);
 }
 
 #login-sector {
-    color: #a1a1aa !important; /* Gray color (var(--text-muted)) */
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.light-mode #login-sector {
+    color: #18181b !important;
 }
 
 #login-sector option {
