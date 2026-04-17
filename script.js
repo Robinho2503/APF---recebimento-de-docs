@@ -385,6 +385,8 @@ let btnLogout, topAuthInfo, authNavTabs, btnLoginThemeToggle;
 let btnMobileMenu, sidebarBackdrop;
 let btnForgotPassword, forgotPasswordModal, btnCloseForgot;
 let newProjectModal, btnCloseNewProject, btnConfirmNewProject, newProjNameInp, newProjUfInp, newProjCityInp;
+let newProjectModalTitle, btnConfirmNewProjectText, newProjectModalInfo;
+let editingProjectId = null;
 
 function initDOMElements() {
     // Auth
@@ -463,6 +465,9 @@ function initDOMElements() {
     newProjNameInp = document.getElementById('new-proj-name');
     newProjUfInp = document.getElementById('new-proj-uf');
     newProjCityInp = document.getElementById('new-proj-city');
+    newProjectModalTitle = document.getElementById('new-project-modal-title');
+    btnConfirmNewProjectText = document.getElementById('btn-confirm-new-project-text');
+    newProjectModalInfo = document.getElementById('new-project-modal-info');
 }
 
 // Init
@@ -685,7 +690,11 @@ function initEventListeners() {
     if (btnNewProject) {
         btnNewProject.addEventListener('click', () => {
             if (newProjectModal) {
-                // Clear previous values
+                editingProjectId = null;
+                if (newProjectModalTitle) newProjectModalTitle.innerHTML = '<i class="ph ph-plus-circle"></i> Novo Empreendimento';
+                if (btnConfirmNewProjectText) btnConfirmNewProjectText.textContent = 'Criar Empreendimento';
+                if (newProjectModalInfo) newProjectModalInfo.style.display = 'block';
+                
                 if (newProjNameInp) newProjNameInp.value = '';
                 if (newProjUfInp) newProjUfInp.value = '';
                 if (newProjCityInp) newProjCityInp.value = '';
@@ -706,31 +715,44 @@ function initEventListeners() {
                 return;
             }
 
-            const baseProj = state.projects.find(p => p.id === 'p_default') || state.projects[0];
-            const duplicatedItems = JSON.parse(JSON.stringify(baseProj.items)).map(item => {
-                item.attachments = [];
-                item.validationStatus = 'Em Análise';
-                item.observation = '';
-                item.expanded = false;
-                return item;
-            });
+            if (editingProjectId) {
+                // Modo Edição
+                const proj = state.projects.find(p => p.id === editingProjectId);
+                if (proj) {
+                    proj.name = name;
+                    proj.uf = uf;
+                    proj.cidade = city;
+                    showTemporaryMessage(`Empreendimento "${name}" atualizado com sucesso!`);
+                }
+            } else {
+                // Modo Criação
+                const baseProj = state.projects.find(p => p.id === 'p_default') || state.projects[0];
+                const duplicatedItems = JSON.parse(JSON.stringify(baseProj.items)).map(item => {
+                    item.attachments = [];
+                    item.validationStatus = 'Em Análise';
+                    item.observation = '';
+                    item.expanded = false;
+                    return item;
+                });
 
-            const newProj = {
-                id: 'p_' + generateId(),
-                name: name,
-                uf: uf,
-                cidade: city,
-                dueDate: '',
-                engAnalysisOpened: false,
-                createdAt: new Date().toISOString().split('T')[0],
-                pendenciaActive: false,
-                pendencias: [],
-                items: duplicatedItems
-            };
+                const newProj = {
+                    id: 'p_' + generateId(),
+                    name: name,
+                    uf: uf,
+                    cidade: city,
+                    dueDate: '',
+                    engAnalysisOpened: false,
+                    createdAt: new Date().toISOString().split('T')[0],
+                    pendenciaActive: false,
+                    pendencias: [],
+                    items: duplicatedItems
+                };
 
-            state.projects.push(newProj);
-            localUI.currentProjectId = newProj.id;
-            localUI.expandedIds.clear();
+                state.projects.push(newProj);
+                localUI.currentProjectId = newProj.id;
+                localUI.expandedIds.clear();
+                showTemporaryMessage(`Empreendimento "${name}" criado com sucesso!`);
+            }
             
             newProjectModal.classList.add('hidden');
             
@@ -745,8 +767,6 @@ function initEventListeners() {
             document.querySelector('[data-tab="management"]').classList.add('active');
             document.getElementById('tab-management').classList.add('active');
             applyAuthState();
-            
-            showTemporaryMessage(`Empreendimento ${name} criado com sucesso!`);
         });
     }
 
@@ -886,14 +906,20 @@ function initEventListeners() {
     if (btnRenameProject) {
         btnRenameProject.addEventListener('click', () => {
             const curr = getCurrentProject();
-            if (curr.id === 'p_default') return;
-            const newName = prompt('Novo nome para o empreendimento:', curr.name);
-            if (newName && newName.trim() && newName.trim() !== curr.name) {
-                curr.name = newName.trim();
-                saveState();
-                updateGlobalDateUI();
-                renderTree();
-                renderTracking();
+            if (!curr || curr.id === 'p_default') return;
+
+            if (newProjectModal) {
+                editingProjectId = curr.id;
+                if (newProjectModalTitle) newProjectModalTitle.innerHTML = '<i class="ph ph-pencil-simple"></i> Editar Empreendimento';
+                if (btnConfirmNewProjectText) btnConfirmNewProjectText.textContent = 'Salvar Alterações';
+                if (newProjectModalInfo) newProjectModalInfo.style.display = 'none';
+
+                if (newProjNameInp) newProjNameInp.value = curr.name || '';
+                if (newProjUfInp) newProjUfInp.value = curr.uf || '';
+                if (newProjCityInp) newProjCityInp.value = curr.cidade || '';
+
+                newProjectModal.classList.remove('hidden');
+                if (newProjNameInp) newProjNameInp.focus();
             }
         });
     }

@@ -419,7 +419,7 @@
     <div id="new-project-modal" class="modal-backdrop hidden" style="z-index: 10000;">
         <div class="modal glass-panel" style="max-width: 450px; padding: 2rem;">
             <div class="modal-header" style="margin-bottom: 1.5rem;">
-                <h3><i class="ph ph-plus-circle"></i> Novo Empreendimento</h3>
+                <h3 id="new-project-modal-title"><i class="ph ph-plus-circle"></i> Novo Empreendimento</h3>
                 <button id="btn-close-new-project" class="icon-btn" title="Fechar"><i class="ph ph-x"></i></button>
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
@@ -448,13 +448,13 @@
                         <input type="text" id="new-proj-city" class="input-modern" style="width: 100%; max-width: none;" placeholder="Ex: São Paulo">
                     </div>
                 </div>
-                <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
+                <p id="new-project-modal-info" style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
                     <i class="ph ph-info"></i> O novo empreendimento herdará automaticamente a estrutura de pastas do Modelo de Entrega.
                 </p>
             </div>
             <div class="modal-footer" style="margin-top: 2rem;">
                 <button id="btn-confirm-new-project" class="btn btn-primary" style="width: 100%; justify-content: center;">
-                    <i class="ph ph-check"></i> Criar Empreendimento
+                    <i class="ph ph-check"></i> <span id="btn-confirm-new-project-text">Criar Empreendimento</span>
                 </button>
             </div>
         </div>
