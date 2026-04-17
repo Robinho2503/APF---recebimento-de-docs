@@ -427,6 +427,7 @@ function initDOMElements() {
     topAuthInfo = document.getElementById('top-auth-info');
     authNavTabs = document.getElementById('auth-nav-tabs');
     btnLoginThemeToggle = document.getElementById('btn-login-theme-toggle');
+    btnLogout = document.getElementById('btn-logout');
     btnMobileMenu = document.getElementById('btn-mobile-menu');
     sidebarBackdrop = document.getElementById('sidebar-backdrop');
     btnForgotPassword = document.getElementById('btn-forgot-password');
@@ -443,6 +444,7 @@ function initDOMElements() {
     btnRenameProject = document.getElementById('btn-rename-project');
     btnOpenTemplate = document.getElementById('btn-open-template');
     btnAddRoot = document.getElementById('btn-add-root');
+    btnSettings = document.getElementById('btn-settings');
     
     // Containers
     checklistContainer = document.getElementById('checklist-render-area');
@@ -459,6 +461,14 @@ function initDOMElements() {
     passwordError = document.getElementById('global-password-error');
     passwordLock = document.getElementById('password-lock');
     managementContent = document.getElementById('management-content');
+
+    // Settings elements
+    btnSaveSettings = document.getElementById('btn-save-settings');
+    btnResetModel = document.getElementById('btn-reset-model');
+    geminiModelInp = document.getElementById('settings-gemini-model');
+    geminiKeyInp = document.getElementById('settings-gemini-key');
+    btnToggleKey = document.getElementById('btn-toggle-key-visibility');
+    apfPassInp = document.getElementById('settings-apf-pass');
 
     // Pendencias & Modals
     btnTogglePendencias = document.getElementById('btn-toggle-pendencias');
@@ -1377,24 +1387,27 @@ function applyAuthState(silentRedirect = false) {
 }
 
 function logout() {
-        // Return to login screen
-        if (globalLogin) globalLogin.style.display = 'flex';
-        if (authStatusBanner) authStatusBanner.style.display = 'none';
-        if (btnLogout) btnLogout.style.display = 'none';
-        
-        const mainLayout = document.querySelector('.main-layout');
-        if (mainLayout) mainLayout.style.display = 'none';
-        
-        // Clear password input
-        const inputPassword = document.getElementById('global-password-input');
-        if (inputPassword) {
-            inputPassword.value = '';
-            inputPassword.focus();
-        }
-        
-        applyAuthState(true);
-        renderTree();
+    isAuthenticated = false;
+    authenticatedSector = null;
+    sessionStorage.removeItem('apf_session_sector');
+
+    // Return to login screen
+    if (globalLogin) globalLogin.style.display = 'flex';
+    if (authStatusBanner) authStatusBanner.style.display = 'none';
+    if (btnLogout) btnLogout.style.display = 'none';
+    
+    const mainLayout = document.querySelector('.main-layout');
+    if (mainLayout) mainLayout.style.display = 'none';
+    
+    // Clear password input
+    const inputPassword = document.getElementById('global-password-input');
+    if (inputPassword) {
+        inputPassword.value = '';
+        inputPassword.focus();
     }
+    
+    applyAuthState(true);
+    renderTree();
 }
 
 
