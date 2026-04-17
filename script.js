@@ -2151,6 +2151,28 @@ function renderTree() {
     if (!mgmt) updateProjectProgressUI(currProj);
     else updateManagementStatsUI();
     renderAnalysisPanels();
+
+    // Novo: Ajuste dinâmico de fonte para nomes longos
+    setTimeout(adjustTreeFontSize, 0); 
+}
+
+function adjustTreeFontSize() {
+    const names = document.querySelectorAll('.item-name');
+    names.forEach(name => {
+        name.style.fontSize = ''; // Reset para re-calcular
+        
+        let fontSize = 0.9;
+        const minFontSize = 0.6; // Reduzido um pouco mais para garantir visibilidade
+        const step = 0.02; // Passo menor para ajuste mais fino
+        
+        // Verifica transbordamento e reduz fonte
+        if (name.scrollWidth > name.clientWidth) {
+            while (name.scrollWidth > name.clientWidth && fontSize > minFontSize) {
+                fontSize -= step;
+                name.style.fontSize = fontSize + 'rem';
+            }
+        }
+    });
 }
 
 function createNode(item, level) {
@@ -2244,7 +2266,6 @@ function createNode(item, level) {
     const nameSpan = document.createElement('span');
     nameSpan.className = 'item-name text-truncate';
     if(isRootFolder) nameSpan.classList.add('root-name'); 
-    nameSpan.style.maxWidth = '300px';
     nameSpan.title = 'Clique para Expandir ou Ocultar';
     nameSpan.appendChild(chevron);
     nameSpan.appendChild(icon);
