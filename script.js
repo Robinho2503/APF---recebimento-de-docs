@@ -744,7 +744,11 @@ function initEventListeners() {
             opt.onclick = () => {
                 const mode = opt.dataset.mode;
                 dropdown.classList.add('hidden');
-                generateProjectReport(mode);
+                if (mode === 'ai_project_report') {
+                    if (typeof generateProjectReportAI === 'function') generateProjectReportAI();
+                } else {
+                    generateProjectReport(mode);
+                }
             };
         });
     }
@@ -3767,6 +3771,99 @@ function renderAuditLog() {
             </div>
         `;
     }).join('');
+}
+
+window.generateProjectReportAI = async function() {
+    const curr = getCurrentProject();
+    if (!curr || curr.id === 'none') {
+        alert('Selecione um empreendimento primeiro.');
+        return;
+    }
+
+    const apiKey = localStorage.getItem('apf_gemini_key');
+    const modelName = localStorage.getItem('apf_gemini_model') || 'gemini-1.5-flash';
+    if (!apiKey) {
+        alert('API Key do Gemini não configurada. Por favor, acesse as Configurações (ícone ⚙️).');
+        return;
+    }
+
+    document.getElementById('preview-title').innerHTML = `<i class="ph ph-sparkle" style="color:var(--accent);"></i> Relatório do Empreendimento (IA): ${curr.name}`;
+    document.getElementById('preview-download-btn').style.display = 'none';
+    const body = document.getElementById('preview-body');
+    
+    body.innerHTML = `
+        <div style="text-align:center; padding:4rem; color:var(--primary);">
+            <i class="ph ph-sparkle ph-spin" style="font-size: 3rem; display:inline-block; animation-duration: 2s;"></i>
+            <p style="margin-top:1rem;">A inteligência artificial está analisando as métricas do empreendimento...</p>
+        </div>
+    `;
+    modalOverlay.classList.remove('hidden');
+
+    try {
+        // Collect Metrics
+        const allItems = curr.items || [];
+        const requiredItems = allItems.filter(i => {
+            const hasChildren = allItems.some(child => child.parentId === i.id);
+            return (i.parentId !== null && !hasChildren && !i.isNotApplicable);
+        });
+
+        const totalItems = requiredItems.length;
+        const validated = requiredItems.filter(i => i.validationStatus === 'Validado').length;
+        const apontamento = requiredItems.filter(i => i.validationStatus === 'Apontamento').length;
+        const pendent = requiredItems.filter(i => !i.attachments || i.attachments.length === 0).length;
+        
+        let dueMsg = "Sem prazo geral definido";
+        if (curr.dueDate) {
+            const today = new Date().setHours(0,0,0,0);
+            const due = new Date(curr.dueDate + 'T00:00:00').getTime();
+            const diffDays = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
+            if (diffDays < 0) {
+                dueMsg = `Atrasado em ${Math.abs(diffDays)} dia(s)`;
+            } else if (diffDays === 0) {
+                dueMsg = "Prazo encerra hoje";
+            } else {
+                dueMsg = `Dentro do prazo (${diffDays} dia(s) restante(s))`;
+            }
+        }
+
+        const metricsSummary = `Lugar/Empreendimento: ${curr.name}
+Total de documentos exigidos: ${totalItems}
+Documentos Validados: ${validated}
+Documentos com Apontamento (Refazer/Corrigir): ${apontamento}
+Documentos completamente Pendentes (Faltosos): ${pendent}
+Status do Prazo: ${dueMsg}`;
+
+        const aiUrl = \`https://generativelanguage.googleapis.com/v1/models/\${modelName}:generateContent?key=\${apiKey}\`;
+        
+        const payload = {
+            contents: [{
+                parts: [
+                    { text: "Atue como um gerente de projetos rigoroso e analítico. A partir das métricas cruas a seguir sobre a entrega de documentação de um empreendimento, gere um resumo executivo objetivo e direto. Indique qual a etapa atual de saúde do projeto, mencione se há criticidade em relação aos atrasos ou pendências, e indique o que precisa de mais atenção. Use tom executivo. Devolva a resposta com uso de negrito para pontos importantes. Métricas:\\n\\n" + metricsSummary }
+                ]
+            }]
+        };
+
+        const aiRes = await fetch(aiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!aiRes.ok) throw new Error('Falha na comunicação com o Gemini. Verifique a chave ou o modelo nas configurações.');
+        const data = await aiRes.json();
+        const textOut = data.candidates[0].content.parts[0].text;
+        
+        const formattedHtml = textOut.replace(/\\*\\*(.*?)\\*\\*/g, '<strong style="color:var(--accent);">$1</strong>').replace(/\\n/g, '<br>');
+
+        body.innerHTML = \`<div style="text-align:left; color:white; font-size:0.95rem; line-height:1.6; padding: 1rem; width: 100%; white-space: break-spaces;">\${formattedHtml}</div>\`;
+
+    } catch(e) {
+        console.error(e);
+        body.innerHTML = \`<div style="padding:2rem; text-align:center; color:var(--danger)">
+            <i class="ph ph-warning-circle" style="font-size: 2.5rem; margin-bottom: 1rem; display: block;"></i>
+            <p>\${e.message}</p>
+        </div>\`;
+    }
 }
 function generateProjectReport(mode = 'only_points') {
     const curr = getCurrentProject();
