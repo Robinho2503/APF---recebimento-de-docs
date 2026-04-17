@@ -1199,13 +1199,18 @@ function showTemporaryMessage(msg, type = 'info') {
     toast.style.position = 'fixed';
     toast.style.bottom = '2rem';
     toast.style.right = '2rem';
-    toast.style.padding = '0.75rem 1.5rem';
-    toast.style.borderRadius = '0.5rem';
-    toast.style.background = type === 'danger' ? 'var(--danger)' : 'var(--accent)';
+    toast.style.padding = '1rem 1.5rem';
+    toast.style.borderRadius = '1rem';
+    
+    // Glassmorphism Style
+    toast.style.background = type === 'danger' ? 'rgba(239, 68, 68, 0.9)' : 'rgba(16, 185, 129, 0.9)';
+    toast.style.backdropFilter = 'blur(10px)';
+    toast.style.border = '1px solid rgba(255, 255, 255, 0.2)';
+    
     toast.style.color = 'white';
-    toast.style.boxShadow = '0 10px 25px rgba(0,0,0,0.3)';
+    toast.style.boxShadow = '0 15px 35px rgba(0,0,0,0.4)';
     toast.style.zIndex = '100000';
-    toast.style.fontSize = '0.85rem';
+    toast.style.fontSize = '0.9rem';
     toast.style.fontWeight = '600';
     toast.style.display = 'flex';
     toast.style.alignItems = 'center';
@@ -1214,8 +1219,8 @@ function showTemporaryMessage(msg, type = 'info') {
     toast.style.opacity = '0';
     toast.style.transition = 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
     
-    const icon = type === 'danger' ? 'ph-warning-circle' : 'ph-info';
-    toast.innerHTML = `<i class="ph ${icon}"></i> ${msg}`;
+    const iconName = type === 'danger' ? 'ph-warning-circle' : 'ph-check-circle';
+    toast.innerHTML = `<i class="ph ${iconName}" style="font-size: 1.25rem;"></i> ${msg}`;
     
     document.body.appendChild(toast);
     
@@ -2502,24 +2507,8 @@ function createNode(item, level) {
     }
 
     itemLeft.appendChild(nameSpan);
-    
     const itemRight = document.createElement('div');
     itemRight.className = 'item-right';
-
-    // LOCK ICON FOR ROOT FOLDERS - Right Aligned
-    if(isRootFolder && localUI.currentProjectId !== 'p_default') {
-        const isLocked = authenticatedSector && authenticatedSector !== 'APF' && authenticatedSector.trim() !== item.name.trim();
-        if (isLocked) {
-            const lockIcon = document.createElement('i');
-            lockIcon.className = 'ph ph-lock-simple';
-            lockIcon.style.color = 'var(--text-muted)';
-            lockIcon.style.opacity = '0.6';
-            lockIcon.style.fontSize = '1.1rem';
-            lockIcon.style.marginRight = '0.5rem';
-            lockIcon.title = 'Acesso Restrito';
-            itemRight.appendChild(lockIcon);
-        }
-    }
 
     if(!isMgmt) {
         if(!isRootFolder && !hasChildren) {
@@ -2974,7 +2963,7 @@ function renderSectorPasswordsSettings() {
             
             saveState();
             addAuditLog('Senha Alterada', `Senha do setor <strong>${s}</strong> foi alterada.`, 'warning');
-            showTemporaryMessage(`Senha de ${s} atualizada.`);
+            showTemporaryMessage(`Senha de ${s} atualizada com sucesso!`, "success");
         };
 
         row.appendChild(label);
