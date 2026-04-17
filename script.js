@@ -189,12 +189,21 @@ window.showConfirm = function({ title, message, confirmText, cancelText, type, o
     btnConfirmYes.textContent = confirmText || 'Sim, confirmar';
     btnConfirmNo.textContent = cancelText || 'Não, cancelar';
     
+    // Reset display
+    btnConfirmNo.style.display = 'block';
+
     // Icon e Estilo do Botão
     if (type === 'danger') {
         btnConfirmYes.className = 'btn btn-danger';
         confirmModalIconContainer.innerHTML = '<i class="ph ph-warning-circle" style="font-size: 3.5rem; color: var(--danger);"></i>';
+    } else if (type === 'success') {
+        btnConfirmYes.className = 'btn btn-primary';
+        btnConfirmYes.style.background = 'var(--accent)';
+        btnConfirmNo.style.display = 'none'; // Hide cancel button for success messages
+        confirmModalIconContainer.innerHTML = '<i class="ph ph-check-circle" style="font-size: 3.5rem; color: var(--accent);"></i>';
     } else {
         btnConfirmYes.className = 'btn btn-primary';
+        btnConfirmYes.style.background = '';
         confirmModalIconContainer.innerHTML = '<i class="ph ph-question" style="font-size: 3.5rem; color: var(--primary);"></i>';
     }
     
@@ -204,6 +213,7 @@ window.showConfirm = function({ title, message, confirmText, cancelText, type, o
         confirmModal.classList.add('hidden');
         btnConfirmYes.onclick = null;
         btnConfirmNo.onclick = null;
+        btnConfirmYes.style.background = '';
     };
     
     btnConfirmYes.onclick = () => { cleanup(); if (onConfirm) onConfirm(); };
@@ -3917,8 +3927,17 @@ async function processPasswordChange() {
         saveState();
         
         addAuditLog('Senha Alterada', `O setor <strong>${authenticatedSector}</strong> alterou sua própria senha de acesso.`, 'warning');
-        showTemporaryMessage("Sua senha foi alterada com sucesso!", "success");
         closeChangePasswordModal();
+        
+        // Mensagem de Confirmação Robusta
+        setTimeout(() => {
+            showConfirm({
+                title: 'Senha Atualizada',
+                message: 'Sua senha foi alterada com sucesso! Utilize-a em seu próximo login.',
+                confirmText: 'Entendido',
+                type: 'success'
+            });
+        }, 300);
     } catch (e) {
         console.error("Erro ao alterar senha:", e);
         showTemporaryMessage("Erro técnico ao salvar senha. Tente novamente.", "danger");
