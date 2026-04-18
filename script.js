@@ -2110,10 +2110,12 @@ function updateProjectProgressUI(curr) {
         return;
     }
     
-    let generalProgressPct = 0;
-    
-    // Calcula o progresso Geral (todas as pastas folha)
-    const leafItems = curr.items.filter(i => i.parentId !== null);
+    // Calcula o progresso Geral (todas as pastas folha que são aplicáveis)
+    const leafItems = curr.items.filter(i => {
+        const hasChildren = curr.items.some(child => child.parentId === i.id);
+        return i.parentId !== null && !hasChildren && !i.isNotApplicable;
+    });
+
     if (leafItems.length > 0) {
         const deliveredCount = leafItems.filter(i => i.attachments && i.attachments.length > 0 && i.validationStatus !== 'Apontamento').length;
         generalProgressPct = Math.round((deliveredCount / leafItems.length) * 100);
@@ -3467,6 +3469,7 @@ function renderAnalysisPanels() {
             curr.items.filter(i => i.parentId === itemId).forEach(child => {
                 const hasChildren = curr.items.some(i => i.parentId === child.id);
                 if (!hasChildren) {
+                    if (child.isNotApplicable) return;
                     total++;
                     if (child.attachments && child.attachments.length > 0) {
                         delivered++;
