@@ -2143,14 +2143,14 @@ function updateProjectProgressUI(curr) {
         }
 
         trackingSectorHTML = `
-            <div style="display: flex; align-items: center; gap: 1.25rem; background: rgba(0,0,0,0.25); padding: 1.25rem 1.5rem; border-radius: 1rem; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-                <div class="circular-progress-container" style="width: 70px; height: 70px;">
+            <div style="display: flex; align-items: center; gap: 1rem; background: rgba(0,0,0,0.25); padding: 0.8rem 1.2rem; border-radius: 1rem; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 4px 15px rgba(0,0,0,0.3); width: fit-content; min-width: 320px;">
+                <div class="circular-progress-container" style="width: 55px; height: 55px;">
                     <div class="circular-progress" style="--progress: ${sectorProgressPct}%; background: conic-gradient(var(--accent) var(--progress), rgba(255,255,255,0.1) 0);"></div>
-                    <span class="progress-text" style="font-size: 1.25rem;">${sectorProgressPct}%</span>
+                    <span class="progress-text" style="font-size: 0.95rem;">${sectorProgressPct}%</span>
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                    <span style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);">Progresso do Setor: ${sectorNameDisplay}</span>
-                    <span style="font-size: 0.85rem; font-weight: 500; color: var(--accent);">Progresso da sua documentação local</span>
+                <div style="display: flex; flex-direction: column; gap: 0.15rem;">
+                    <span style="font-size: 1.05rem; font-weight: 800; color: var(--text-main);">Progresso de entrega do setor: ${sectorNameDisplay}</span>
+                    <span style="font-size: 0.75rem; font-weight: 500; color: var(--accent);">Progresso da sua documentação local</span>
                 </div>
             </div>
         `;
@@ -2194,6 +2194,7 @@ function updateProjectProgressUI(curr) {
     
     container.style.display = 'flex';
     container.style.flexDirection = 'column';
+    container.style.alignItems = 'center';
     container.style.gap = '0.75rem';
     container.innerHTML = trackingSectorHTML + generalHTML;
 }
