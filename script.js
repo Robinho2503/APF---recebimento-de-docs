@@ -387,18 +387,6 @@ function calculateProjectStats(project) {
     return { pendente, apontamento };
 }
 
-function getItemSector(itemId) {
-    const items = getItems();
-    if (!items) return null;
-    let curr = items.find(i => i.id === itemId);
-    while (curr && curr.parentId !== null) {
-        let parent = items.find(i => i.id === curr.parentId);
-        if (!parent) break;
-        curr = parent;
-    }
-    return curr ? curr.name : null;
-}
-
 function updateThemeIcon() {
     const themeButtons = [
         document.getElementById('btn-theme-toggle'),
