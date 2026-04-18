@@ -1529,7 +1529,7 @@ function updateGlobalDateUI() {
             </div>
             <div class="dashboard-card danger ${treeSearchFilter === 'apontamento' ? 'active' : ''}" onclick="handleDashboardFilter('apontamento', ${withPoints})" style="padding: 0.3rem 0.5rem; min-height: 44px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
                 <span class="card-value" style="font-size: 0.95rem; line-height: 1;">${withPoints}</span>
-                <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px;">Pontos</span>
+                <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px;">REVISAR</span>
             </div>
         `;
     }
