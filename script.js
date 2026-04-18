@@ -1506,18 +1506,20 @@ function updateGlobalDateUI() {
 
     if(dash) {
         dash.style.display = 'grid';
+        dash.style.gridTemplateColumns = 'repeat(2, 1fr)';
+        dash.style.gap = '0.5rem';
         dash.innerHTML = `
-            <div class="dashboard-card accent ${treeSearchFilter === 'validado' ? 'active' : ''}" onclick="handleDashboardFilter('validado', ${validated})">
-                <span class="card-value">${validated}</span><span class="card-label">Validados</span>
+            <div class="dashboard-card accent ${treeSearchFilter === 'validado' ? 'active' : ''}" onclick="handleDashboardFilter('validado', ${validated})" style="padding: 0.5rem; min-height: 50px;">
+                <span class="card-value" style="font-size: 1.1rem;">${validated}</span><span class="card-label" style="font-size: 0.65rem;">Validados</span>
             </div>
-            <div class="dashboard-card warning ${treeSearchFilter === 'analise' ? 'active' : ''}" onclick="handleDashboardFilter('analise', ${inAnalysis})">
-                <span class="card-value">${inAnalysis}</span><span class="card-label">Em Análise APF</span>
+            <div class="dashboard-card warning ${treeSearchFilter === 'analise' ? 'active' : ''}" onclick="handleDashboardFilter('analise', ${inAnalysis})" style="padding: 0.5rem; min-height: 50px;">
+                <span class="card-value" style="font-size: 1.1rem;">${inAnalysis}</span><span class="card-label" style="font-size: 0.65rem;">Em Análise</span>
             </div>
-            <div class="dashboard-card danger ${treeSearchFilter === 'pendente' ? 'active' : ''}" onclick="handleDashboardFilter('pendente', ${pending})">
-                <span class="card-value">${pending}</span><span class="card-label">Pendentes</span>
+            <div class="dashboard-card danger ${treeSearchFilter === 'pendente' ? 'active' : ''}" onclick="handleDashboardFilter('pendente', ${pending})" style="padding: 0.5rem; min-height: 50px;">
+                <span class="card-value" style="font-size: 1.1rem;">${pending}</span><span class="card-label" style="font-size: 0.65rem;">Pendentes</span>
             </div>
-            <div class="dashboard-card danger ${treeSearchFilter === 'apontamento' ? 'active' : ''}" onclick="handleDashboardFilter('apontamento', ${withPoints})">
-                <span class="card-value">${withPoints}</span><span class="card-label">Apontamentos</span>
+            <div class="dashboard-card danger ${treeSearchFilter === 'apontamento' ? 'active' : ''}" onclick="handleDashboardFilter('apontamento', ${withPoints})" style="padding: 0.5rem; min-height: 50px;">
+                <span class="card-value" style="font-size: 1.1rem;">${withPoints}</span><span class="card-label" style="font-size: 0.65rem;">Apontamentos</span>
             </div>
         `;
     }
@@ -2196,7 +2198,7 @@ function updateProjectProgressUI(curr) {
         </div>
     `;
 
-    container.style.display = 'block';
+    container.style.display = 'flex';
     container.innerHTML = dashboardHTML;
 }
 

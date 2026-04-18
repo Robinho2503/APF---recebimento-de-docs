@@ -138,21 +138,21 @@
                             </div>
                         </div>
                         <!-- Progress Line -->
-                        <div id="project-progress-container" style="margin-bottom: 1rem; display: none;"></div>
-                        <!-- Container Flex: Busca e Quadros Lado a Lado -->
-                        <div class="search-dashboard-row" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start; margin-bottom: 1.5rem;">
-                            <!-- Layout intuitivo: Filtros Globais -->
-                            <div class="global-search-wrapper" style="flex: 1; min-width: 300px; margin-bottom: 0;">
-                                <div style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
+                        <!-- Top Stats Row: Progresso e Cards lado a lado -->
+                        <div class="top-stats-row" style="display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: flex-start; margin-bottom: 1.5rem;">
+                            <div id="project-progress-container" style="display: none;"></div>
+                            <div id="project-dashboard" class="dashboard-grid" style="display: none; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; flex: 1; max-width: 350px;">
+                                <!-- JS Injected (2x2 Grid) -->
+                            </div>
+                        </div>
+                        <!-- Busca Global (Agora ocupando a linha toda abaixo dos stats) -->
+                        <div class="search-dashboard-row" style="margin-bottom: 1.5rem;">
+                            <div class="global-search-wrapper" style="width: 100%;">
+                                <div style="display: flex; gap: 0.5rem;">
                                     <button id="btn-toggle-all-checklist" class="btn-toggle-all" title="Mostrar/Ocultar todos os itens do empreendimento" style="width: auto; padding: 0.3rem 0.75rem; border: 1px solid rgba(255,255,255,0.1);">
                                         <span class="label">Mostrar tudo</span>
                                     </button>
                                 </div>
-                            </div>
-
-                            <!-- Layout intuitivo: Dashboard de Status do Projeto -->
-                            <div id="project-dashboard" class="dashboard-grid" style="display: none; flex: 1.5; min-width: 320px;">
-                                <!-- Injetado por JS (Contadores de progresso, vencidos, validados) -->
                             </div>
                         </div>
 
