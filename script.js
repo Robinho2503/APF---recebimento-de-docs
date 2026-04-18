@@ -2398,8 +2398,12 @@ function renderTree() {
         }
     }
 
-    if (!mgmt) updateProjectProgressUI(currProj);
-    else updateManagementStatsUI();
+    if (!mgmt) {
+        updateProjectProgressUI(currProj);
+        updateGlobalDateUI();
+    } else {
+        updateManagementStatsUI();
+    }
     renderAnalysisPanels();
 
     // Novo: Ajuste dinâmico de fonte para nomes longos
