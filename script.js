@@ -2149,7 +2149,7 @@ function updateProjectProgressUI(curr) {
                     <span class="progress-text" style="font-size: 0.95rem;">${sectorProgressPct}%</span>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 0.15rem;">
-                    <span style="font-size: 1.05rem; font-weight: 800; color: var(--text-main);">Progresso de entrega do setor: ${sectorNameDisplay}</span>
+                    <span style="font-size: 1.05rem; font-weight: 800; color: var(--text-main);">Progresso de entrega do setor</span>
                     <span style="font-size: 0.75rem; font-weight: 500; color: var(--accent);">Progresso da sua documentação local</span>
                 </div>
             </div>
@@ -2194,7 +2194,7 @@ function updateProjectProgressUI(curr) {
     
     container.style.display = 'flex';
     container.style.flexDirection = 'column';
-    container.style.alignItems = 'center';
+    container.style.alignItems = 'flex-start';
     container.style.gap = '0.75rem';
     container.innerHTML = trackingSectorHTML + generalHTML;
 }
