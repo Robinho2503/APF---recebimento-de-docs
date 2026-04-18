@@ -172,6 +172,19 @@ function isMgmtActive() {
     return activeTabObj && activeTabObj.dataset.tab === 'management';
 }
 
+function getItemSector(itemId) {
+    const p = getCurrentProject();
+    if (!p) return null;
+    let item = p.items.find(i => i.id === itemId);
+    if (!item) return null;
+    
+    let current = item;
+    while (current && current.parentId !== null) {
+        current = p.items.find(i => i.id === current.parentId);
+    }
+    return current ? current.name : null;
+}
+
 function debounce(func, wait) {
     let timeout;
     return (...args) => {
@@ -1437,7 +1450,7 @@ function logout() {
 // Project Management & Global UI
 function updateGlobalDateUI() {
     const p = getCurrentProject();
-    const dash = document.getElementById('project-dashboard');
+    const dash = document.getElementById('unified-top-dashboard');
     const nameEl = document.getElementById('checklist-proj-name');
     const subtitleEl = document.getElementById('checklist-subtitle');
     const noProjPlaceholder = document.getElementById('no-project-selected');
@@ -2079,6 +2092,8 @@ function updateProjectProgressUI(curr) {
     }
     container.style.display = 'block';
 
+    const isAPF = authenticatedSector === 'APF';
+
     // --- CÁLCULOS DE PROGRESSO ---
     let generalProgressPct = 0;
     const leafItems = curr.items.filter(i => {
@@ -2092,7 +2107,7 @@ function updateProjectProgressUI(curr) {
     }
 
     let sectorProgressPct = 0;
-    if (authenticatedSector !== 'APF') {
+    if (!isAPF) {
         const sectorLeafItems = leafItems.filter(i => getItemSector(i.id) === authenticatedSector);
         if (sectorLeafItems.length > 0) {
             const deliveredSectorCount = sectorLeafItems.filter(i => i.attachments && i.attachments.length > 0 && i.validationStatus !== 'Apontamento').length;
@@ -2103,16 +2118,18 @@ function updateProjectProgressUI(curr) {
     }
 
     // --- CÁLCULOS DE ESTATÍSTICAS (FILTROS) ---
-    let allStatsItems;
-    if (curr.pendenciaActive && !isMgmtActive()) {
-        allStatsItems = curr.pendencias || [];
-    } else {
-        allStatsItems = leafItems;
-    }
+    const isPendenciaMode = curr.pendenciaActive && !isMgmtActive();
+    let allStatsItems = isPendenciaMode ? (curr.pendencias || []) : leafItems;
 
     let filteredStatsItems = allStatsItems;
-    if (authenticatedSector && authenticatedSector !== 'APF') {
-        filteredStatsItems = allStatsItems.filter(i => getItemSector(i.id) === authenticatedSector);
+    if (!isAPF) {
+        if (isPendenciaMode) {
+            // Para Pendências, o setor está na propriedade .sector
+            filteredStatsItems = allStatsItems.filter(i => i.sector === authenticatedSector);
+        } else {
+            // Para Itens Normais, usamos o auxiliar
+            filteredStatsItems = allStatsItems.filter(i => getItemSector(i.id) === authenticatedSector);
+        }
     }
 
     const total = filteredStatsItems.length;
@@ -2122,6 +2139,59 @@ function updateProjectProgressUI(curr) {
     const inAnalysis = total - validated - withPoints - pending;
 
     // --- RENDERIZAÇÃO UNIFICADA ---
+    let progressSectionHTML = '';
+    
+    if (isAPF) {
+        // VIEW APF: Apenas um progresso grande (Geral)
+        progressSectionHTML = `
+            <div style="display: flex; align-items: center; gap: 1.25rem;">
+                <div class="circular-progress-container" style="width: 58px; height: 58px;">
+                    <div class="circular-progress" style="--progress: ${generalProgressPct}%; background: conic-gradient(var(--accent) var(--progress), rgba(255,255,255,0.1) 0);"></div>
+                    <span class="progress-text" style="font-size: 1rem; font-weight: 800; color: var(--text-main);">${generalProgressPct}%</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.15rem;">
+                    <div style="display: flex; align-items: center; gap: 0.4rem; color: var(--accent); font-size: 0.65rem; font-weight: 700; text-transform: uppercase;">
+                        <i class="ph ph-globe"></i> Global
+                    </div>
+                    <span style="font-size: 1.1rem; font-weight: 800; color: var(--text-main);">Índice Geral do Projeto</span>
+                </div>
+            </div>
+        `;
+    } else {
+        // VIEW SETOR: Seu Setor em Destaque + Global menor
+        progressSectionHTML = `
+            <div style="display: flex; align-items: center; gap: 2.25rem;">
+                <!-- SEU SETOR -->
+                <div style="display: flex; align-items: center; gap: 1.25rem;">
+                    <div class="circular-progress-container" style="width: 54px; height: 54px;">
+                        <div class="circular-progress" style="--progress: ${sectorProgressPct}%; background: conic-gradient(var(--accent) var(--progress), rgba(255,255,255,0.1) 0);"></div>
+                        <span class="progress-text" style="font-size: 0.9rem; font-weight: 800; color: var(--text-main);">${sectorProgressPct}%</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.1rem;">
+                        <div style="display: flex; align-items: center; gap: 0.4rem; color: var(--accent); font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
+                            <i class="ph-bold ph-buildings"></i> Seu Setor
+                        </div>
+                        <span style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.01em;">Progresso de entrega</span>
+                    </div>
+                </div>
+
+                <!-- GLOBAL -->
+                <div style="display: flex; align-items: center; gap: 1rem; opacity: 0.85;">
+                    <div class="circular-progress-container" style="width: 44px; height: 44px;">
+                        <div class="circular-progress" style="--progress: ${generalProgressPct}%; background: conic-gradient(rgba(255,255,255,0.3) var(--progress), rgba(255,255,255,0.05) 0);"></div>
+                        <span class="progress-text" style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">${generalProgressPct}%</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column;">
+                        <div style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.55rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">
+                            <i class="ph ph-globe"></i> Global
+                        </div>
+                        <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted);">Índice Geral</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
     let pendenciasHTML = '';
     if (curr.pendenciaActive) {
         const pendencias = curr.pendencias || [];
@@ -2149,68 +2219,38 @@ function updateProjectProgressUI(curr) {
     }
 
     container.innerHTML = `
-        <div class="glass-panel" style="display: flex; align-items: center; padding: 0.65rem 1.5rem; gap: 1.75rem; border-radius: 1.25rem; border: 1px solid rgba(255,255,255,0.08); background: rgba(0,0,0,0.2); width: fit-content; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+        <div class="glass-panel" style="display: flex; align-items: center; padding: 0.7rem 1.75rem; gap: 2rem; border-radius: 1.25rem; border: 1px solid rgba(255,255,255,0.08); background: rgba(0,0,0,0.2); width: fit-content; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
             
-            <!-- SEÇÃO ESQUERDA: PROGRESSO -->
-            <div style="display: flex; align-items: center; gap: 2rem;">
-                <!-- SEU SETOR -->
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <div class="circular-progress-container" style="width: 52px; height: 52px;">
-                        <div class="circular-progress" style="--progress: ${sectorProgressPct}%; background: conic-gradient(var(--accent) var(--progress), rgba(255,255,255,0.1) 0);"></div>
-                        <span class="progress-text" style="font-size: 0.85rem; font-weight: 800; color: var(--text-main);">${sectorProgressPct}%</span>
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 0.05rem;">
-                        <div style="display: flex; align-items: center; gap: 0.4rem; color: var(--accent); font-size: 0.65rem; font-weight: 700; text-transform: uppercase;">
-                            <i class="ph ph-buildings"></i> Seu Setor
-                        </div>
-                        <span style="font-size: 0.95rem; font-weight: 800; color: var(--text-main);">Progresso de entrega</span>
-                    </div>
-                </div>
-
-                <!-- GLOBAL -->
-                <div style="display: flex; align-items: center; gap: 0.85rem; opacity: 0.8;">
-                    <div class="circular-progress-container" style="width: 42px; height: 42px;">
-                        <div class="circular-progress" style="--progress: ${generalProgressPct}%; background: conic-gradient(rgba(255,255,255,0.3) var(--progress), rgba(255,255,255,0.05) 0);"></div>
-                        <span class="progress-text" style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">${generalProgressPct}%</span>
-                    </div>
-                    <div style="display: flex; flex-direction: column;">
-                        <div style="font-size: 0.55rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Global</div>
-                        <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">Índice Geral</span>
-                    </div>
-                </div>
-            </div>
-
+            ${progressSectionHTML}
             ${pendenciasHTML}
 
             <!-- LINHA DIVISORA VERTICAL -->
-            <div style="height: 40px; width: 1px; background: rgba(255,255,255,0.12);"></div>
+            <div style="height: 48px; width: 1px; background: rgba(255,255,255,0.12);"></div>
 
             <!-- SEÇÃO DIREITA: ESTATÍSTICAS / FILTROS (GRID 2x2) -->
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.35rem; width: 310px;">
-                <div class="dashboard-card accent ${treeSearchFilter === 'validado' ? 'active' : ''}" onclick="handleDashboardFilter('validado', ${validated})" style="padding: 0.3rem 0.6rem; background: rgba(255,255,255,0.03); border: none; box-shadow: none; border-radius: 0.75rem;">
-                    <span class="card-value" style="font-size: 0.95rem; line-height: 1;">${validated}</span>
-                    <span class="card-label" style="font-size: 0.5rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7;">Validados</span>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.35rem; width: 320px;">
+                <div class="dashboard-card accent ${treeSearchFilter === 'validado' ? 'active' : ''}" onclick="handleDashboardFilter('validado', ${validated})" style="padding: 0.4rem 0.6rem; background: rgba(255,255,255,0.03); border: none; box-shadow: none; border-radius: 0.75rem;">
+                    <span class="card-value" style="font-size: 1rem; line-height: 1;">${validated}</span>
+                    <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7;">Validados</span>
                 </div>
-                <div class="dashboard-card warning ${treeSearchFilter === 'analise' ? 'active' : ''}" onclick="handleDashboardFilter('analise', ${inAnalysis})" style="padding: 0.3rem 0.6rem; background: rgba(255,255,255,0.03); border: none; box-shadow: none; border-radius: 0.75rem;">
-                    <span class="card-value" style="font-size: 0.95rem; line-height: 1;">${inAnalysis}</span>
-                    <span class="card-label" style="font-size: 0.5rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7;">Análise</span>
+                <div class="dashboard-card warning ${treeSearchFilter === 'analise' ? 'active' : ''}" onclick="handleDashboardFilter('analise', ${inAnalysis})" style="padding: 0.4rem 0.6rem; background: rgba(255,255,255,0.03); border: none; box-shadow: none; border-radius: 0.75rem;">
+                    <span class="card-value" style="font-size: 1rem; line-height: 1;">${inAnalysis}</span>
+                    <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7;">Análise</span>
                 </div>
-                <div class="dashboard-card danger ${treeSearchFilter === 'pendente' ? 'active' : ''}" onclick="handleDashboardFilter('pendente', ${pending})" style="padding: 0.3rem 0.6rem; background: rgba(255,255,255,0.03); border: none; box-shadow: none; border-radius: 0.75rem;">
-                    <span class="card-value" style="font-size: 0.95rem; line-height: 1;">${pending}</span>
-                    <span class="card-label" style="font-size: 0.5rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7;">Pendentes</span>
+                <div class="dashboard-card danger ${treeSearchFilter === 'pendente' ? 'active' : ''}" onclick="handleDashboardFilter('pendente', ${pending})" style="padding: 0.4rem 0.6rem; background: rgba(255,255,255,0.03); border: none; box-shadow: none; border-radius: 0.75rem;">
+                    <span class="card-value" style="font-size: 1rem; line-height: 1;">${pending}</span>
+                    <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7;">Pendentes</span>
                 </div>
-                <div class="dashboard-card danger ${treeSearchFilter === 'apontamento' ? 'active' : ''}" onclick="handleDashboardFilter('apontamento', ${withPoints})" style="padding: 0.3rem 0.6rem; background: rgba(255,255,255,0.03); border: none; box-shadow: none; border-radius: 0.75rem;">
-                    <span class="card-value" style="font-size: 0.95rem; line-height: 1;">${withPoints}</span>
-                    <span class="card-label" style="font-size: 0.5rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7;">REVISAR</span>
+                <div class="dashboard-card danger ${treeSearchFilter === 'apontamento' ? 'active' : ''}" onclick="handleDashboardFilter('apontamento', ${withPoints})" style="padding: 0.4rem 0.6rem; background: rgba(255,255,255,0.03); border: none; box-shadow: none; border-radius: 0.75rem;">
+                    <span class="card-value" style="font-size: 1rem; line-height: 1;">${withPoints}</span>
+                    <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7;">REVISAR</span>
                 </div>
             </div>
 
         </div>
     `;
-
-    container.style.display = 'flex';
-    container.innerHTML = dashboardHTML;
 }
+
 
 function calculateDays(dueDate) {
     if(!dueDate) return null;
