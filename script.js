@@ -2110,6 +2110,8 @@ function updateProjectProgressUI(curr) {
         return;
     }
     
+    let generalProgressPct = 0;
+    
     // Calcula o progresso Geral (todas as pastas folha que são aplicáveis)
     const leafItems = curr.items.filter(i => {
         const hasChildren = curr.items.some(child => child.parentId === i.id);
