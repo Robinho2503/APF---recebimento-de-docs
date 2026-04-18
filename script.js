@@ -2123,41 +2123,19 @@ function updateProjectProgressUI(curr) {
         generalProgressPct = Math.round((deliveredCount / leafItems.length) * 100);
     }
 
-    // Calcula o progresso do Setor logado
-    let trackingSectorHTML = '';
-    
-    if (!curr.pendenciaActive) {
-        let sectorProgressPct = 0;
-        let sectorNameDisplay = authenticatedSector;
-        
-        if (authenticatedSector !== 'APF') {
-            const sectorLeafItems = leafItems.filter(i => getItemSector(i.id) === authenticatedSector);
-            if (sectorLeafItems.length > 0) {
-                const deliveredSectorCount = sectorLeafItems.filter(i => i.attachments && i.attachments.length > 0 && i.validationStatus !== 'Apontamento').length;
-                sectorProgressPct = Math.round((deliveredSectorCount / sectorLeafItems.length) * 100);
-            }
-        } else {
-            // APF tem métrica global principal no Painel de Setor (mesmo que o geral, mas em destaque)
-            sectorProgressPct = generalProgressPct;
-            sectorNameDisplay = "Visão Geral (APF)";
+    let sectorProgressPct = 0;
+    if (authenticatedSector !== 'APF') {
+        const sectorLeafItems = leafItems.filter(i => getItemSector(i.id) === authenticatedSector);
+        if (sectorLeafItems.length > 0) {
+            const deliveredSectorCount = sectorLeafItems.filter(i => i.attachments && i.attachments.length > 0 && i.validationStatus !== 'Apontamento').length;
+            sectorProgressPct = Math.round((deliveredSectorCount / sectorLeafItems.length) * 100);
         }
-
-        trackingSectorHTML = `
-            <div style="display: flex; align-items: center; gap: 1rem; background: rgba(0,0,0,0.25); padding: 0.8rem 1.2rem; border-radius: 1rem; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 4px 15px rgba(0,0,0,0.3); width: fit-content; min-width: 320px;">
-                <div class="circular-progress-container" style="width: 55px; height: 55px;">
-                    <div class="circular-progress" style="--progress: ${sectorProgressPct}%; background: conic-gradient(var(--accent) var(--progress), rgba(255,255,255,0.1) 0);"></div>
-                    <span class="progress-text" style="font-size: 0.95rem;">${sectorProgressPct}%</span>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 0.15rem;">
-                    <span style="font-size: 1.05rem; font-weight: 800; color: var(--text-main);">Progresso de entrega do setor</span>
-                    <span style="font-size: 0.75rem; font-weight: 500; color: var(--accent);">Progresso da sua documentação local</span>
-                </div>
-            </div>
-        `;
+    } else {
+        sectorProgressPct = generalProgressPct;
     }
 
-    // Progresso Geral ou de Pendências reduzido pela metade
-    let generalHTML = '';
+    // Lógica para Pendências Caixa (quando ativo)
+    let pendStatusHTML = '';
     if (curr.pendenciaActive) {
         const pendencias = curr.pendencias || [];
         let pendPct = 0;
@@ -2165,38 +2143,61 @@ function updateProjectProgressUI(curr) {
             const resolvedCount = pendencias.filter(p => p.attachments && p.attachments.length > 0).length;
             pendPct = Math.round((resolvedCount / pendencias.length) * 100);
         }
-        generalHTML = `
-            <div style="display: flex; align-items: center; gap: 0.75rem; background: rgba(0,0,0,0.15); padding: 0.5rem 0.75rem; border-radius: 0.75rem; width: fit-content; border: 1px solid rgba(255,255,255,0.05);">
-                <div class="circular-progress-container" style="width: 35px; height: 35px;">
+        pendStatusHTML = `
+            <div style="height: 35px; width: 1px; background: rgba(255,255,255,0.1); margin: 0 0.5rem;"></div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div class="circular-progress-container" style="width: 42px; height: 42px;">
                     <div class="circular-progress" style="--progress: ${pendPct}%; background: conic-gradient(var(--warning) var(--progress), rgba(255,255,255,0.1) 0);"></div>
-                    <span class="progress-text" style="font-size: 0.65rem;">${pendPct}%</span>
+                    <span class="progress-text" style="font-size: 0.7rem;">${pendPct}%</span>
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 0.1rem;">
-                    <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">Resolução de Pendências</span>
-                    <span style="font-size: 0.65rem; color: var(--text-muted);">Itens enviados p/ CAIXA</span>
-                </div>
-            </div>
-        `;
-    } else {
-        generalHTML = `
-            <div style="display: flex; align-items: center; gap: 0.75rem; background: rgba(0,0,0,0.15); padding: 0.5rem 0.75rem; border-radius: 0.75rem; width: fit-content; border: 1px solid rgba(255,255,255,0.05);">
-                <div class="circular-progress-container" style="width: 35px; height: 35px;">
-                    <div class="circular-progress" style="--progress: ${generalProgressPct}%;"></div>
-                    <span class="progress-text" style="font-size: 0.65rem;">${generalProgressPct}%</span>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 0.1rem;">
-                    <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">Progresso de Entrega Global</span>
-                    <span style="font-size: 0.65rem; color: var(--text-muted);">Índice de todo o empreendimento</span>
+                <div style="display: flex; flex-direction: column;">
+                    <span style="font-size: 0.65rem; font-weight: 700; color: var(--warning); text-transform: uppercase;">Pendências</span>
+                    <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-main);">Caixa (APF)</span>
                 </div>
             </div>
         `;
     }
-    
-    container.style.display = 'flex';
-    container.style.flexDirection = 'column';
-    container.style.alignItems = 'flex-start';
-    container.style.gap = '0.75rem';
-    container.innerHTML = trackingSectorHTML + generalHTML;
+
+    const dashboardHTML = `
+        <div class="glass-panel" style="display: flex; align-items: center; padding: 1rem 1.5rem; gap: 2.25rem; border-radius: 1.25rem; border: 1px solid rgba(255,255,255,0.08); background: rgba(0,0,0,0.2); width: fit-content; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+            
+            <!-- INDICADOR: SEU SETOR -->
+            <div style="display: flex; align-items: center; gap: 1.25rem;">
+                <div class="circular-progress-container" style="width: 60px; height: 60px; filter: drop-shadow(0 0 10px ${sectorProgressPct === 100 ? 'var(--accent)44' : 'transparent'});">
+                    <div class="circular-progress" style="--progress: ${sectorProgressPct}%; background: conic-gradient(var(--accent) var(--progress), rgba(255,255,255,0.1) 0);"></div>
+                    <span class="progress-text" style="font-size: 1rem; font-weight: 800; color: var(--text-main);">${sectorProgressPct}%</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.15rem;">
+                    <div style="display: flex; align-items: center; gap: 0.4rem; color: var(--accent); font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
+                        <i class="ph-bold ph-buildings"></i> Seu Setor
+                    </div>
+                    <span style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.01em;">Progresso de entrega</span>
+                </div>
+            </div>
+
+            <!-- DIVISOR -->
+            <div style="height: 45px; width: 1px; background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.15), transparent);"></div>
+
+            <!-- INDICADOR: GLOBAL -->
+            <div style="display: flex; align-items: center; gap: 1rem; opacity: 0.8;">
+                <div class="circular-progress-container" style="width: 48px; height: 48px;">
+                    <div class="circular-progress" style="--progress: ${generalProgressPct}%; background: conic-gradient(rgba(255,255,255,0.3) var(--progress), rgba(255,255,255,0.05) 0);"></div>
+                    <span class="progress-text" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">${generalProgressPct}%</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.1rem;">
+                    <div style="display: flex; align-items: center; gap: 0.4rem; color: var(--text-muted); font-size: 0.6rem; font-weight: 600; text-transform: uppercase;">
+                        <i class="ph-bold ph-chart-line-up"></i> Global
+                    </div>
+                    <span style="font-size: 0.9rem; font-weight: 700; color: var(--text-muted);">Índice Geral</span>
+                </div>
+            </div>
+
+            ${pendStatusHTML}
+        </div>
+    `;
+
+    container.style.display = 'block';
+    container.innerHTML = dashboardHTML;
 }
 
 function calculateDays(dueDate) {
