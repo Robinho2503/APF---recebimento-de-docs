@@ -1515,21 +1515,21 @@ function updateGlobalDateUI() {
         dash.style.gridTemplateColumns = 'repeat(2, 1fr)';
         dash.style.gap = '0.4rem';
         dash.innerHTML = `
-            <div class="dashboard-card accent ${treeSearchFilter === 'validado' ? 'active' : ''}" onclick="handleDashboardFilter('validado', ${validated})" style="padding: 0.3rem 0.5rem; min-height: 44px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-                <span class="card-value" style="font-size: 0.95rem; line-height: 1;">${validated}</span>
-                <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px;">Validados</span>
+            <div class="dashboard-card accent ${treeSearchFilter === 'validado' ? 'active' : ''}" onclick="handleDashboardFilter('validado', ${validated})" style="padding: 0.5rem; background: rgba(255,255,255,0.03); border: none; box-shadow: none; border-radius: 0.75rem; flex: 1;">
+                <span class="card-value" style="font-size: 1.1rem; line-height: 1;">${validated}</span>
+                <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 4px; opacity: 0.7;">Validados</span>
             </div>
-            <div class="dashboard-card warning ${treeSearchFilter === 'analise' ? 'active' : ''}" onclick="handleDashboardFilter('analise', ${inAnalysis})" style="padding: 0.3rem 0.5rem; min-height: 44px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-                <span class="card-value" style="font-size: 0.95rem; line-height: 1;">${inAnalysis}</span>
-                <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px;">Análise</span>
+            <div class="dashboard-card warning ${treeSearchFilter === 'analise' ? 'active' : ''}" onclick="handleDashboardFilter('analise', ${inAnalysis})" style="padding: 0.5rem; background: rgba(255,255,255,0.03); border: none; box-shadow: none; border-radius: 0.75rem; flex: 1;">
+                <span class="card-value" style="font-size: 1.1rem; line-height: 1;">${inAnalysis}</span>
+                <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 4px; opacity: 0.7;">Análise</span>
             </div>
-            <div class="dashboard-card danger ${treeSearchFilter === 'pendente' ? 'active' : ''}" onclick="handleDashboardFilter('pendente', ${pending})" style="padding: 0.3rem 0.5rem; min-height: 44px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-                <span class="card-value" style="font-size: 0.95rem; line-height: 1;">${pending}</span>
-                <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px;">Pendentes</span>
+            <div class="dashboard-card danger ${treeSearchFilter === 'pendente' ? 'active' : ''}" onclick="handleDashboardFilter('pendente', ${pending})" style="padding: 0.5rem; background: rgba(255,255,255,0.03); border: none; box-shadow: none; border-radius: 0.75rem; flex: 1;">
+                <span class="card-value" style="font-size: 1.1rem; line-height: 1;">${pending}</span>
+                <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 4px; opacity: 0.7;">Pendentes</span>
             </div>
-            <div class="dashboard-card danger ${treeSearchFilter === 'apontamento' ? 'active' : ''}" onclick="handleDashboardFilter('apontamento', ${withPoints})" style="padding: 0.3rem 0.5rem; min-height: 44px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-                <span class="card-value" style="font-size: 0.95rem; line-height: 1;">${withPoints}</span>
-                <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px;">REVISAR</span>
+            <div class="dashboard-card danger ${treeSearchFilter === 'apontamento' ? 'active' : ''}" onclick="handleDashboardFilter('apontamento', ${withPoints})" style="padding: 0.5rem; background: rgba(255,255,255,0.03); border: none; box-shadow: none; border-radius: 0.75rem; flex: 1;">
+                <span class="card-value" style="font-size: 1.1rem; line-height: 1;">${withPoints}</span>
+                <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 4px; opacity: 0.7;">REVISAR</span>
             </div>
         `;
     }
