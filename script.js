@@ -2141,7 +2141,7 @@ function updateProjectProgressUI(curr) {
                     <div style="display: flex; align-items: center; gap: 0.4rem; color: var(--accent); font-size: 0.65rem; font-weight: 700; text-transform: uppercase;">
                         <i class="ph ph-globe"></i> Global
                     </div>
-                    <span style="font-size: 1.1rem; font-weight: 800; color: var(--text-main);">Índice Geral do Projeto</span>
+                    <span style="font-size: 1.1rem; font-weight: 800; color: var(--text-main);">Progresso de entrega</span>
                 </div>
             </div>
         `;
@@ -2173,7 +2173,7 @@ function updateProjectProgressUI(curr) {
                         <div style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.55rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">
                             <i class="ph ph-globe"></i> Global
                         </div>
-                        <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted);">Índice Geral</span>
+                        <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted);">Progresso</span>
                     </div>
                 </div>
             </div>
@@ -2591,32 +2591,14 @@ function createNode(item, level) {
     nameSpan.appendChild(titleText);
 
 
-    // INDICATORS for ROOT FOLDERS
+
+
+    // Espaçador sutil para manter o alinhamento sem os indicadores
     if(isRootFolder && localUI.currentProjectId !== 'p_default') {
-        const stats = getNodeStats(item.id);
-        const totalAlerts = stats.pendente + stats.apontamento;
-        const isLocked = authenticatedSector && authenticatedSector !== 'APF' && authenticatedSector.trim() !== item.name.trim();
-
-        const indicatorsCont = document.createElement('div');
-        indicatorsCont.className = 'sector-indicators';
-
-        if (totalAlerts > 0) {
-            const circle = document.createElement('span');
-            circle.className = 'pending-circle';
-            circle.textContent = totalAlerts;
-            circle.title = `${totalAlerts} item(s) com pendências ou apontamentos`;
-            indicatorsCont.appendChild(circle);
-        }
-
-        if (indicatorsCont.children.length > 0) {
-            itemLeft.prepend(indicatorsCont);
-        } else {
-            const spacer = document.createElement('div');
-            spacer.style.width = '60px'; 
-            spacer.style.flexShrink = '0';
-            spacer.style.marginRight = '0.75rem';
-            itemLeft.prepend(spacer);
-        }
+        const spacer = document.createElement('div');
+        spacer.style.width = '20px'; 
+        spacer.style.flexShrink = '0';
+        itemLeft.prepend(spacer);
     }
 
     itemLeft.appendChild(nameSpan);
