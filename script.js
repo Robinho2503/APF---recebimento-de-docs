@@ -1497,7 +1497,13 @@ function updateGlobalDateUI() {
         });
     }
 
-    const applicableItems = allItems.filter(i => !i.isNotApplicable);
+    // Filtrar por setor se não for APF
+    let filteredItems = allItems.filter(i => !i.isNotApplicable);
+    if (authenticatedSector && authenticatedSector !== 'APF') {
+        filteredItems = filteredItems.filter(i => getItemSector(i.id) === authenticatedSector);
+    }
+
+    const applicableItems = filteredItems;
     const total = applicableItems.length;
     const validated = applicableItems.filter(i => (i.validationStatus === 'Validado' || i.validationStatus === 'APF check') && i.attachments?.length > 0).length;
     const withPoints = applicableItems.filter(i => i.validationStatus === 'Apontamento' && i.attachments?.length > 0).length;
@@ -1507,19 +1513,23 @@ function updateGlobalDateUI() {
     if(dash) {
         dash.style.display = 'grid';
         dash.style.gridTemplateColumns = 'repeat(2, 1fr)';
-        dash.style.gap = '0.5rem';
+        dash.style.gap = '0.4rem';
         dash.innerHTML = `
-            <div class="dashboard-card accent ${treeSearchFilter === 'validado' ? 'active' : ''}" onclick="handleDashboardFilter('validado', ${validated})" style="padding: 0.5rem; min-height: 50px;">
-                <span class="card-value" style="font-size: 1.1rem;">${validated}</span><span class="card-label" style="font-size: 0.65rem;">Validados</span>
+            <div class="dashboard-card accent ${treeSearchFilter === 'validado' ? 'active' : ''}" onclick="handleDashboardFilter('validado', ${validated})" style="padding: 0.3rem 0.5rem; min-height: 44px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                <span class="card-value" style="font-size: 0.95rem; line-height: 1;">${validated}</span>
+                <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px;">Validados</span>
             </div>
-            <div class="dashboard-card warning ${treeSearchFilter === 'analise' ? 'active' : ''}" onclick="handleDashboardFilter('analise', ${inAnalysis})" style="padding: 0.5rem; min-height: 50px;">
-                <span class="card-value" style="font-size: 1.1rem;">${inAnalysis}</span><span class="card-label" style="font-size: 0.65rem;">Em Análise</span>
+            <div class="dashboard-card warning ${treeSearchFilter === 'analise' ? 'active' : ''}" onclick="handleDashboardFilter('analise', ${inAnalysis})" style="padding: 0.3rem 0.5rem; min-height: 44px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                <span class="card-value" style="font-size: 0.95rem; line-height: 1;">${inAnalysis}</span>
+                <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px;">Análise</span>
             </div>
-            <div class="dashboard-card danger ${treeSearchFilter === 'pendente' ? 'active' : ''}" onclick="handleDashboardFilter('pendente', ${pending})" style="padding: 0.5rem; min-height: 50px;">
-                <span class="card-value" style="font-size: 1.1rem;">${pending}</span><span class="card-label" style="font-size: 0.65rem;">Pendentes</span>
+            <div class="dashboard-card danger ${treeSearchFilter === 'pendente' ? 'active' : ''}" onclick="handleDashboardFilter('pendente', ${pending})" style="padding: 0.3rem 0.5rem; min-height: 44px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                <span class="card-value" style="font-size: 0.95rem; line-height: 1;">${pending}</span>
+                <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px;">Pendentes</span>
             </div>
-            <div class="dashboard-card danger ${treeSearchFilter === 'apontamento' ? 'active' : ''}" onclick="handleDashboardFilter('apontamento', ${withPoints})" style="padding: 0.5rem; min-height: 50px;">
-                <span class="card-value" style="font-size: 1.1rem;">${withPoints}</span><span class="card-label" style="font-size: 0.65rem;">Apontamentos</span>
+            <div class="dashboard-card danger ${treeSearchFilter === 'apontamento' ? 'active' : ''}" onclick="handleDashboardFilter('apontamento', ${withPoints})" style="padding: 0.3rem 0.5rem; min-height: 44px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                <span class="card-value" style="font-size: 0.95rem; line-height: 1;">${withPoints}</span>
+                <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px;">Pontos</span>
             </div>
         `;
     }
