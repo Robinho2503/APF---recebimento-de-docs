@@ -3574,7 +3574,7 @@ function initSettings() {
     if (!btnSettings) return;
 
     btnSettings.onclick = () => {
-        if (geminiModelInp) geminiModelInp.value = localStorage.getItem('apf_gemini_model') || 'gemini-1.5-flash';
+        if (geminiModelInp) geminiModelInp.value = localStorage.getItem('apf_gemini_model') || 'gemini-2.5-flash';
         if (geminiKeyInp) geminiKeyInp.value = localStorage.getItem('apf_gemini_key') || '';
         
         renderSectorPasswordsSettings();
@@ -3599,7 +3599,7 @@ function initSettings() {
     settingsModal.addEventListener('click', (e) => { if(e.target === settingsModal) settingsModal.classList.add('hidden'); });
 
     btnResetModel.addEventListener('click', () => {
-        geminiModelInp.value = 'gemini-1.5-flash';
+        geminiModelInp.value = 'gemini-2.5-flash';
         geminiModelInp.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
         setTimeout(() => geminiModelInp.style.backgroundColor = '', 500);
     });
@@ -3612,9 +3612,9 @@ function initSettings() {
 
 
     btnSaveSettings.addEventListener('click', () => {
-        const gModel = geminiModelInp.value.trim();
-        const gKey = geminiKeyInp.value.trim();
-        const aPass = apfPassInp.value.trim();
+        const gModel = geminiModelInp ? geminiModelInp.value.trim() : '';
+        const gKey = geminiKeyInp ? geminiKeyInp.value.trim() : '';
+        const aPass = apfPassInp ? apfPassInp.value.trim() : '';
 
         if (gModel) localStorage.setItem('apf_gemini_model', gModel);
         if (gKey) localStorage.setItem('apf_gemini_key', gKey); else localStorage.removeItem('apf_gemini_key');
