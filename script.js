@@ -420,6 +420,7 @@ let checklistContainer, sidebarApf, btnToggleSidebar, managementContainer, track
 let tabs, tabContents, btnUnlock, btnBackToMain, inputPassword, passwordError, passwordLock, managementContent;
 let btnSettings, btnSaveSettings, btnResetModel, geminiModelInp, geminiKeyInp, btnToggleKey, apfPassInp;
 let btnTogglePendencias, pendenciasMgmtPanel, btnAddPendencia, pendenciaStartDateInp, modalOverlay, btnCloseModal;
+let engAnalysisMgmtPanel, engAnalysisStartDateInp;
 let btnShowHistory, historyModal, btnCloseHistory;
 let projectDueDateInp, currentProjectName, projectGlobalCountdown;
 let globalLogin, loginSector;
@@ -489,6 +490,10 @@ function initDOMElements() {
     pendenciaStartDateInp = document.getElementById('pendencia-start-date');
     modalOverlay = document.getElementById('modal-overlay');
     btnCloseModal = document.getElementById('btn-close-modal');
+    
+    // Análise CAIXA
+    engAnalysisMgmtPanel = document.getElementById('eng-analysis-mgmt-panel');
+    engAnalysisStartDateInp = document.getElementById('eng-analysis-start-date');
 
     // Inputs
     projectDueDateInp = document.getElementById('project-due-date');
@@ -975,11 +980,21 @@ function initEventListeners() {
                         curr.engAnalysisStartDate = new Date().toISOString().split('T')[0];
                     }
                 } else {
-                    // Opcional: manter ou limpar a data ao fechar? 
-                    // Se o usuário fechar e abrir de novo, costuma-se resetar o ciclo.
                     curr.engAnalysisStartDate = '';
                 }
 
+                saveState();
+                updateGlobalDateUI();
+                renderTracking();
+            }
+        });
+    }
+
+    if (engAnalysisStartDateInp) {
+        engAnalysisStartDateInp.addEventListener('change', (e) => {
+            const curr = getCurrentProject();
+            if (curr && curr.id !== 'p_default') {
+                curr.engAnalysisStartDate = e.target.value;
                 saveState();
                 updateGlobalDateUI();
                 renderTracking();
@@ -1538,6 +1553,12 @@ function updateGlobalDateUI() {
             btnToggleEngEl.style.color = 'var(--info)';
             btnToggleEngEl.style.borderColor = 'var(--info)';
         }
+        if (engAnalysisMgmtPanel) {
+            engAnalysisMgmtPanel.classList.remove('hidden');
+        }
+        if (engAnalysisStartDateInp) {
+            engAnalysisStartDateInp.value = p.engAnalysisStartDate || '';
+        }
         if (projectGlobalCountdown) projectGlobalCountdown.style.display = 'none';
     } else {
         if (subtitleEl) {
@@ -1550,6 +1571,9 @@ function updateGlobalDateUI() {
             btnToggleEngEl.style.backgroundColor = '';
             btnToggleEngEl.style.color = '';
             btnToggleEngEl.style.borderColor = '';
+        }
+        if (engAnalysisMgmtPanel) {
+            engAnalysisMgmtPanel.classList.add('hidden');
         }
     }
 }
