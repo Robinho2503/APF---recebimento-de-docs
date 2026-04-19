@@ -710,13 +710,6 @@ function initEventListeners() {
                 updateGlobalDateUI();
                 renderTree();
                 renderTracking();
-
-                // Fechar sidebar no mobile ao trocar de aba principal se estiver aberta
-                if (window.innerWidth <= 992 && sidebarApf && sidebarApf.classList.contains('mobile-active')) {
-                    sidebarApf.classList.remove('mobile-active');
-                    if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
-                    toggleBodyScroll(false);
-                }
             });
         });
     }
@@ -4365,64 +4358,4 @@ document.addEventListener('DOMContentLoaded', () => {
     if (modal) {
         modal.onclick = (e) => { if (e.target === modal) closeChangePasswordModal(); };
     }
-
-    initMobileGestures();
 });
-
-// Resiliência Mobile: Gestos de Swipe para fechar a sidebar
-function initMobileGestures() {
-    let touchStartX = 0;
-    let touchEndX = 0;
-    const minSwipeDistance = 50;
-    
-    const sidebar = document.getElementById('sidebar-apf');
-    if (!sidebar) return;
-
-    sidebar.addEventListener('touchstart', e => {
-        touchStartX = e.changedTouches[0].screenX;
-    }, { passive: true });
-
-    sidebar.addEventListener('touchend', e => {
-        touchEndX = e.changedTouches[0].screenX;
-        handleSwipe();
-    }, { passive: true });
-
-    function handleSwipe() {
-        const swipeDistance = touchStartX - touchEndX;
-        // Swipe da Direita para Esquerda (<-) para fechar o menu
-        if (swipeDistance > minSwipeDistance && sidebar.classList.contains('mobile-active')) {
-            sidebar.classList.remove('mobile-active');
-            const backdrop = document.getElementById('sidebar-backdrop');
-            if (backdrop) backdrop.classList.remove('active');
-            toggleBodyScroll(false);
-        }
-    }
-}
-
-// Bloqueia/Desbloqueia o scroll do corpo (útil para modais e menus moblie)
-function toggleBodyScroll(lock) {
-    if (lock) {
-        document.body.style.overflow = 'hidden';
-        document.body.style.touchAction = 'none';
-    } else {
-        document.body.style.overflow = '';
-        document.body.style.touchAction = '';
-    }
-}
-
-// Atualizar o botão de menu mobile para também controlar o scroll
-const originalInitializeMobile = () => {
-    const btn = document.getElementById('btn-mobile-menu');
-    const backdrop = document.getElementById('sidebar-backdrop');
-    if (btn && backdrop) {
-        btn.addEventListener('click', () => {
-            const isActive = document.getElementById('sidebar-apf').classList.contains('mobile-active');
-            toggleBodyScroll(!isActive);
-        });
-        backdrop.addEventListener('click', () => {
-             toggleBodyScroll(false);
-        });
-    }
-};
-
-document.addEventListener('DOMContentLoaded', originalInitializeMobile);
