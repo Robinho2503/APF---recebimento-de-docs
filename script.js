@@ -416,7 +416,7 @@ function toggleTheme() {
 
 // DOM Elements
 let btnNewProject, btnExportZip, btnExportPoints, btnToggleEng, btnDeleteProject, btnRenameProject, btnOpenTemplate, btnAddRoot;
-let checklistContainer, sidebarApf, btnToggleSidebar, managementContainer, trackingContainer;
+let checklistContainer, sidebarApf, btnToggleSidebar, managementContainer, trackingContainer, dueDateContainer;
 let tabs, tabContents, btnUnlock, btnBackToMain, inputPassword, passwordError, passwordLock, managementContent;
 let btnSettings, btnSaveSettings, btnResetModel, geminiModelInp, geminiKeyInp, btnToggleKey, apfPassInp;
 let btnTogglePendencias, pendenciasMgmtPanel, btnAddPendencia, pendenciaStartDateInp, modalOverlay, btnCloseModal;
@@ -465,6 +465,7 @@ function initDOMElements() {
     btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
     managementContainer = document.getElementById('management-render-area');
     trackingContainer = document.getElementById('tracking-render-area');
+    dueDateContainer = document.getElementById('due-date-container');
 
     // Tabs & Management
     tabs = document.querySelectorAll('.tab-btn');
