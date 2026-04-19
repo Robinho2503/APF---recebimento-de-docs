@@ -38,11 +38,11 @@ body {
 
 .main-layout { display: block; }
 
-.app-container { max-width: 1400px; padding: 2rem; margin-left: 290px; overflow-x: hidden; }
+.app-container { max-width: 1400px; padding: 2rem; margin-left: 320px; overflow-x: hidden; }
 
 /* Sidebar */
 .sidebar {
-    width: 290px;
+    width: 320px;
     height: 100vh;
     position: fixed;
     left: 0;
@@ -82,12 +82,12 @@ body {
     padding: 0.75rem;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.5rem;
 }
 .sidebar .tracking-card { 
     position: relative;
     flex-direction: column; 
-    padding: 0.75rem 0.85rem; 
+    padding: 0.5rem 0.85rem; 
     align-items: stretch; 
     gap: 0.4rem; 
     margin-bottom: 0.6rem; 
