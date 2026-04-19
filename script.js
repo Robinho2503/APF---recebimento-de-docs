@@ -1858,7 +1858,7 @@ function renderTracking() {
             const diffDays = Math.floor((today - start) / (1000 * 60 * 60 * 24));
             const displayDays = diffDays >= 0 ? diffDays : 0;
             
-            trackingLine = `<span style="color: var(--danger); font-weight: 700; display:flex; align-items:center; gap:0.25rem;"><i class="ph ph-warning-diamond"></i> Resolução de pendências │ ${displayDays} dias</span>`;
+            trackingLine = `<span style="color: var(--danger); font-weight: 700; display:flex; align-items:center; gap:0.2rem; font-size: 0.7rem;"><i class="ph ph-warning-diamond"></i> Resolução de pendências │ ${displayDays} dias</span>`;
         } else if (p.engAnalysisOpened) {
             let daysDisplay = 0;
             if (p.engAnalysisStartDate) {
@@ -1869,7 +1869,7 @@ function renderTracking() {
                 const diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
                 daysDisplay = diff >= 0 ? diff : 0;
             }
-            trackingLine = `<span style="color: var(--info); font-weight: 700; display:flex; align-items:center; gap:0.25rem;"><i class="ph ph-calendar"></i> Análise CAIXA │ ${daysDisplay} dias</span>`;
+            trackingLine = `<span style="color: var(--info); font-weight: 700; display:flex; align-items:center; gap:0.2rem; font-size: 0.7rem;"><i class="ph ph-calendar"></i> Análise CAIXA │ ${daysDisplay} dias</span>`;
         } else if (!p.dueDate) {
             trackingLine = `<span style="color: var(--text-muted); font-weight: 500;">Sem prazo</span>`;
         } else {
@@ -1877,9 +1877,9 @@ function renderTracking() {
             const bizHtml = statusText.includes('<div') ? statusText.match(/<div.*/)[0] : '';
 
             trackingLine = `
-                <div style="display: flex; align-items: flex-start; width: 100%;">
+                <div style="display: flex; align-items: flex-start; width: 100%; font-size: 0.7rem;">
                     <span style="color: var(--text-muted); font-weight: 500; white-space: nowrap;">${dateText}</span>
-                    <span style="color: rgba(255,255,255,0.2); margin: 0 0.5rem;">┃</span>
+                    <span style="color: rgba(255,255,255,0.2); margin: 0 0.4rem;">┃</span>
                     <div style="display: flex; flex-direction: column; color: ${statusCol};">
                         <span style="font-weight: 700;">${barePrazo}</span>
                         ${bizHtml}
@@ -1904,11 +1904,11 @@ function renderTracking() {
 
         card.innerHTML = `
             <div class="tracking-body">
-                <div class="mb-1 flex-between" style="align-items: center; gap: 0.5rem;">
-                    <h3 style="font-weight:700; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; margin: 0; ${titleStyle}" title="${p.name}"><i class="ph ph-buildings" style="${iconStyle}"></i> ${p.name}</h3>
+                <div class="mb-1 flex-between" style="align-items: center; gap: 0.4rem;">
+                    <h3 style="font-weight:700; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; margin: 0; ${titleStyle}" title="${p.name}"><i class="ph ph-buildings" style="${iconStyle}"></i> ${p.name}</h3>
                 </div>
                 ${(p.cidade || p.uf) ? `<div class="tk-location"><i class="ph ph-map-pin"></i> ${p.cidade || ''}${p.cidade && p.uf ? ' - ' : ''}${p.uf || ''}</div>` : ''}
-                <div class="mb-1" style="font-size: 0.75rem; width: 100%; margin-top: 0.25rem;">
+                <div class="mb-1" style="font-size: 0.7rem; width: 100%; margin-top: 0.2rem;">
                     ${trackingLine}
                 </div>
             </div>
