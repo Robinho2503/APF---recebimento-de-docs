@@ -2578,25 +2578,37 @@ function createNode(item, level) {
 
     let allValidated = false;
     if (isRootFolder && hasChildren) {
-        allValidated = true;
-        const checkChildren = (parentId) => {
-            const kids = getItems().filter(i => i.parentId === parentId);
-            kids.forEach(k => {
-                const kKids = getItems().filter(j => j.parentId === k.id);
-                if (kKids.length === 0) {
-                    if (!k.isNotApplicable) {
-                        const hasAtt = k.attachments && k.attachments.length > 0;
-                        const isValidated = k.validationStatus === 'Validado' || k.validationStatus === 'APF check';
-                        if (!hasAtt || !isValidated) {
-                            allValidated = false;
+        let totalDocs = 0;
+        let validatedDocs = 0;
+        const pItems = getItems();
+        
+        const countValidations = (parentId) => {
+            const children = pItems.filter(i => i.parentId === parentId);
+            children.forEach(child => {
+                const subChildren = pItems.filter(i => i.parentId === child.id);
+                if (subChildren.length === 0) {
+                    // É um documento folha (não é pasta)
+                    if (!child.isNotApplicable) {
+                        totalDocs++;
+                        const hasAtt = child.attachments && child.attachments.length > 0;
+                        const status = (child.validationStatus || '').trim().toLowerCase();
+                        // Aceita 'validado' ou 'apf check' de forma resiliente
+                        if (hasAtt && (status === 'validado' || status === 'apf check')) {
+                            validatedDocs++;
                         }
                     }
                 } else {
-                    checkChildren(k.id);
+                    // É uma pasta, continua descendo
+                    countValidations(child.id);
                 }
             });
         };
-        checkChildren(item.id);
+        
+        countValidations(item.id);
+        // O setor só fica verde se houver documentos e todos estiverem validados
+        if (totalDocs > 0 && totalDocs === validatedDocs) {
+            allValidated = true;
+        }
     }
 
     const nameSpan = document.createElement('span');
