@@ -1540,14 +1540,14 @@ function updateGlobalDateUI() {
             daysDisplay = diff >= 0 ? diff : 0;
         }
 
-        const label = `Análise CAIXA aberta │ ${daysDisplay} dias`;
+        const label = `Início da Análise │ ${daysDisplay} dias`;
 
         if (subtitleEl) {
-            subtitleEl.innerHTML = `<i class="ph ph-file-search"></i> ${label}`;
+            subtitleEl.innerHTML = `<i class="ph ph-calendar"></i> ${label}`;
             subtitleEl.className = 'badge-eng-subtitle';
         }
         if (btnToggleEngEl) {
-            btnToggleEngEl.innerHTML = `<i class="ph ph-magnifying-glass"></i> ${label}`;
+            btnToggleEngEl.innerHTML = `<i class="ph ph-calendar"></i> ${label}`;
             btnToggleEngEl.className = 'btn';
             btnToggleEngEl.style.backgroundColor = 'rgba(96, 165, 250, 0.1)';
             btnToggleEngEl.style.color = 'var(--info)';
@@ -1566,7 +1566,7 @@ function updateGlobalDateUI() {
             subtitleEl.className = 'default-subtitle';
         }
         if (btnToggleEngEl) {
-            btnToggleEngEl.innerHTML = '<i class="ph ph-magnifying-glass"></i> Abrir Engenharia';
+            btnToggleEngEl.innerHTML = '<i class="ph ph-calendar"></i> Abrir Engenharia';
             btnToggleEngEl.className = 'btn btn-outline';
             btnToggleEngEl.style.backgroundColor = '';
             btnToggleEngEl.style.color = '';
@@ -1867,7 +1867,7 @@ function renderTracking() {
                 const diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
                 daysDisplay = diff >= 0 ? diff : 0;
             }
-            trackingLine = `<span style="color: #1e3a8a; font-weight: 700; display:flex; align-items:center; gap:0.25rem;"><i class="ph ph-file-search"></i> Análise CAIXA aberta │ ${daysDisplay} dias</span>`;
+            trackingLine = `<span style="color: #1e3a8a; font-weight: 700; display:flex; align-items:center; gap:0.25rem;"><i class="ph ph-calendar"></i> Início da Análise │ ${daysDisplay} dias</span>`;
         } else if (!p.dueDate) {
             trackingLine = `<span style="color: var(--text-muted); font-weight: 500;">Sem prazo</span>`;
         } else {
