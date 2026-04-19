@@ -1918,8 +1918,8 @@ function renderTracking() {
                     </h3>
                 </div>
                 ${(p.cidade || p.uf) ? `
-                <div class="tk-location" style="display: flex; align-items: center; gap: 0.3rem; margin-bottom: 0.4rem; color: var(--text-muted); font-size: 0.68rem; opacity: 0.7;">
-                    <i class="ph ph-map-pin" style="font-size: 0.75rem;"></i> 
+                <div class="tk-location" style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.45rem; color: var(--text-muted); font-size: 0.72rem; opacity: 0.8;">
+                    <i class="ph ph-map-pin" style="font-size: 0.85rem; width: 0.95rem; text-align: center;"></i> 
                     <span>${p.cidade || ''}${p.cidade && p.uf ? ' - ' : ''}${p.uf || ''}</span>
                 </div>` : ''}
                 <div style="width: 100%; margin-top: 0.2rem;">
