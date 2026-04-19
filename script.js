@@ -1912,14 +1912,14 @@ function renderTracking() {
 
         card.innerHTML = `
             <div class="tracking-body" style="padding-left: ${p.id === localUI.currentProjectId ? '1.25rem' : '0'}; transition: padding 0.3s ease;">
-                <div class="mb-1 flex-between" style="align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+                <div class="mb-1 flex-between" style="align-items: center; gap: 0.5rem; margin-bottom: 0.2rem;">
                     <h3 style="font-weight:700; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; margin: 0; ${titleStyle}" title="${p.name}">
                         <i class="ph ph-buildings" style="${iconStyle}; font-size: 0.95rem; margin-right: 0.25rem;"></i> ${p.name}
                     </h3>
                 </div>
                 ${(p.cidade || p.uf) ? `
-                <div class="tk-location" style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.45rem; color: var(--text-muted); font-size: 0.72rem; opacity: 0.8;">
-                    <i class="ph ph-map-pin" style="font-size: 0.85rem; width: 0.95rem; text-align: center;"></i> 
+                <div class="tk-location" style="display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.4rem; color: var(--text-muted); font-size: 0.62rem; opacity: 0.7;">
+                    <i class="ph ph-map-pin" style="font-size: 0.75rem; width: 0.95rem; text-align: center;"></i> 
                     <span>${p.cidade || ''}${p.cidade && p.uf ? ' - ' : ''}${p.uf || ''}</span>
                 </div>` : ''}
                 <div style="width: 100%; margin-top: 0.2rem;">
