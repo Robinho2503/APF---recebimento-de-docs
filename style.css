@@ -106,7 +106,7 @@ body {
 }
 
 .sidebar .tracking-card.eng-active:hover {
-    background: rgba(245, 158, 11, 0.1);
+    background: rgba(59, 130, 246, 0.1);
 }
 
 .sidebar .tracking-card.eng-active h3,
@@ -115,13 +115,13 @@ body {
 }
 
 .sidebar .tracking-card.eng-active .tk-status {
-    color: var(--warning) !important;
+    color: var(--info) !important;
 }
 
 .badge-eng {
-    background: rgba(245, 158, 11, 0.08) !important;
-    color: var(--warning) !important;
-    border: 1px solid rgba(245, 158, 11, 0.3) !important;
+    background: rgba(59, 130, 246, 0.08) !important;
+    color: var(--info) !important;
+    border: 1px solid rgba(59, 130, 246, 0.3) !important;
     text-transform: none;
     font-size: 0.75rem;
     font-weight: 600;
@@ -132,14 +132,14 @@ body {
 .badge-eng-subtitle {
     font-size: 0.85rem;
     font-weight: 600;
-    color: var(--warning) !important;
-    background: rgba(245, 158, 11, 0.08) !important;
+    color: var(--info) !important;
+    background: rgba(59, 130, 246, 0.08) !important;
     padding: 0.3rem 0.6rem;
     border-radius: 0.35rem;
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    border: 1px solid rgba(245, 158, 11, 0.3) !important;
+    border: 1px solid rgba(59, 130, 246, 0.3) !important;
     margin-top: 0.5rem;
 }
 
@@ -463,11 +463,11 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
     font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem; text-transform: uppercase; letter-spacing: 0.05em;
     border: 1px solid transparent;
 }
-.badge-analise { background: rgba(245, 158, 11, 0.1); color: var(--warning); border-color: rgba(245, 158, 11, 0.2); }
+.badge-analise { background: rgba(59, 130, 246, 0.1); color: var(--info); border-color: rgba(59, 130, 246, 0.2); }
 .badge-validado, .badge-entregue { background: rgba(16, 185, 129, 0.1); color: var(--accent); border-color: rgba(16, 185, 129, 0.2); }
 .badge-apontamento, .badge-pendente { background: rgba(239, 68, 68, 0.1); color: var(--danger); border-color: rgba(239, 68, 68, 0.2); }
 .badge-na { background: rgba(113, 113, 122, 0.1); color: var(--text-muted); border-color: rgba(113, 113, 122, 0.2); }
-.badge-eng { background: rgba(245, 158, 11, 0.1); color: var(--warning); border-color: rgba(245, 158, 11, 0.2); text-transform: none; font-size: 0.8rem; font-weight: 700; }
+/* .badge-eng removed duplicate defined earlier */
 
 .apf-check-symbol {
     display: inline-flex;

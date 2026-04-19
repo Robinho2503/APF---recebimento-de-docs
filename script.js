@@ -1867,7 +1867,7 @@ function renderTracking() {
                 const diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
                 daysDisplay = diff >= 0 ? diff : 0;
             }
-            trackingLine = `<span style="color: #1e3a8a; font-weight: 700; display:flex; align-items:center; gap:0.25rem;"><i class="ph ph-calendar"></i> Início da Análise │ ${daysDisplay} dias</span>`;
+            trackingLine = `<span style="color: var(--info); font-weight: 700; display:flex; align-items:center; gap:0.25rem;"><i class="ph ph-calendar"></i> Início da Análise │ ${daysDisplay} dias</span>`;
         } else if (!p.dueDate) {
             trackingLine = `<span style="color: var(--text-muted); font-weight: 500;">Sem prazo</span>`;
         } else {
@@ -1893,8 +1893,8 @@ function renderTracking() {
             titleStyle = 'color: var(--danger);';
             iconStyle = 'color: var(--danger);';
         } else if (p.engAnalysisOpened) {
-            titleStyle = 'color: #1e3a8a;'; // Azul marinho/escuro
-            iconStyle = 'color: #1e3a8a;';
+            titleStyle = 'color: var(--info);';
+            iconStyle = 'color: var(--info);';
         }
 
         // Contagem de apontamentos de APF
