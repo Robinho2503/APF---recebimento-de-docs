@@ -1521,15 +1521,16 @@ function updateGlobalDateUI() {
     // 2. Caso Especial: MODELO DE ENTREGA
     if(p.id === 'p_default') {
         if(dash) dash.style.display = 'none';
-        if(nameEl) nameEl.textContent = 'MODELO DE ENTREGA';
-        if(subtitleEl) subtitleEl.textContent = 'Estrutura padrão de pastas';
-        if(currentProjectName) currentProjectName.textContent = 'MODELO DE ENTREGA';
+        if(nameEl) nameEl.textContent = p.name;
+        if(subtitleEl) {
+            subtitleEl.innerHTML = '<i class="ph ph-layout" style="opacity: 0.7;"></i> Estrutura Base de Documentação';
+            subtitleEl.className = 'default-subtitle';
+        }
+        if(btnRenameProject) btnRenameProject.style.display = 'none';
+        if(btnDeleteProject) btnDeleteProject.style.display = 'none';
+        if(dueDateContainer) dueDateContainer.style.display = 'none';
+        if(projectGlobalCountdown) projectGlobalCountdown.style.display = 'none';
         
-        if (dueDateContainer) dueDateContainer.style.display = 'none';
-        if (projectDueDateInp) { projectDueDateInp.disabled = true; projectDueDateInp.value = ''; }
-        if (btnRenameProject) btnRenameProject.style.display = 'none';
-        if (btnDeleteProject) btnDeleteProject.style.display = 'none';
-
         // Reseta filtro no modelo
         treeSearchFilter = 'all';
         return;
@@ -1537,7 +1538,18 @@ function updateGlobalDateUI() {
 
     // 3. Caso Normal: Empreendimentos Reais
     if(nameEl) nameEl.textContent = p.name;
-    if(subtitleEl) subtitleEl.textContent = 'Entrega de documentação';
+    
+    // Gerar subtítulo com localização
+    const locationStr = (p.cidade || p.uf) ? `${p.cidade || ''}${p.cidade && p.uf ? ' - ' : ''}${p.uf || ''}` : '';
+    const baseSubtitle = locationStr 
+        ? `<i class="ph ph-map-pin" style="opacity: 0.7;"></i> ${locationStr} │ Entrega de documentação` 
+        : 'Entrega de documentação';
+
+    if(subtitleEl) {
+        subtitleEl.innerHTML = baseSubtitle;
+        subtitleEl.className = 'default-subtitle';
+    }
+
     if(currentProjectName) currentProjectName.textContent = p.name;
     if(btnRenameProject) btnRenameProject.style.display = 'inline-flex';
     if(btnDeleteProject) btnDeleteProject.style.display = 'inline-flex';
@@ -1547,12 +1559,30 @@ function updateGlobalDateUI() {
     // RENDERIZAR PAINEL UNIFICADO
     updateProjectProgressUI(p);
 
+    // Contagem Regressiva Global (Dias Úteis)
+    if (projectGlobalCountdown) {
+        if (p.dueDate) {
+            const bizDays = calculateBusinessDays(p.dueDate);
+            const isExpired = new Date(p.dueDate) < new Date().setHours(0,0,0,0);
+            
+            if (isExpired) {
+                projectGlobalCountdown.innerHTML = `<i class="ph ph-warning-circle"></i> Prazo Encerrado`;
+                projectGlobalCountdown.style.color = 'var(--danger)';
+            } else {
+                projectGlobalCountdown.innerHTML = `<i class="ph ph-clock"></i> ${bizDays} dias úteis restantes`;
+                projectGlobalCountdown.style.color = bizDays <= 5 ? 'var(--warning)' : 'var(--accent)';
+            }
+            projectGlobalCountdown.style.display = 'block';
+        } else {
+            projectGlobalCountdown.style.display = 'none';
+        }
+    }
+
     // Análise CAIXA?
-    const btnToggleEngId = 'btn-toggle-eng'; // Consistent ID
+    const btnToggleEngId = 'btn-toggle-eng'; 
     const btnToggleEngEl = document.getElementById(btnToggleEngId);
     
     if(p.engAnalysisOpened) {
-        // Calcular Dias
         let daysDisplay = 0;
         if (p.engAnalysisStartDate) {
             const start = new Date(p.engAnalysisStartDate);
@@ -1566,7 +1596,7 @@ function updateGlobalDateUI() {
         const label = `Análise CAIXA │ ${daysDisplay} dias`;
 
         if (subtitleEl) {
-            subtitleEl.innerHTML = `<i class="ph ph-calendar"></i> ${label}`;
+            subtitleEl.innerHTML = `<i class="ph ph-map-pin" style="opacity: 0.7;"></i> ${locationStr} │ <i class="ph ph-calendar"></i> ${label}`;
             subtitleEl.className = 'badge-eng-subtitle';
         }
         if (btnToggleEngEl) {
@@ -1582,12 +1612,9 @@ function updateGlobalDateUI() {
         if (engAnalysisStartDateInp) {
             engAnalysisStartDateInp.value = p.engAnalysisStartDate || '';
         }
+        // Quando engenharia está aberta, escondemos o countdown de entrega (fase anterior)
         if (projectGlobalCountdown) projectGlobalCountdown.style.display = 'none';
     } else {
-        if (subtitleEl) {
-            subtitleEl.textContent = 'Entrega de documentação';
-            subtitleEl.className = 'default-subtitle';
-        }
         if (btnToggleEngEl) {
             btnToggleEngEl.innerHTML = '<i class="ph ph-calendar"></i> Abrir Engenharia';
             btnToggleEngEl.className = 'btn btn-outline';

@@ -122,16 +122,38 @@
             </div>
             
             <!-- Unified Project Header Bar (Integrated Deck) -->
-            <div id="unified-header-deck" class="glass-panel" style="display: none; align-items: center; padding: 0.85rem 1.75rem; gap: 2rem; border-radius: 1rem; margin: 1rem 0 2rem; background: var(--panel-bg); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
-                <div id="project-info-segment" style="display:flex; flex-direction: column; align-items: flex-start; gap: 0.1rem; min-width: 240px;">
-                    <span id="checklist-subtitle" class="default-subtitle" style="color: var(--text-muted); font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.8;"></span>
-                    <strong id="checklist-proj-name" style="color: var(--text-main); font-size: 1.55rem; font-weight: 800; letter-spacing: -0.02em;"></strong>
+            <div id="unified-header-deck" class="glass-panel" style="display: none; align-items: center; padding: 0.85rem 1.75rem; gap: 1.5rem; border-radius: 1rem; margin: 1rem 0 2rem; background: var(--panel-bg); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 8px 32px rgba(0,0,0,0.2); flex-wrap: wrap;">
+                
+                <!-- Zona 1: Identificação -->
+                <div id="project-info-segment" style="display:flex; flex-direction: column; align-items: flex-start; gap: 0.1rem; min-width: 220px; flex: 1;">
+                    <span id="checklist-subtitle" class="default-subtitle" style="color: var(--text-muted); font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.8; display: flex; align-items: center; gap: 0.4rem;"></span>
+                    <strong id="checklist-proj-name" style="color: var(--text-main); font-size: 1.4rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2;"></strong>
+                    <div id="project-global-countdown" class="date-info" style="font-size: 0.8rem; font-weight: 700; margin-top: 0.2rem; display: none; align-items: center; gap: 0.3rem;"></div>
                 </div>
                 
-                <div id="header-deck-separator" style="height: 50px; width: 1px; background: rgba(255,255,255,0.1); flex-shrink: 0;"></div>
+                <div class="header-deck-separator" style="height: 40px; width: 1px; background: rgba(255,255,255,0.1); flex-shrink: 0;"></div>
 
-                <div id="unified-top-dashboard" style="display: flex; gap: 1.5rem; align-items: center; flex-grow: 1;">
+                <!-- Zona 2: Dashboard de Progresso -->
+                <div id="unified-top-dashboard" style="display: flex; gap: 1.25rem; align-items: center; flex: 2; justify-content: flex-start;">
                     <!-- JS Injected Dashboard Components -->
+                </div>
+
+                <div class="header-deck-separator" style="height: 40px; width: 1px; background: rgba(255,255,255,0.1); flex-shrink: 0;"></div>
+
+                <!-- Zona 3: Gestão e Ações -->
+                <div id="header-actions-segment" style="display: flex; align-items: center; gap: 1rem; flex-shrink: 0; background: rgba(255,255,255,0.03); padding: 0.5rem 1rem; border-radius: 0.75rem; border: 1px solid rgba(255,255,255,0.05);">
+                    <div id="due-date-container" style="display: flex; flex-direction: column; align-items: flex-start;">
+                        <label style="font-size: 0.55rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; letter-spacing: 0.08em; margin-bottom: 0.15rem; opacity: 0.7;">Prazo Geral</label>
+                        <input type="date" id="project-due-date" class="input-modern" style="max-width: 130px; padding: 0.2rem 0.4rem; font-size: 0.75rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.4rem; color: var(--text-main);">
+                    </div>
+                    <div style="display: flex; gap: 0.4rem;">
+                        <button id="btn-rename-project" class="icon-btn-sm" title="Renomear Empreendimento" style="background: rgba(255,255,255,0.05); color: var(--text-main); border: 1px solid rgba(255,255,255,0.1); width: 32px; height: 32px; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                            <i class="ph ph-pencil-simple" style="font-size: 1rem;"></i>
+                        </button>
+                        <button id="btn-delete-project" class="icon-btn-sm" title="Excluir Empreendimento" style="background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); width: 32px; height: 32px; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                            <i class="ph ph-trash" style="font-size: 1rem;"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -140,11 +162,6 @@
                 <div class="checklist-analysis-layout">
                     <!-- Coluna principal: Checklist -->
                     <div class="checklist-main-col glass-panel">
-                        <div class="section-header flex-between mb-4">
-                            <div id="project-global-countdown" class="date-info" style="text-align: left; background: rgba(0,0,0,0.2); padding: 0.5rem 1rem; border-radius: 0.5rem; display: none;">
-                                <!-- JS injected -->
-                            </div>
-                        </div>
                         <!-- Progress Line -->
                         <!-- Top Stats Row: Progresso e Cards lado a lado -->
                         <!-- Busca Global (Agora ocupando a linha toda abaixo dos stats) -->
@@ -202,18 +219,6 @@
                         <div class="flex-between flex-wrap gap-4">
                             <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
                                 <h2 style="font-size: 1.25rem;">Gestão de Pastas: <span id="current-project-name" style="color:var(--primary)"></span></h2>
-                            </div>
-                            <div style="display: flex; gap: 1rem; align-items: flex-end;">
-                                <div id="due-date-container" style="display: flex; flex-direction: column; align-items: flex-end;">
-                                    <label style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">Prazo Geral da Entrega</label>
-                                    <input type="date" id="project-due-date" class="input-modern" style="max-width: 180px; padding: 0.4rem 0.75rem; font-size: 0.85rem;">
-                                </div>
-                                <button id="btn-rename-project" class="btn btn-outline btn-sm" style="padding: 0.5rem;" title="Renomear Empreendimento">
-                                    <i class="ph ph-pencil-simple" style="font-size: 1.15rem; margin: 0;"></i>
-                                </button>
-                                <button id="btn-delete-project" class="btn btn-danger btn-sm" style="padding: 0.5rem;" title="Excluir Empreendimento Atual - Cuidado!">
-                                    <i class="ph ph-trash" style="font-size: 1.15rem; margin: 0;"></i>
-                                </button>
                             </div>
                         </div>
                         <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">Estrutura de arquivos e validação para este empreendimento.</p>
