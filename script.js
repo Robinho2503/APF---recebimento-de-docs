@@ -1912,7 +1912,7 @@ function renderTracking() {
 
         card.innerHTML = `
             <div class="tracking-body" style="padding-left: ${p.id === localUI.currentProjectId ? '1.25rem' : '0'}; transition: padding 0.3s ease;">
-                <div class="mb-1 flex-between" style="align-items: flex-start; gap: 0.5rem; margin-bottom: 0.35rem;">
+                <div class="mb-1 flex-between" style="align-items: flex-start; gap: 0.5rem; margin-bottom: 2px;">
                     <h3 style="font-weight:700; font-size: 0.85rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: normal; flex: 1; margin: 0; line-height: 1.25; ${titleStyle}" title="${p.name}">
                         <i class="ph ph-buildings" style="${iconStyle}; font-size: 0.95rem; margin-right: 0.25rem; margin-top: 0.1rem; display: inline-block;"></i>${p.name}
                     </h3>
