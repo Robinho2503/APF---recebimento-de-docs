@@ -2207,12 +2207,31 @@ function updateProjectProgressUI(curr) {
     // NOVO: Cálculo de Análise para o Setor (Validação)
     let sectorAnalysisPct = 0;
     let sectorGrade = null;
+    let sectorAnalysisHTML = ''; // Variável para armazenar o bloco de análise
     if (!isAPF) {
         const sectorLeafItems = leafItems.filter(i => getItemSector(i.id) === authenticatedSector);
         if (sectorLeafItems.length > 0) {
             const validatedSectorCount = sectorLeafItems.filter(i => (i.validationStatus === 'Validado' || i.validationStatus === 'APF check') && i.attachments?.length > 0).length;
             sectorAnalysisPct = Math.round((validatedSectorCount / sectorLeafItems.length) * 100);
             sectorGrade = getGrade(sectorAnalysisPct);
+            
+            sectorAnalysisHTML = `
+                <!-- DIVISOR VERTICAL -->
+                <div style="height: 48px; width: 1px; background: rgba(255,255,255,0.12);"></div>
+
+                <!-- ANÁLISE DO SETOR (TEXTO) -->
+                <div style="display: flex; align-items: center; gap: 1rem; min-width: 180px;">
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 54px; height: 54px; background: ${sectorGrade?.bg || 'rgba(255,255,255,0.05)'}; border-radius: 50%; border: 1px solid ${sectorGrade?.color || 'rgba(255,255,255,0.1)'}44; box-shadow: inset 0 0 15px ${sectorGrade?.color || 'transparent'}11;">
+                        <span style="font-size: 1.25rem; font-weight: 900; color: ${sectorGrade?.color || 'var(--text-muted)'}; line-height: 1;">${sectorGrade?.g || '-'}</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.1rem;">
+                        <div style="display: flex; align-items: center; gap: 0.4rem; color: var(--info); font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
+                            <i class="ph-bold ph-shield-check"></i> Análise do setor
+                        </div>
+                        <span style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.01em;">${sectorGrade?.label || 'Em análise...'}</span>
+                    </div>
+                </div>
+            `;
         }
     }
 
@@ -2236,7 +2255,7 @@ function updateProjectProgressUI(curr) {
             </div>
         `;
     } else {
-        // VIEW SETOR: Seu Setor em Destaque + Global menor + Análise do Setor (TEXTO)
+        // VIEW SETOR: Seu Setor em Destaque + Global menor
         progressSectionHTML = `
             <div style="display: flex; align-items: center; gap: 2.5rem;">
                 
@@ -2254,23 +2273,7 @@ function updateProjectProgressUI(curr) {
                     </div>
                 </div>
 
-                <!-- DIVISOR SUTIL -->
-                <div style="height: 48px; width: 1px; background: rgba(255,255,255,0.08);"></div>
-
-                <!-- ANÁLISE DO SETOR (TEXTO) -->
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 54px; height: 54px; background: ${sectorGrade?.bg || 'rgba(255,255,255,0.05)'}; border-radius: 50%; border: 1px solid ${sectorGrade?.color || 'rgba(255,255,255,0.1)'}44; box-shadow: inset 0 0 15px ${sectorGrade?.color || 'transparent'}11;">
-                        <span style="font-size: 1.25rem; font-weight: 900; color: ${sectorGrade?.color || 'var(--text-muted)'}; line-height: 1;">${sectorGrade?.g || '-'}</span>
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 0.1rem;">
-                        <div style="display: flex; align-items: center; gap: 0.4rem; color: var(--info); font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
-                            <i class="ph-bold ph-shield-check"></i> Análise do setor
-                        </div>
-                        <span style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.01em;">${sectorGrade?.label || 'Em análise...'}</span>
-                    </div>
-                </div>
-
-                <!-- GLOBAL (MENOR) -->
+                <!-- GLOBAL (MENOR EM SETOR) -->
                 <div style="display: flex; align-items: center; gap: 0.8rem; opacity: 0.65; margin-left: 0.5rem; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 1.5rem;">
                     <div class="circular-progress-container" style="width: 38px; height: 38px;">
                         <div class="circular-progress" style="--progress: ${generalProgressPct}%; background: conic-gradient(var(--text-muted) var(--progress), rgba(255,255,255,0.05) 0);"></div>
@@ -2340,6 +2343,8 @@ function updateProjectProgressUI(curr) {
                     <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7;">REVISAR</span>
                 </div>
             </div>
+
+            ${sectorAnalysisHTML}
 
         </div>
     `;
