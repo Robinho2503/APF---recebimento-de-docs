@@ -1358,7 +1358,23 @@ function applyAuthState(silentRedirect = false) {
         apfBtn.style.display = authenticatedSector === 'APF' ? 'inline-flex' : 'none';
     }
 
-    if (authenticatedSector !== 'APF') {
+    if (authenticatedSector === 'APF') {
+        const isCurrentlyMgmt = isMgmtActive();
+        if (!isCurrentlyMgmt) {
+            // Force Management tab for APF (Unification)
+            tabs.forEach(t => t.classList.remove('active'));
+            tabContents.forEach(tc => tc.classList.remove('active'));
+            
+            const mgmtTab = document.getElementById('tab-management');
+            if (mgmtTab) {
+                mgmtTab.classList.add('active');
+                mgmtTab.style.display = '';
+            }
+            
+            const mgmtBtn = document.querySelector('[data-tab="management"]');
+            if (mgmtBtn) mgmtBtn.classList.add('active');
+        }
+    } else {
         const isCurrentlyMgmt = isMgmtActive();
         if (isCurrentlyMgmt || !document.getElementById('tab-checklist').classList.contains('active')) {
             // Force Checklist tab for non-APF
@@ -1396,6 +1412,13 @@ function applyAuthState(silentRedirect = false) {
                 btn.classList.add('active');
             } else {
                 btn.classList.remove('active');
+            }
+            
+            // Hide Checklist tab button for APF
+            if (authenticatedSector === 'APF' && btn.dataset.tab === 'checklist') {
+                btn.style.display = 'none';
+            } else {
+                btn.style.display = 'flex';
             }
         });
     }
@@ -2168,7 +2191,6 @@ function updateProjectProgressUI(curr) {
     const container = document.getElementById('unified-top-dashboard');
     if (!container) return;
     
-    // VISIBILIDADE: Se for MODELO ou nenhum, esconde
     if (!curr || curr.id === 'p_default' || curr.id === 'none') {
         container.style.display = 'none';
         return;
@@ -2189,17 +2211,6 @@ function updateProjectProgressUI(curr) {
         generalProgressPct = Math.round((deliveredCount / leafItems.length) * 100);
     }
 
-    let sectorProgressPct = 0;
-    if (!isAPF) {
-        const sectorLeafItems = leafItems.filter(i => getItemSector(i.id) === authenticatedSector);
-        if (sectorLeafItems.length > 0) {
-            const deliveredSectorCount = sectorLeafItems.filter(i => i.attachments && i.attachments.length > 0 && i.validationStatus !== 'Apontamento').length;
-            sectorProgressPct = Math.round((deliveredSectorCount / sectorLeafItems.length) * 100);
-        }
-    } else {
-        sectorProgressPct = generalProgressPct;
-    }
-
     // --- CÁLCULOS DE ESTATÍSTICAS (FILTROS) ---
     const isPendenciaMode = curr.pendenciaActive && !isMgmtActive();
     let allStatsItems = isPendenciaMode ? (curr.pendencias || []) : leafItems;
@@ -2207,10 +2218,8 @@ function updateProjectProgressUI(curr) {
     let filteredStatsItems = allStatsItems;
     if (!isAPF) {
         if (isPendenciaMode) {
-            // Para Pendências, o setor está na propriedade .sector
             filteredStatsItems = allStatsItems.filter(i => i.sector === authenticatedSector);
         } else {
-            // Para Itens Normais, usamos o auxiliar
             filteredStatsItems = allStatsItems.filter(i => getItemSector(i.id) === authenticatedSector);
         }
     }
@@ -2221,77 +2230,101 @@ function updateProjectProgressUI(curr) {
     const pending = filteredStatsItems.filter(i => !i.attachments || i.attachments.length === 0 && !i.isNotApplicable).length;
     const inAnalysis = total - validated - withPoints - pending;
 
-    // NOVO: Cálculo de Análise para o Setor (Validação)
-    let sectorAnalysisPct = 0;
-    let sectorGrade = null;
-    let sectorAnalysisHTML = ''; // Variável para armazenar o bloco de análise
-    if (!isAPF) {
+    // --- RENDERIZAÇÃO SEÇÃO DE ANÁLISE (GRID 2x2 para APF) ---
+    let analysisSectionHTML = '';
+
+    if (isAPF) {
+        // Encontra todos os setores (pastas raiz)
+        const sectors = curr.items.filter(i => i.parentId === null).sort((a, b) => a.name.localeCompare(b.name));
+        
+        analysisSectionHTML = `
+            <!-- DIVISOR VERTICAL -->
+            <div style="height: 60px; width: 1px; background: rgba(255,255,255,0.12);"></div>
+            
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; flex-grow: 1; max-width: 480px;">
+        `;
+
+        sectors.forEach(s => {
+            const sectorLeafs = leafItems.filter(i => getItemSector(i.id) === s.name);
+            let sPct = 0;
+            if (sectorLeafs.length > 0) {
+                const sValidated = sectorLeafs.filter(i => (i.validationStatus === 'Validado' || i.validationStatus === 'APF check') && i.attachments?.length > 0).length;
+                sPct = Math.round((sValidated / sectorLeafs.length) * 100);
+            }
+            const grade = getGrade(sPct);
+
+            analysisSectionHTML += `
+                <div style="display: flex; align-items: center; gap: 0.6rem; padding: 0.35rem 0.6rem; background: rgba(255,255,255,0.03); border-radius: 0.6rem; border: 1px solid rgba(255,255,255,0.05);">
+                    <div style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: ${grade.bg}; border-radius: 50%; font-size: 0.8rem; font-weight: 900; color: ${grade.color}; box-shadow: inset 0 0 8px ${grade.color}22;">
+                        ${grade.g}
+                    </div>
+                    <div style="display: flex; flex-direction: column; overflow: hidden;">
+                        <span style="font-size: 0.55rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${s.name}</span>
+                        <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-main);">${sPct}%</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        analysisSectionHTML += `</div>`;
+    } else {
+        // VIEW SETOR: Única nota (Comportamento Original)
         const sectorLeafItems = leafItems.filter(i => getItemSector(i.id) === authenticatedSector);
         if (sectorLeafItems.length > 0) {
             const validatedSectorCount = sectorLeafItems.filter(i => (i.validationStatus === 'Validado' || i.validationStatus === 'APF check') && i.attachments?.length > 0).length;
-            sectorAnalysisPct = Math.round((validatedSectorCount / sectorLeafItems.length) * 100);
-            sectorGrade = getGrade(sectorAnalysisPct);
+            const sectorAnalysisPct = Math.round((validatedSectorCount / sectorLeafItems.length) * 100);
+            const sectorGrade = getGrade(sectorAnalysisPct);
             
-            sectorAnalysisHTML = `
-                <!-- DIVISOR VERTICAL -->
+            analysisSectionHTML = `
                 <div style="height: 48px; width: 1px; background: rgba(255,255,255,0.12);"></div>
-
-                <!-- ANÁLISE DO SETOR (TEXTO) -->
                 <div style="display: flex; align-items: center; gap: 1rem; min-width: 180px;">
                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 54px; height: 54px; background: ${sectorGrade?.bg || 'rgba(255,255,255,0.05)'}; border-radius: 50%; border: 1px solid ${sectorGrade?.color || 'rgba(255,255,255,0.1)'}44; box-shadow: inset 0 0 15px ${sectorGrade?.color || 'transparent'}11;">
                         <span style="font-size: 1.25rem; font-weight: 900; color: ${sectorGrade?.color || 'var(--text-muted)'}; line-height: 1;">${sectorGrade?.g || '-'}</span>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 0rem;">
-                        <div style="color: var(--info); font-size: 0.55rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: -2px;">
-                            Análise do setor
-                        </div>
-                        <span style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.01em;">${sectorGrade?.label || 'Em análise...'}</span>
+                        <div style="color: var(--info); font-size: 0.55rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: -2px;">Análise do setor</div>
+                        <span style="font-size: 1.05rem; font-weight: 800; color: var(--text-main);">${sectorGrade?.label || 'Em análise...'}</span>
                     </div>
                 </div>
             `;
         }
     }
 
-    // --- RENDERIZAÇÃO UNIFICADA ---
+    // --- RENDERIZAÇÃO RESUMO DE PROGRESSO ---
     let progressSectionHTML = '';
-    
     if (isAPF) {
-        // VIEW APF: Apenas um progresso grande (Geral)
         progressSectionHTML = `
             <div style="display: flex; align-items: center; gap: 1.25rem;">
                 <div class="circular-progress-container" style="width: 58px; height: 58px;">
                     <div class="circular-progress" style="--progress: ${generalProgressPct}%; background: conic-gradient(var(--accent) var(--progress), rgba(255,255,255,0.1) 0);"></div>
                     <span class="progress-text" style="font-size: 1rem; font-weight: 800; color: var(--text-main);">${generalProgressPct}%</span>
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 0rem;">
-                    <div style="color: var(--accent); font-size: 0.55rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: -2px;">
-                        Global
-                    </div>
-                    <span style="font-size: 1.1rem; font-weight: 800; color: var(--text-main);">Progresso de entrega</span>
+                <div style="display: flex; flex-direction: column;">
+                    <div style="color: var(--accent); font-size: 0.55rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: -2px;">Global</div>
+                    <span style="font-size: 1.1rem; font-weight: 800; color: var(--text-main);">Entrega</span>
                 </div>
             </div>
         `;
     } else {
-        // VIEW SETOR: Seu Setor em Destaque + Global menor
+        const sectorLeafItems = leafItems.filter(i => getItemSector(i.id) === authenticatedSector);
+        let sPct = 0;
+        if (sectorLeafItems.length > 0) {
+            const deliveredSectorCount = sectorLeafItems.filter(i => i.attachments && i.attachments.length > 0 && i.validationStatus !== 'Apontamento').length;
+            sPct = Math.round((deliveredSectorCount / sectorLeafItems.length) * 100);
+        }
         progressSectionHTML = `
             <div style="display: flex; align-items: center; gap: 2.5rem;">
-                
-                <!-- PROGRESSO DE ENTREGA -->
                 <div style="display: flex; align-items: center; gap: 1.25rem;">
                     <div class="circular-progress-container" style="width: 54px; height: 54px;">
-                        <div class="circular-progress" style="--progress: ${sectorProgressPct}%; background: conic-gradient(var(--accent) var(--progress), rgba(255,255,255,0.1) 0);"></div>
-                        <span class="progress-text" style="font-size: 0.9rem; font-weight: 800; color: var(--text-main);">${sectorProgressPct}%</span>
+                        <div class="circular-progress" style="--progress: ${sPct}%; background: conic-gradient(var(--accent) var(--progress), rgba(255,255,255,0.1) 0);"></div>
+                        <span class="progress-text" style="font-size: 0.9rem; font-weight: 800; color: var(--text-main);">${sPct}%</span>
                     </div>
-                    <div style="display: flex; flex-direction: column; gap: 0rem;">
-                        <div style="color: var(--accent); font-size: 0.55rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: -2px;">
-                            Seu Setor
-                        </div>
-                        <span style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.01em;">Progresso de entrega</span>
+                    <div style="display: flex; flex-direction: column;">
+                        <div style="color: var(--accent); font-size: 0.55rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: -2px;">Seu Setor</div>
+                        <span style="font-size: 1.05rem; font-weight: 800; color: var(--text-main);">Progresso</span>
                     </div>
                 </div>
-
-                <!-- GLOBAL (MENOR EM SETOR) -->
-                <div style="display: flex; align-items: center; gap: 0.8rem; opacity: 0.65; margin-left: 0.5rem; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 1.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.8rem; opacity: 0.65; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 1.5rem;">
                     <div class="circular-progress-container" style="width: 38px; height: 38px;">
                         <div class="circular-progress" style="--progress: ${generalProgressPct}%; background: conic-gradient(var(--text-muted) var(--progress), rgba(255,255,255,0.05) 0);"></div>
                         <span class="progress-text" style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted);">${generalProgressPct}%</span>
@@ -2301,28 +2334,20 @@ function updateProjectProgressUI(curr) {
                         <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Progresso</span>
                     </div>
                 </div>
-
             </div>
         `;
     }
 
     let pendenciasHTML = '';
     if (curr.pendenciaActive) {
-        const pendencias = curr.pendencias || [];
-        let pendPct = 0;
-        if (pendencias.length > 0) {
-            const resolvedCount = pendencias.filter(p => p.attachments && p.attachments.length > 0).length;
-            pendPct = Math.round((resolvedCount / pendencias.length) * 100);
-        }
+        const pends = curr.pendencias || [];
+        let pPct = pends.length > 0 ? Math.round((pends.filter(p => p.attachments?.length > 0).length / pends.length) * 100) : 0;
         pendenciasHTML = `
-            <!-- DIVISOR 2 -->
             <div style="height: 40px; width: 1px; background: rgba(255,255,255,0.12);"></div>
-
-            <!-- INDICADOR: PENDÊNCIAS CAIXA -->
-            <div style="display: flex; align-items: center; gap: 1rem;">
+            <div style="display: flex; align-items: center; gap: 0.8rem;">
                 <div class="circular-progress-container" style="width: 44px; height: 44px;">
-                    <div class="circular-progress" style="--progress: ${pendPct}%; background: conic-gradient(var(--warning) var(--progress), rgba(255,255,255,0.1) 0);"></div>
-                    <span class="progress-text" style="font-size: 0.75rem; font-weight: 700; color: var(--warning);">${pendPct}%</span>
+                    <div class="circular-progress" style="--progress: ${pPct}%; background: conic-gradient(var(--warning) var(--progress), rgba(255,255,255,0.1) 0);"></div>
+                    <span class="progress-text" style="font-size: 0.75rem; font-weight: 700; color: var(--warning);">${pPct}%</span>
                 </div>
                 <div style="display: flex; flex-direction: column;">
                     <div style="font-size: 0.55rem; color: var(--warning); font-weight: 700; text-transform: uppercase;">Pendências</div>
@@ -2334,14 +2359,9 @@ function updateProjectProgressUI(curr) {
 
     container.innerHTML = `
         <div class="glass-panel" style="display: flex; align-items: center; padding: 0.7rem 1.75rem; gap: 2rem; border-radius: 1.25rem; border: 1px solid rgba(255,255,255,0.08); background: rgba(0,0,0,0.2); width: fit-content; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
-            
             ${progressSectionHTML}
             ${pendenciasHTML}
-
-            <!-- LINHA DIVISORA VERTICAL -->
             <div style="height: 48px; width: 1px; background: rgba(255,255,255,0.12);"></div>
-
-            <!-- SEÇÃO DIREITA: ESTATÍSTICAS / FILTROS (GRID 2x2) -->
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.35rem; width: 320px;">
                 <div class="dashboard-card accent ${treeSearchFilter === 'validado' ? 'active' : ''}" onclick="handleDashboardFilter('validado', ${validated})" style="padding: 0.4rem 0.6rem; background: rgba(255,255,255,0.03); border: none; box-shadow: none; border-radius: 0.75rem;">
                     <span class="card-value" style="font-size: 1rem; line-height: 1;">${validated}</span>
@@ -2360,9 +2380,7 @@ function updateProjectProgressUI(curr) {
                     <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7;">REVISAR</span>
                 </div>
             </div>
-
-            ${sectorAnalysisHTML}
-
+            ${analysisSectionHTML}
         </div>
     `;
 }
@@ -3001,6 +3019,8 @@ function createNode(item, level) {
         if(!isRootFolder) {
             const mgmtFields = document.createElement('div');
             mgmtFields.className = 'management-fields';
+            const isAPF = authenticatedSector === 'APF';
+
             if (item.attachments && item.attachments.length > 0) {
                 const valSelect = document.createElement('select');
                 valSelect.className = 'input-modern btn-sm';
@@ -3073,6 +3093,27 @@ function createNode(item, level) {
                     mgmtFields.appendChild(naLabel);
                 }
             }
+
+            // NOVO: Renderizar Botão de Anexo na ADM para APF
+            if (isAPF && !hasChildren && currProj.id !== 'p_default') {
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.className = 'file-input-hidden';
+                fileInput.multiple = true;
+                fileInput.onchange = (e) => window.handleFileUpload(item.id, e.target.files);
+                itemRight.appendChild(fileInput);
+
+                const btnAttach = document.createElement('button');
+                btnAttach.className = 'icon-btn attach-icon-btn';
+                btnAttach.title = 'Anexar documento';
+                btnAttach.innerHTML = '<i class="ph ph-paperclip"></i>';
+                btnAttach.onclick = () => fileInput.click();
+                if (item.isNotApplicable) {
+                    btnAttach.disabled = true;
+                    btnAttach.style.opacity = '0.5';
+                }
+                mgmtFields.appendChild(btnAttach);
+            }
             itemRight.appendChild(mgmtFields);
         }
 
@@ -3121,10 +3162,16 @@ function createNode(item, level) {
                 btnAi.className = 'icon-btn';
                 btnAi.innerHTML = '<i class="ph ph-magic-wand text-primary"></i>';
                 btnAi.onclick = () => window.analyzeDocumentAI(att);
+
+                const btnDelFile = document.createElement('button');
+                btnDelFile.className = 'icon-btn delete';
+                btnDelFile.innerHTML = '<i class="ph ph-x"></i>';
+                btnDelFile.onclick = () => window.handleDeleteFile(item.id, att.id);
                 
                 attBadge.appendChild(nameTxt);
                 attBadge.appendChild(btnAi);
                 attBadge.appendChild(btnView);
+                attBadge.appendChild(btnDelFile);
                 inlineAttachments.appendChild(attBadge);
             });
             itemRight.appendChild(inlineAttachments);
