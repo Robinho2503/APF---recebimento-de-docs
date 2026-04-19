@@ -2576,9 +2576,38 @@ function createNode(item, level) {
         icon.style.color = iconColor;
     }
 
+    let allValidated = false;
+    if (isRootFolder && hasChildren) {
+        allValidated = true;
+        const checkChildren = (parentId) => {
+            const kids = getItems().filter(i => i.parentId === parentId);
+            kids.forEach(k => {
+                const kKids = getItems().filter(j => j.parentId === k.id);
+                if (kKids.length === 0) {
+                    if (!k.isNotApplicable) {
+                        const hasAtt = k.attachments && k.attachments.length > 0;
+                        const isValidated = k.validationStatus === 'Validado' || k.validationStatus === 'APF check';
+                        if (!hasAtt || !isValidated) {
+                            allValidated = false;
+                        }
+                    }
+                } else {
+                    checkChildren(k.id);
+                }
+            });
+        };
+        checkChildren(item.id);
+    }
+
     const nameSpan = document.createElement('span');
     nameSpan.className = 'item-name text-truncate';
     if(isRootFolder) nameSpan.classList.add('root-name'); 
+    
+    if (isRootFolder && allValidated) {
+        nameSpan.style.color = 'var(--accent)';
+        icon.style.color = 'var(--accent)';
+    }
+
     nameSpan.title = 'Clique para Expandir ou Ocultar';
     nameSpan.appendChild(chevron);
     nameSpan.appendChild(icon);
