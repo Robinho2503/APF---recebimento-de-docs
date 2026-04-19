@@ -2399,17 +2399,24 @@ function expandRelevantNodes() {
             const nodeChildren = items.filter(i => i.parentId === nodeId);
             return nodeChildren.some(c => {
                 const cMatches = c.name.toLowerCase().includes(treeSearchQuery);
-                const cHasAtt = c.attachments && c.attachments.length > 0;
-                const cValidOrAPF = c.validationStatus === 'APF check' || c.validationStatus === 'Validado';
-                const cPointed = c.validationStatus === 'Apontamento';
-
                 let cMatchesFilter = true;
-                if (treeSearchFilter === 'pendente') cMatchesFilter = !cHasAtt && !c.isNotApplicable;
-                else if (treeSearchFilter === 'apontamento') cMatchesFilter = cHasAtt && cPointed;
-                else if (treeSearchFilter === 'validado') cMatchesFilter = (cHasAtt && cValidOrAPF) || c.isNotApplicable;
-                else if (treeSearchFilter === 'analise') cMatchesFilter = cHasAtt && !cValidOrAPF && !cPointed;
+                const cSector = getItemSector(c.id);
+                const sectorMatches = authenticatedSector === 'APF' || cSector === authenticatedSector;
+
+                if (treeSearchFilter !== 'all') {
+                    if (cIsFolder) {
+                        cMatchesFilter = false;
+                    } else if (!sectorMatches) {
+                        cMatchesFilter = false;
+                    } else {
+                        if (treeSearchFilter === 'pendente') cMatchesFilter = !cHasAtt && !c.isNotApplicable;
+                        else if (treeSearchFilter === 'apontamento') cMatchesFilter = cHasAtt && cPointed;
+                        else if (treeSearchFilter === 'validado') cMatchesFilter = (cHasAtt && cValidOrAPF) || c.isNotApplicable;
+                        else if (treeSearchFilter === 'analise') cMatchesFilter = cHasAtt && !cValidOrAPF && !cPointed;
+                    }
+                }
                 
-                return (cMatches && cMatchesFilter) || anyChildMatches(c.id);
+                return (cMatches && cMatchesFilter && sectorMatches) || anyChildMatches(c.id);
             });
         };
 
@@ -2587,8 +2594,13 @@ function createNode(item, level) {
         const isFolder = getChildItems(item.id).length > 0 || item.parentId === null;
         
         let matchesFilter = true;
+        const isAPF = authenticatedSector === 'APF';
+        const sectorMatches = isAPF || nodeSector === authenticatedSector;
+
         if (treeSearchFilter !== 'all') {
             if (isFolder) {
+                matchesFilter = false;
+            } else if (!sectorMatches) {
                 matchesFilter = false;
             } else {
                 const itemValidOrAPF = item.validationStatus === 'Validado' || item.validationStatus === 'APF check';
@@ -2610,8 +2622,13 @@ function createNode(item, level) {
                 const cIsFolder = getItems().some(i => i.parentId === c.id) || c.parentId === null;
                 
                 let cMatchesFilter = true;
+                const cSector = getItemSector(c.id);
+                const cSectorMatches = isAPF || cSector === authenticatedSector;
+
                 if (treeSearchFilter !== 'all') {
                     if (cIsFolder) {
+                        cMatchesFilter = false;
+                    } else if (!cSectorMatches) {
                         cMatchesFilter = false;
                     } else {
                         const cValidOrAPF = c.validationStatus === 'Validado' || c.validationStatus === 'APF check';
@@ -2624,7 +2641,7 @@ function createNode(item, level) {
                     }
                 }
                 
-                return (cMatches && cMatchesFilter) || anyChildMatches(c.id);
+                return (cMatches && cMatchesFilter && cSectorMatches) || anyChildMatches(c.id);
             });
         };
 
