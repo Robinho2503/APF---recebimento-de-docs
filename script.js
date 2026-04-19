@@ -1640,12 +1640,14 @@ window.handleDashboardFilter = function(filter, count) {
     // Toggle filter: if clicking active, go back to 'all'
     if (treeSearchFilter === filter && filter !== 'all') {
         treeSearchFilter = 'all';
+        localUI.expandedIds.clear(); // Ocultar tudo ao limpar filtro
     } else {
         treeSearchFilter = filter;
-        
-        // Auto-expand removido para manter as pastas ocultas por padrão conforme solicitado
+        // Auto-expand ao aplicar filtro para mostrar os resultados encontrados
+        expandRelevantNodes();
     }
     
+    saveLocalUI();
     updateGlobalDateUI();
     renderTree();
 };
