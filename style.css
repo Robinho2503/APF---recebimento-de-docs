@@ -2145,3 +2145,51 @@ hr {
 #confirm-modal-icon-container i {
     filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.2));
 }
+
+/* Global Project Header Styling */
+#global-project-header {
+    animation: fadeInDown 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 10;
+    position: relative;
+}
+
+#global-project-header #checklist-proj-name {
+    background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.7) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Dashboard Wrapper Centering refine */
+#dashboard-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+#unified-top-dashboard {
+    display: flex;
+    justify-content: center;
+}
+
+/* Responsive adjustment for global header */
+@media (max-width: 768px) {
+    #global-project-header #checklist-proj-name {
+        font-size: 1.5rem !important;
+    }
+    #global-project-header {
+        margin-top: 1rem !important;
+    }
+}

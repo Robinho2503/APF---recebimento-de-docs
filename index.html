@@ -121,9 +121,17 @@
                 </div>
             </div>
             
+            <!-- Cabeçalho Global do Projeto (Nome e Subtítulo) -->
+            <div id="global-project-header" style="text-align: center; margin: 1.5rem 0 1rem; padding: 0 1rem;">
+                <div style="display:flex; flex-direction: column; align-items:center; gap:0.25rem;">
+                    <strong id="checklist-proj-name" style="color: var(--text-main); font-size:1.8rem; font-weight:800; letter-spacing: -0.02em;"></strong>
+                    <h2 id="checklist-subtitle" class="default-subtitle" style="color: var(--text-muted); font-size: 0.95rem; font-weight: 500; opacity: 0.8;"></h2>
+                </div>
+            </div>
+
             <!-- Dashboard Unificado (Visível em ambas as abas) -->
-            <div id="dashboard-wrapper" style="padding: 0 1rem; margin-bottom: 1.5rem;">
-                <div id="unified-top-dashboard" style="display: none;"></div>
+            <div id="dashboard-wrapper" style="padding: 0 1rem; margin-bottom: 2rem; display: flex; justify-content: center;">
+                <div id="unified-top-dashboard" style="display: none; width: 100%; max-width: 1200px;"></div>
             </div>
 
             <!-- Checklist - Always Visible -->
@@ -132,13 +140,7 @@
                     <!-- Coluna principal: Checklist -->
                     <div class="checklist-main-col glass-panel">
                         <div class="section-header flex-between mb-4">
-                            <div>
-                                <div style="display:flex; align-items:center; gap:0.75rem;">
-                                    <strong id="checklist-proj-name" style="color: var(--text-main); font-size:1.5rem; font-weight:700;"></strong>
-                                </div>
-                                <h2 id="checklist-subtitle" class="default-subtitle" style="color: var(--text-muted); font-size: 0.9rem; font-weight: 500; opacity: 0.8; margin-top: 0.25rem;"></h2>
-                            </div>
-                            <div id="project-global-countdown" class="date-info" style="text-align: right; background: rgba(0,0,0,0.2); padding: 0.5rem 1rem; border-radius: 0.5rem; display: none;">
+                            <div id="project-global-countdown" class="date-info" style="text-align: left; background: rgba(0,0,0,0.2); padding: 0.5rem 1rem; border-radius: 0.5rem; display: none;">
                                 <!-- JS injected -->
                             </div>
                         </div>
