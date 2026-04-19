@@ -1912,9 +1912,9 @@ function renderTracking() {
 
         card.innerHTML = `
             <div class="tracking-body" style="padding-left: ${p.id === localUI.currentProjectId ? '1.25rem' : '0'}; transition: padding 0.3s ease;">
-                <div class="mb-1 flex-between" style="align-items: flex-start; gap: 0.5rem; margin-bottom: 0.2rem;">
-                    <h3 style="font-weight:700; font-size: 0.85rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: normal; flex: 1; margin: 0; line-height: 1.25; ${titleStyle}" title="${p.name}">
-                        <i class="ph ph-buildings" style="${iconStyle}; font-size: 0.95rem; margin-right: 0.25rem; margin-top: 0.1rem; display: inline-block;"></i>${p.name}
+                <div class="mb-1 flex-between" style="align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+                    <h3 style="font-weight:700; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; margin: 0; ${titleStyle}" title="${p.name}">
+                        <i class="ph ph-buildings" style="${iconStyle}; font-size: 0.95rem; margin-right: 0.25rem;"></i> ${p.name}
                     </h3>
                 </div>
                 ${(p.cidade || p.uf) ? `
@@ -1931,34 +1931,8 @@ function renderTracking() {
     });
 
     renderAnalysisPanels();
-    
-    // Auto-fit project names after rendering
-    setTimeout(fitProjectNames, 50);
 }
 
-function fitProjectNames() {
-    const titles = document.querySelectorAll('.sidebar .tracking-card h3');
-    titles.forEach(h3 => {
-        // Reset para o tamanho base
-        h3.style.fontSize = '0.85rem';
-        
-        // Calcula a altura máxima permitida para 2 linhas (baseado no line-height)
-        const style = window.getComputedStyle(h3);
-        const lineHeight = parseFloat(style.lineHeight);
-        const maxHeight = lineHeight * 2;
-        
-        if (h3.scrollHeight <= maxHeight + 1) return; // Cabe em 1 ou 2 linhas
-
-        let currentSize = 0.85;
-        const minSize = 0.62;
-
-        // Reduz a fonte enquanto o conteúdo não couber em 2 linhas
-        while (h3.scrollHeight > maxHeight + 1 && currentSize > minSize) {
-            currentSize -= 0.02;
-            h3.style.fontSize = currentSize + 'rem';
-        }
-    });
-}
 
 // Rendering Tree Helpers
 function getChildItems(parentId) {
@@ -4399,8 +4373,4 @@ document.addEventListener('DOMContentLoaded', () => {
     if (modal) {
         modal.onclick = (e) => { if (e.target === modal) closeChangePasswordModal(); };
     }
-
-    // Inicializar ajuste de nomes no carregamento e redimensionamento
-    window.addEventListener('resize', fitProjectNames);
-    setTimeout(fitProjectNames, 1000); // Loader delay buffer
 });
