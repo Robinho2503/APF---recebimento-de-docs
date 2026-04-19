@@ -2399,9 +2399,16 @@ function expandRelevantNodes() {
             const nodeChildren = items.filter(i => i.parentId === nodeId);
             return nodeChildren.some(c => {
                 const cMatches = c.name.toLowerCase().includes(treeSearchQuery);
+                const cHasAtt = c.attachments && c.attachments.length > 0;
+                const cIsFolder = items.some(i => i.parentId === c.id) || c.parentId === null;
+                const cValidOrAPF = c.validationStatus === 'APF check' || c.validationStatus === 'Validado';
+                const cPointed = c.validationStatus === 'Apontamento';
+                
                 let cMatchesFilter = true;
                 const cSector = getItemSector(c.id);
-                const sectorMatches = authenticatedSector === 'APF' || cSector === authenticatedSector;
+                const userSector = (authenticatedSector || '').trim().toLowerCase();
+                const itemSectorNormalized = (cSector || '').trim().toLowerCase();
+                const sectorMatches = authenticatedSector === 'APF' || itemSectorNormalized === userSector;
 
                 if (treeSearchFilter !== 'all') {
                     if (cIsFolder) {
@@ -2595,7 +2602,9 @@ function createNode(item, level) {
         
         let matchesFilter = true;
         const isAPF = authenticatedSector === 'APF';
-        const sectorMatches = isAPF || nodeSector === authenticatedSector;
+        const userSector = (authenticatedSector || '').trim().toLowerCase();
+        const itemSectorNormalized = (nodeSector || '').trim().toLowerCase();
+        const sectorMatches = isAPF || itemSectorNormalized === userSector;
 
         if (treeSearchFilter !== 'all') {
             if (isFolder) {
@@ -2623,7 +2632,9 @@ function createNode(item, level) {
                 
                 let cMatchesFilter = true;
                 const cSector = getItemSector(c.id);
-                const cSectorMatches = isAPF || cSector === authenticatedSector;
+                const itemSectorNormalized = (cSector || '').trim().toLowerCase();
+                const userSector = (authenticatedSector || '').trim().toLowerCase();
+                const cSectorMatches = isAPF || itemSectorNormalized === userSector;
 
                 if (treeSearchFilter !== 'all') {
                     if (cIsFolder) {
