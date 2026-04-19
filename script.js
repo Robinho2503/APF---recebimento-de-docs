@@ -1912,9 +1912,9 @@ function renderTracking() {
 
         card.innerHTML = `
             <div class="tracking-body" style="padding-left: ${p.id === localUI.currentProjectId ? '1.25rem' : '0'}; transition: padding 0.3s ease;">
-                <div class="mb-1 flex-between" style="align-items: center; gap: 0.5rem; margin-bottom: 0.2rem;">
-                    <h3 style="font-weight:700; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; margin: 0; ${titleStyle}" title="${p.name}">
-                        <i class="ph ph-buildings" style="${iconStyle}; font-size: 0.95rem; margin-right: 0.25rem;"></i> ${p.name}
+                <div class="mb-1 flex-between" style="align-items: flex-start; gap: 0.5rem; margin-bottom: 0.2rem;">
+                    <h3 style="font-weight:700; font-size: 0.85rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: normal; flex: 1; margin: 0; line-height: 1.25; ${titleStyle}" title="${p.name}">
+                        <i class="ph ph-buildings" style="${iconStyle}; font-size: 0.95rem; margin-right: 0.25rem; margin-top: 0.1rem; display: inline-block;"></i>${p.name}
                     </h3>
                 </div>
                 ${(p.cidade || p.uf) ? `
@@ -1939,35 +1939,24 @@ function renderTracking() {
 function fitProjectNames() {
     const titles = document.querySelectorAll('.sidebar .tracking-card h3');
     titles.forEach(h3 => {
-        // Reset to base size for calculation
+        // Reset para o tamanho base
         h3.style.fontSize = '0.85rem';
         
-        // Get the available width (h3 is flex: 1, so it takes available space)
-        const containerWidth = h3.clientWidth;
-        if (containerWidth <= 0) return;
-
-        // Create a temporary span to measure text width accurately without ellipsis
-        const span = document.createElement('span');
-        span.style.visibility = 'hidden';
-        span.style.whiteSpace = 'nowrap';
-        span.style.position = 'absolute';
-        span.style.fontWeight = '700';
-        span.style.fontSize = '0.85rem';
-        // Only measure the text part, excluding the icon
-        const textOnly = h3.textContent.trim();
-        span.textContent = textOnly;
-        document.body.appendChild(span);
+        // Calcula a altura máxima permitida para 2 linhas (baseado no line-height)
+        const style = window.getComputedStyle(h3);
+        const lineHeight = parseFloat(style.lineHeight);
+        const maxHeight = lineHeight * 2;
+        
+        if (h3.scrollHeight <= maxHeight + 1) return; // Cabe em 1 ou 2 linhas
 
         let currentSize = 0.85;
         const minSize = 0.62;
 
-        while (span.offsetWidth > (containerWidth - 5) && currentSize > minSize) {
+        // Reduz a fonte enquanto o conteúdo não couber em 2 linhas
+        while (h3.scrollHeight > maxHeight + 1 && currentSize > minSize) {
             currentSize -= 0.02;
-            span.style.fontSize = currentSize + 'rem';
+            h3.style.fontSize = currentSize + 'rem';
         }
-        
-        h3.style.fontSize = currentSize + 'rem';
-        document.body.removeChild(span);
     });
 }
 
