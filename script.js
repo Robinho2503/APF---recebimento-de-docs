@@ -2224,9 +2224,9 @@ function updateProjectProgressUI(curr) {
                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 54px; height: 54px; background: ${sectorGrade?.bg || 'rgba(255,255,255,0.05)'}; border-radius: 50%; border: 1px solid ${sectorGrade?.color || 'rgba(255,255,255,0.1)'}44; box-shadow: inset 0 0 15px ${sectorGrade?.color || 'transparent'}11;">
                         <span style="font-size: 1.25rem; font-weight: 900; color: ${sectorGrade?.color || 'var(--text-muted)'}; line-height: 1;">${sectorGrade?.g || '-'}</span>
                     </div>
-                    <div style="display: flex; flex-direction: column; gap: 0.1rem;">
-                        <div style="display: flex; align-items: center; gap: 0.4rem; color: var(--info); font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
-                            <i class="ph-bold ph-shield-check"></i> Análise do setor
+                    <div style="display: flex; flex-direction: column; gap: 0rem;">
+                        <div style="color: var(--info); font-size: 0.55rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: -2px;">
+                            Análise do setor
                         </div>
                         <span style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.01em;">${sectorGrade?.label || 'Em análise...'}</span>
                     </div>
@@ -2246,9 +2246,9 @@ function updateProjectProgressUI(curr) {
                     <div class="circular-progress" style="--progress: ${generalProgressPct}%; background: conic-gradient(var(--accent) var(--progress), rgba(255,255,255,0.1) 0);"></div>
                     <span class="progress-text" style="font-size: 1rem; font-weight: 800; color: var(--text-main);">${generalProgressPct}%</span>
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 0.15rem;">
-                    <div style="display: flex; align-items: center; gap: 0.4rem; color: var(--accent); font-size: 0.65rem; font-weight: 700; text-transform: uppercase;">
-                        <i class="ph ph-globe"></i> Global
+                <div style="display: flex; flex-direction: column; gap: 0rem;">
+                    <div style="color: var(--accent); font-size: 0.55rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: -2px;">
+                        Global
                     </div>
                     <span style="font-size: 1.1rem; font-weight: 800; color: var(--text-main);">Progresso de entrega</span>
                 </div>
@@ -2265,9 +2265,9 @@ function updateProjectProgressUI(curr) {
                         <div class="circular-progress" style="--progress: ${sectorProgressPct}%; background: conic-gradient(var(--accent) var(--progress), rgba(255,255,255,0.1) 0);"></div>
                         <span class="progress-text" style="font-size: 0.9rem; font-weight: 800; color: var(--text-main);">${sectorProgressPct}%</span>
                     </div>
-                    <div style="display: flex; flex-direction: column; gap: 0.1rem;">
-                        <div style="display: flex; align-items: center; gap: 0.4rem; color: var(--accent); font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
-                            <i class="ph-bold ph-buildings"></i> Seu Setor
+                    <div style="display: flex; flex-direction: column; gap: 0rem;">
+                        <div style="color: var(--accent); font-size: 0.55rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: -2px;">
+                            Seu Setor
                         </div>
                         <span style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.01em;">Progresso de entrega</span>
                     </div>
