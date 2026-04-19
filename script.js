@@ -2204,6 +2204,18 @@ function updateProjectProgressUI(curr) {
     const pending = filteredStatsItems.filter(i => !i.attachments || i.attachments.length === 0).length;
     const inAnalysis = total - validated - withPoints - pending;
 
+    // NOVO: Cálculo de Análise para o Setor (Validação)
+    let sectorAnalysisPct = 0;
+    let sectorGrade = null;
+    if (!isAPF) {
+        const sectorLeafItems = leafItems.filter(i => getItemSector(i.id) === authenticatedSector);
+        if (sectorLeafItems.length > 0) {
+            const validatedSectorCount = sectorLeafItems.filter(i => (i.validationStatus === 'Validado' || i.validationStatus === 'APF check') && i.attachments?.length > 0).length;
+            sectorAnalysisPct = Math.round((validatedSectorCount / sectorLeafItems.length) * 100);
+            sectorGrade = getGrade(sectorAnalysisPct);
+        }
+    }
+
     // --- RENDERIZAÇÃO UNIFICADA ---
     let progressSectionHTML = '';
     
@@ -2224,10 +2236,11 @@ function updateProjectProgressUI(curr) {
             </div>
         `;
     } else {
-        // VIEW SETOR: Seu Setor em Destaque + Global menor
+        // VIEW SETOR: Seu Setor em Destaque + Global menor + Análise do Setor (TEXTO)
         progressSectionHTML = `
-            <div style="display: flex; align-items: center; gap: 2.25rem;">
-                <!-- SEU SETOR -->
+            <div style="display: flex; align-items: center; gap: 2.5rem;">
+                
+                <!-- PROGRESSO DE ENTREGA -->
                 <div style="display: flex; align-items: center; gap: 1.25rem;">
                     <div class="circular-progress-container" style="width: 54px; height: 54px;">
                         <div class="circular-progress" style="--progress: ${sectorProgressPct}%; background: conic-gradient(var(--accent) var(--progress), rgba(255,255,255,0.1) 0);"></div>
@@ -2241,19 +2254,34 @@ function updateProjectProgressUI(curr) {
                     </div>
                 </div>
 
-                <!-- GLOBAL -->
-                <div style="display: flex; align-items: center; gap: 1rem; opacity: 0.85;">
-                    <div class="circular-progress-container" style="width: 44px; height: 44px;">
-                        <div class="circular-progress" style="--progress: ${generalProgressPct}%; background: conic-gradient(rgba(255,255,255,0.3) var(--progress), rgba(255,255,255,0.05) 0);"></div>
-                        <span class="progress-text" style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">${generalProgressPct}%</span>
+                <!-- DIVISOR SUTIL -->
+                <div style="height: 48px; width: 1px; background: rgba(255,255,255,0.08);"></div>
+
+                <!-- ANÁLISE DO SETOR (TEXTO) -->
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 54px; height: 54px; background: ${sectorGrade?.bg || 'rgba(255,255,255,0.05)'}; border-radius: 50%; border: 1px solid ${sectorGrade?.color || 'rgba(255,255,255,0.1)'}44; box-shadow: inset 0 0 15px ${sectorGrade?.color || 'transparent'}11;">
+                        <span style="font-size: 1.25rem; font-weight: 900; color: ${sectorGrade?.color || 'var(--text-muted)'}; line-height: 1;">${sectorGrade?.g || '-'}</span>
                     </div>
-                    <div style="display: flex; flex-direction: column;">
-                        <div style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.55rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">
-                            <i class="ph ph-globe"></i> Global
+                    <div style="display: flex; flex-direction: column; gap: 0.1rem;">
+                        <div style="display: flex; align-items: center; gap: 0.4rem; color: var(--info); font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
+                            <i class="ph-bold ph-shield-check"></i> Análise do setor
                         </div>
-                        <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted);">Progresso</span>
+                        <span style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.01em;">${sectorGrade?.label || 'Em análise...'}</span>
                     </div>
                 </div>
+
+                <!-- GLOBAL (MENOR) -->
+                <div style="display: flex; align-items: center; gap: 0.8rem; opacity: 0.65; margin-left: 0.5rem; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 1.5rem;">
+                    <div class="circular-progress-container" style="width: 38px; height: 38px;">
+                        <div class="circular-progress" style="--progress: ${generalProgressPct}%; background: conic-gradient(var(--text-muted) var(--progress), rgba(255,255,255,0.05) 0);"></div>
+                        <span class="progress-text" style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted);">${generalProgressPct}%</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column;">
+                        <div style="font-size: 0.5rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Global</div>
+                        <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Progresso</span>
+                    </div>
+                </div>
+
             </div>
         `;
     }
@@ -3580,9 +3608,27 @@ function initAIEngine() {
     }
 }
 
+// Auxiliary function to get grade and status label
+function getGrade(pct) {
+    if (pct >= 90) return { g: 'A', color: 'var(--accent)', label: 'Excelente', bg: 'rgba(52,211,153,0.15)' };
+    if (pct >= 70) return { g: 'B', color: '#60a5fa', label: 'Bom', bg: 'rgba(96,165,250,0.15)' };
+    if (pct >= 50) return { g: 'C', color: 'var(--warning)', label: 'Regular', bg: 'rgba(245,158,11,0.15)' };
+    if (pct >= 25) return { g: 'D', color: '#fb923c', label: 'Baixo', bg: 'rgba(251,146,60,0.15)' };
+    return { g: 'F', color: 'var(--danger)', label: 'Crítico', bg: 'rgba(239,68,68,0.12)' };
+}
+
 function renderAnalysisPanels() {
     const sectorsEl = document.getElementById('panel-sectors');
+    const wrapperEl = document.querySelector('.analysis-panels-wrapper');
     if (!sectorsEl) return;
+
+    // NOVO: Esconde o painel lateral para usuários não-APF conforme solicitado
+    if (authenticatedSector !== 'APF') {
+        if (wrapperEl) wrapperEl.style.display = 'none';
+        return;
+    } else {
+        if (wrapperEl) wrapperEl.style.display = 'flex';
+    }
 
     // ---- PAINEL: Análise por Setor (projeto selecionado) ----
     const nonBase = state.projects.filter(p => p.id !== 'p_default');
@@ -3590,14 +3636,6 @@ function renderAnalysisPanels() {
     if (!curr || curr.id === 'p_default' || nonBase.length === 0) {
         sectorsEl.innerHTML = '<div style="text-align:center; padding:1.25rem; color:var(--text-muted); font-size:0.82rem;"><i class="ph ph-chart-pie" style="font-size:1.5rem; opacity:0.4;"></i><br><br>Selecione um empreendimento para ver a análise por setor.</div>';
         return;
-    }
-
-    function getGrade(pct) {
-        if (pct >= 90) return { g: 'A', color: 'var(--accent)', label: 'Excelente', bg: 'rgba(52,211,153,0.15)' };
-        if (pct >= 70) return { g: 'B', color: '#60a5fa', label: 'Bom', bg: 'rgba(96,165,250,0.15)' };
-        if (pct >= 50) return { g: 'C', color: 'var(--warning)', label: 'Regular', bg: 'rgba(245,158,11,0.15)' };
-        if (pct >= 25) return { g: 'D', color: '#fb923c', label: 'Baixo', bg: 'rgba(251,146,60,0.15)' };
-        return { g: 'F', color: 'var(--danger)', label: 'Crítico', bg: 'rgba(239,68,68,0.12)' };
     }
 
     const roots = curr.items.filter(i => i.parentId === null).sort((a, b) => a.name.localeCompare(b.name));
