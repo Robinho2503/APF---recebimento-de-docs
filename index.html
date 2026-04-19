@@ -121,17 +121,18 @@
                 </div>
             </div>
             
-            <!-- Cabeçalho Global do Projeto (Nome e Subtítulo) -->
-            <div id="global-project-header" style="text-align: center; margin: 1.5rem 0 1rem; padding: 0 1rem;">
-                <div style="display:flex; flex-direction: column; align-items:center; gap:0.25rem;">
-                    <strong id="checklist-proj-name" style="color: var(--text-main); font-size:1.8rem; font-weight:800; letter-spacing: -0.02em;"></strong>
-                    <h2 id="checklist-subtitle" class="default-subtitle" style="color: var(--text-muted); font-size: 0.95rem; font-weight: 500; opacity: 0.8;"></h2>
+            <!-- Unified Project Header Bar (Integrated Deck) -->
+            <div id="unified-header-deck" class="glass-panel" style="display: none; align-items: center; padding: 0.85rem 1.75rem; gap: 2rem; border-radius: 1rem; margin: 1rem 0 2rem; background: var(--panel-bg); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+                <div id="project-info-segment" style="display:flex; flex-direction: column; align-items: flex-start; gap: 0.1rem; min-width: 240px;">
+                    <span id="checklist-subtitle" class="default-subtitle" style="color: var(--text-muted); font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.8;"></span>
+                    <strong id="checklist-proj-name" style="color: var(--text-main); font-size: 1.55rem; font-weight: 800; letter-spacing: -0.02em;"></strong>
                 </div>
-            </div>
+                
+                <div id="header-deck-separator" style="height: 50px; width: 1px; background: rgba(255,255,255,0.1); flex-shrink: 0;"></div>
 
-            <!-- Dashboard Unificado (Visível em ambas as abas) -->
-            <div id="dashboard-wrapper" style="padding: 0 1rem; margin-bottom: 2rem; display: flex; justify-content: center;">
-                <div id="unified-top-dashboard" style="display: none; width: 100%; max-width: 1200px;"></div>
+                <div id="unified-top-dashboard" style="display: flex; gap: 1.5rem; align-items: center; flex-grow: 1;">
+                    <!-- JS Injected Dashboard Components -->
+                </div>
             </div>
 
             <!-- Checklist - Always Visible -->

@@ -1496,19 +1496,18 @@ function logout() {
 // Project Management & Global UI
 function updateGlobalDateUI() {
     const p = getCurrentProject();
+    const deck = document.getElementById('unified-header-deck');
     const dash = document.getElementById('unified-top-dashboard');
     const nameEl = document.getElementById('checklist-proj-name');
     const subtitleEl = document.getElementById('checklist-subtitle');
     const noProjPlaceholder = document.getElementById('no-project-selected');
     const mainWrapper = document.getElementById('main-content-wrapper');
-    const filterWrappers = document.querySelectorAll('.search-filters-group');
-    const dueDateContainer = document.getElementById('due-date-container');
 
     // 1. Estado Inicial: Nenhum projeto selecionado
     if(!p || p.id === 'none') {
         if(noProjPlaceholder) noProjPlaceholder.style.display = 'flex';
         if(mainWrapper) mainWrapper.style.display = 'none';
-        if(dash) dash.style.display = 'none';
+        if(deck) deck.style.display = 'none';
         if(nameEl) nameEl.textContent = 'APF Checklist';
         if(subtitleEl) subtitleEl.textContent = 'Selecione um empreendimento no painel lateral';
         return;
@@ -1517,6 +1516,7 @@ function updateGlobalDateUI() {
     // Se houver projeto, mostrar o conteúdo principal
     if(noProjPlaceholder) noProjPlaceholder.style.display = 'none';
     if(mainWrapper) mainWrapper.style.display = 'block';
+    if(deck) deck.style.display = 'flex';
 
     // 2. Caso Especial: MODELO DE ENTREGA
     if(p.id === 'p_default') {
@@ -2358,11 +2358,10 @@ function updateProjectProgressUI(curr) {
     }
 
     container.innerHTML = `
-        <div class="glass-panel" style="display: flex; align-items: center; padding: 0.7rem 1.75rem; gap: 2rem; border-radius: 1.25rem; border: 1px solid rgba(255,255,255,0.08); background: rgba(0,0,0,0.2); width: fit-content; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
             ${progressSectionHTML}
             ${pendenciasHTML}
-            <div style="height: 48px; width: 1px; background: rgba(255,255,255,0.12);"></div>
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.35rem; width: 320px;">
+            <div style="height: 48px; width: 1px; background: rgba(255,255,255,0.12); flex-shrink:0;"></div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.35rem; width: 300px; flex-shrink: 0;">
                 <div class="dashboard-card accent ${treeSearchFilter === 'validado' ? 'active' : ''}" onclick="handleDashboardFilter('validado', ${validated})" style="padding: 0.4rem 0.6rem; background: rgba(255,255,255,0.03); border: none; box-shadow: none; border-radius: 0.75rem;">
                     <span class="card-value" style="font-size: 1rem; line-height: 1;">${validated}</span>
                     <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7;">Validados</span>
@@ -2381,7 +2380,6 @@ function updateProjectProgressUI(curr) {
                 </div>
             </div>
             ${analysisSectionHTML}
-        </div>
     `;
 }
 
