@@ -1931,6 +1931,44 @@ function renderTracking() {
     });
 
     renderAnalysisPanels();
+    
+    // Auto-fit project names after rendering
+    setTimeout(fitProjectNames, 50);
+}
+
+function fitProjectNames() {
+    const titles = document.querySelectorAll('.sidebar .tracking-card h3');
+    titles.forEach(h3 => {
+        // Reset to base size for calculation
+        h3.style.fontSize = '0.85rem';
+        
+        // Get the available width (h3 is flex: 1, so it takes available space)
+        const containerWidth = h3.clientWidth;
+        if (containerWidth <= 0) return;
+
+        // Create a temporary span to measure text width accurately without ellipsis
+        const span = document.createElement('span');
+        span.style.visibility = 'hidden';
+        span.style.whiteSpace = 'nowrap';
+        span.style.position = 'absolute';
+        span.style.fontWeight = '700';
+        span.style.fontSize = '0.85rem';
+        // Only measure the text part, excluding the icon
+        const textOnly = h3.textContent.trim();
+        span.textContent = textOnly;
+        document.body.appendChild(span);
+
+        let currentSize = 0.85;
+        const minSize = 0.62;
+
+        while (span.offsetWidth > (containerWidth - 5) && currentSize > minSize) {
+            currentSize -= 0.02;
+            span.style.fontSize = currentSize + 'rem';
+        }
+        
+        h3.style.fontSize = currentSize + 'rem';
+        document.body.removeChild(span);
+    });
 }
 
 // Rendering Tree Helpers
@@ -4372,4 +4410,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (modal) {
         modal.onclick = (e) => { if (e.target === modal) closeChangePasswordModal(); };
     }
+
+    // Inicializar ajuste de nomes no carregamento e redimensionamento
+    window.addEventListener('resize', fitProjectNames);
+    setTimeout(fitProjectNames, 1000); // Loader delay buffer
 });
