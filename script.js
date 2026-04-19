@@ -2199,9 +2199,9 @@ function updateProjectProgressUI(curr) {
     }
 
     const total = filteredStatsItems.length;
-    const validated = filteredStatsItems.filter(i => (i.validationStatus === 'Validado' || i.validationStatus === 'APF check') && i.attachments?.length > 0).length;
+    const validated = filteredStatsItems.filter(i => ((i.validationStatus === 'Validado' || i.validationStatus === 'APF check') && i.attachments?.length > 0) || i.isNotApplicable).length;
     const withPoints = filteredStatsItems.filter(i => i.validationStatus === 'Apontamento' && i.attachments?.length > 0).length;
-    const pending = filteredStatsItems.filter(i => !i.attachments || i.attachments.length === 0).length;
+    const pending = filteredStatsItems.filter(i => !i.attachments || i.attachments.length === 0 && !i.isNotApplicable).length;
     const inAnalysis = total - validated - withPoints - pending;
 
     // NOVO: Cálculo de Análise para o Setor (Validação)
@@ -2398,14 +2398,14 @@ function expandRelevantNodes() {
             return nodeChildren.some(c => {
                 const cMatches = c.name.toLowerCase().includes(treeSearchQuery);
                 const cHasAtt = c.attachments && c.attachments.length > 0;
-                const cValid = c.validationStatus === 'APF check' || c.validationStatus === 'Validado';
+                const cValidOrAPF = c.validationStatus === 'APF check' || c.validationStatus === 'Validado';
                 const cPointed = c.validationStatus === 'Apontamento';
 
                 let cMatchesFilter = true;
-                if (treeSearchFilter === 'pendente') cMatchesFilter = !cHasAtt;
+                if (treeSearchFilter === 'pendente') cMatchesFilter = !cHasAtt && !c.isNotApplicable;
                 else if (treeSearchFilter === 'apontamento') cMatchesFilter = cHasAtt && cPointed;
-                else if (treeSearchFilter === 'validado') cMatchesFilter = cHasAtt && cValid;
-                else if (treeSearchFilter === 'analise') cMatchesFilter = cHasAtt && !cValid && !cPointed;
+                else if (treeSearchFilter === 'validado') cMatchesFilter = (cHasAtt && cValidOrAPF) || c.isNotApplicable;
+                else if (treeSearchFilter === 'analise') cMatchesFilter = cHasAtt && !cValidOrAPF && !cPointed;
                 
                 return (cMatches && cMatchesFilter) || anyChildMatches(c.id);
             });
@@ -2589,10 +2589,13 @@ function createNode(item, level) {
             if (isFolder) {
                 matchesFilter = false;
             } else {
+                const itemValidOrAPF = item.validationStatus === 'Validado' || item.validationStatus === 'APF check';
+                const itemPointed = item.validationStatus === 'Apontamento';
+
                 if (treeSearchFilter === 'pendente') matchesFilter = !hasAtt && !item.isNotApplicable;
-                else if (treeSearchFilter === 'apontamento') matchesFilter = hasAtt && item.validationStatus === 'Apontamento';
-                else if (treeSearchFilter === 'validado') matchesFilter = (hasAtt && item.validationStatus === 'Validado') || item.isNotApplicable;
-                else if (treeSearchFilter === 'analise') matchesFilter = hasAtt && item.validationStatus === 'Em Análise de APF';
+                else if (treeSearchFilter === 'apontamento') matchesFilter = hasAtt && itemPointed;
+                else if (treeSearchFilter === 'validado') matchesFilter = (hasAtt && itemValidOrAPF) || item.isNotApplicable;
+                else if (treeSearchFilter === 'analise') matchesFilter = hasAtt && !itemValidOrAPF && !itemPointed;
             }
         }
 
@@ -2609,10 +2612,13 @@ function createNode(item, level) {
                     if (cIsFolder) {
                         cMatchesFilter = false;
                     } else {
+                        const cValidOrAPF = c.validationStatus === 'Validado' || c.validationStatus === 'APF check';
+                        const cPointed = c.validationStatus === 'Apontamento';
+
                         if (treeSearchFilter === 'pendente') cMatchesFilter = !cHasAtt && !c.isNotApplicable;
-                        else if (treeSearchFilter === 'apontamento') cMatchesFilter = cHasAtt && c.validationStatus === 'Apontamento';
-                        else if (treeSearchFilter === 'validado') cMatchesFilter = (cHasAtt && c.validationStatus === 'Validado') || c.isNotApplicable;
-                        else if (treeSearchFilter === 'analise') cMatchesFilter = cHasAtt && c.validationStatus === 'Em Análise de APF';
+                        else if (treeSearchFilter === 'apontamento') cMatchesFilter = cHasAtt && cPointed;
+                        else if (treeSearchFilter === 'validado') cMatchesFilter = (cHasAtt && cValidOrAPF) || c.isNotApplicable;
+                        else if (treeSearchFilter === 'analise') cMatchesFilter = cHasAtt && !cValidOrAPF && !cPointed;
                     }
                 }
                 
