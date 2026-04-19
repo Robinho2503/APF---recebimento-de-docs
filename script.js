@@ -1540,7 +1540,7 @@ function updateGlobalDateUI() {
             daysDisplay = diff >= 0 ? diff : 0;
         }
 
-        const label = `Início da Análise │ ${daysDisplay} dias`;
+        const label = `Análise CAIXA │ ${daysDisplay} dias`;
 
         if (subtitleEl) {
             subtitleEl.innerHTML = `<i class="ph ph-calendar"></i> ${label}`;
@@ -1869,7 +1869,7 @@ function renderTracking() {
                 const diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
                 daysDisplay = diff >= 0 ? diff : 0;
             }
-            trackingLine = `<span style="color: var(--info); font-weight: 700; display:flex; align-items:center; gap:0.25rem;"><i class="ph ph-calendar"></i> Início da Análise │ ${daysDisplay} dias</span>`;
+            trackingLine = `<span style="color: var(--info); font-weight: 700; display:flex; align-items:center; gap:0.25rem;"><i class="ph ph-calendar"></i> Análise CAIXA │ ${daysDisplay} dias</span>`;
         } else if (!p.dueDate) {
             trackingLine = `<span style="color: var(--text-muted); font-weight: 500;">Sem prazo</span>`;
         } else {
