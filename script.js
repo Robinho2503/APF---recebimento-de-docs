@@ -324,6 +324,7 @@ function saveState() {
                     ...p,
                     stats, // Save pre-calculated stats
                     engAnalysisOpened: p.engAnalysisOpened || false,
+                    engAnalysisStartDate: p.engAnalysisStartDate || '',
                     pendenciaActive: p.pendenciaActive || false,
                     pendencias: (p.pendencias || []).map(pend => ({
                         id: pend.id,
@@ -968,6 +969,17 @@ function initEventListeners() {
             const curr = getCurrentProject();
             if (curr && curr.id !== 'p_default') {
                 curr.engAnalysisOpened = !curr.engAnalysisOpened;
+                
+                if (curr.engAnalysisOpened) {
+                    if (!curr.engAnalysisStartDate) {
+                        curr.engAnalysisStartDate = new Date().toISOString().split('T')[0];
+                    }
+                } else {
+                    // Opcional: manter ou limpar a data ao fechar? 
+                    // Se o usuário fechar e abrir de novo, costuma-se resetar o ciclo.
+                    curr.engAnalysisStartDate = '';
+                }
+
                 saveState();
                 updateGlobalDateUI();
                 renderTracking();
@@ -1497,23 +1509,48 @@ function updateGlobalDateUI() {
     // RENDERIZAR PAINEL UNIFICADO
     updateProjectProgressUI(p);
 
-    // Engenharia Aberta?
-    const btnToggleEng = document.getElementById('btn-toggle-eng-analysis');
+    // Análise CAIXA?
+    const btnToggleEngId = 'btn-toggle-eng'; // Consistent ID
+    const btnToggleEngEl = document.getElementById(btnToggleEngId);
+    
     if(p.engAnalysisOpened) {
+        // Calcular Dias
+        let daysDisplay = 0;
+        if (p.engAnalysisStartDate) {
+            const start = new Date(p.engAnalysisStartDate);
+            start.setHours(0,0,0,0);
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
+            daysDisplay = diff >= 0 ? diff : 0;
+        }
+
+        const label = `Análise CAIXA aberta │ ${daysDisplay} dias`;
+
         if (subtitleEl) {
-            subtitleEl.innerHTML = '<i class="ph ph-file-search"></i> Engenharia Aberta';
+            subtitleEl.innerHTML = `<i class="ph ph-file-search"></i> ${label}`;
             subtitleEl.className = 'badge-eng-subtitle';
         }
-        if (btnToggleEng) {
-            btnToggleEng.innerHTML = '<i class="ph ph-magnifying-glass"></i> Engenharia aberta';
-            btnToggleEng.className = 'btn';
-            btnToggleEng.style.backgroundColor = 'rgba(96, 165, 250, 0.1)';
-            btnToggleEng.style.color = 'var(--info)';
-            btnToggleEng.style.borderColor = 'var(--info)';
+        if (btnToggleEngEl) {
+            btnToggleEngEl.innerHTML = `<i class="ph ph-magnifying-glass"></i> ${label}`;
+            btnToggleEngEl.className = 'btn';
+            btnToggleEngEl.style.backgroundColor = 'rgba(96, 165, 250, 0.1)';
+            btnToggleEngEl.style.color = 'var(--info)';
+            btnToggleEngEl.style.borderColor = 'var(--info)';
         }
         if (projectGlobalCountdown) projectGlobalCountdown.style.display = 'none';
     } else {
-        if (subtitleEl) subtitleEl.className = 'default-subtitle';
+        if (subtitleEl) {
+            subtitleEl.textContent = 'Entrega de documentação';
+            subtitleEl.className = 'default-subtitle';
+        }
+        if (btnToggleEngEl) {
+            btnToggleEngEl.innerHTML = '<i class="ph ph-magnifying-glass"></i> Abrir Engenharia';
+            btnToggleEngEl.className = 'btn btn-outline';
+            btnToggleEngEl.style.backgroundColor = '';
+            btnToggleEngEl.style.color = '';
+            btnToggleEngEl.style.borderColor = '';
+        }
     }
 }
 
@@ -1797,7 +1834,16 @@ function renderTracking() {
             
             trackingLine = `<span style="color: var(--danger); font-weight: 700; display:flex; align-items:center; gap:0.25rem;"><i class="ph ph-warning-diamond"></i> Resolução de pendências │ ${displayDays} dias</span>`;
         } else if (p.engAnalysisOpened) {
-            trackingLine = `<span style="color: #1e3a8a; font-weight: 700; display:flex; align-items:center; gap:0.25rem;"><i class="ph ph-file-search"></i> Engenharia Aberta</span>`;
+            let daysDisplay = 0;
+            if (p.engAnalysisStartDate) {
+                const start = new Date(p.engAnalysisStartDate);
+                start.setHours(0,0,0,0);
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                const diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
+                daysDisplay = diff >= 0 ? diff : 0;
+            }
+            trackingLine = `<span style="color: #1e3a8a; font-weight: 700; display:flex; align-items:center; gap:0.25rem;"><i class="ph ph-file-search"></i> Análise CAIXA aberta │ ${daysDisplay} dias</span>`;
         } else if (!p.dueDate) {
             trackingLine = `<span style="color: var(--text-muted); font-weight: 500;">Sem prazo</span>`;
         } else {
