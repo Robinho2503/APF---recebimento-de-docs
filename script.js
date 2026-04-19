@@ -1858,7 +1858,11 @@ function renderTracking() {
             const diffDays = Math.floor((today - start) / (1000 * 60 * 60 * 24));
             const displayDays = diffDays >= 0 ? diffDays : 0;
             
-            trackingLine = `<span style="color: var(--danger); font-weight: 700; display:flex; align-items:center; gap:0.2rem; font-size: 0.7rem;"><i class="ph ph-warning-diamond"></i> Resolução de pendências │ ${displayDays} dias</span>`;
+            trackingLine = `
+                <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: var(--danger); font-weight: 700; display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.65rem; padding: 0.25rem 0.5rem; border-radius: 2rem;">
+                    <i class="ph ph-warning-diamond" style="font-size: 0.8rem;"></i> Resolução de pendências │ ${displayDays}d
+                </div>
+            `;
         } else if (p.engAnalysisOpened) {
             let daysDisplay = 0;
             if (p.engAnalysisStartDate) {
@@ -1869,7 +1873,11 @@ function renderTracking() {
                 const diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
                 daysDisplay = diff >= 0 ? diff : 0;
             }
-            trackingLine = `<span style="color: var(--info); font-weight: 700; display:flex; align-items:center; gap:0.2rem; font-size: 0.7rem;"><i class="ph ph-calendar"></i> Análise CAIXA │ ${daysDisplay} dias</span>`;
+            trackingLine = `
+                <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); color: var(--info); font-weight: 700; display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.65rem; padding: 0.25rem 0.5rem; border-radius: 2rem;">
+                    <i class="ph ph-calendar" style="font-size: 0.8rem;"></i> Análise CAIXA │ ${daysDisplay}d
+                </div>
+            `;
         } else if (!p.dueDate) {
             trackingLine = `<span style="color: var(--text-muted); font-weight: 500;">Sem prazo</span>`;
         } else {
@@ -1877,15 +1885,15 @@ function renderTracking() {
             const bizHtml = statusText.includes('<div') ? statusText.match(/<div.*/)[0] : '';
 
             trackingLine = `
-                <div style="display: flex; align-items: flex-start; width: 100%; font-size: 0.7rem;">
-                    <span style="color: var(--text-muted); font-weight: 500; white-space: nowrap;">${dateText}</span>
-                    <span style="color: rgba(255,255,255,0.2); margin: 0 0.4rem;">┃</span>
+                <div style="display: flex; align-items: center; width: 100%; font-size: 0.72rem; gap: 0.6rem;">
+                    <span style="color: var(--text-muted); font-weight: 500; display: flex; align-items: center; gap: 0.25rem;"><i class="ph ph-calendar-blank" style="font-size: 0.8rem;"></i> ${dateText}</span>
+                    <div style="width: 1px; height: 12px; background: rgba(255,255,255,0.1);"></div>
                     <div style="display: flex; flex-direction: column; color: ${statusCol};">
-                        <span style="font-weight: 700;">${barePrazo}</span>
-                        ${bizHtml}
+                        <span style="font-weight: 700; letter-spacing: 0.01em;">${barePrazo}</span>
+                        ${bizHtml ? `<span style="font-size: 0.65rem; opacity: 0.7; font-weight: 500;">${bizHtml.replace(/<div.*?>|<\/div>/g, '')}</span>` : ''}
                     </div>
                 </div>
-            `;
+`;
         }
 
         // Define colors for the Title and Icon
@@ -1903,12 +1911,18 @@ function renderTracking() {
         const projApontamentos = p.items.filter(i => i.validationStatus === 'Apontamento').length;
 
         card.innerHTML = `
-            <div class="tracking-body">
-                <div class="mb-1 flex-between" style="align-items: center; gap: 0.4rem;">
-                    <h3 style="font-weight:700; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; margin: 0; ${titleStyle}" title="${p.name}"><i class="ph ph-buildings" style="${iconStyle}"></i> ${p.name}</h3>
+            <div class="tracking-body" style="padding-left: ${p.id === localUI.currentProjectId ? '1.25rem' : '0'}; transition: padding 0.3s ease;">
+                <div class="mb-1 flex-between" style="align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+                    <h3 style="font-weight:700; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; margin: 0; ${titleStyle}" title="${p.name}">
+                        <i class="ph ph-buildings" style="${iconStyle}; font-size: 0.95rem; margin-right: 0.25rem;"></i> ${p.name}
+                    </h3>
                 </div>
-                ${(p.cidade || p.uf) ? `<div class="tk-location"><i class="ph ph-map-pin"></i> ${p.cidade || ''}${p.cidade && p.uf ? ' - ' : ''}${p.uf || ''}</div>` : ''}
-                <div class="mb-1" style="font-size: 0.7rem; width: 100%; margin-top: 0.2rem;">
+                ${(p.cidade || p.uf) ? `
+                <div class="tk-location" style="display: flex; align-items: center; gap: 0.3rem; margin-bottom: 0.4rem; color: var(--text-muted); font-size: 0.68rem; opacity: 0.7;">
+                    <i class="ph ph-map-pin" style="font-size: 0.75rem;"></i> 
+                    <span>${p.cidade || ''}${p.cidade && p.uf ? ' - ' : ''}${p.uf || ''}</span>
+                </div>` : ''}
+                <div style="width: 100%; margin-top: 0.2rem;">
                     ${trackingLine}
                 </div>
             </div>

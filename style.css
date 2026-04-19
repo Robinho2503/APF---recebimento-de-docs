@@ -85,15 +85,25 @@ body {
     gap: 0.75rem;
 }
 .sidebar .tracking-card { 
-    position: relative; /* Added for indicator positioning */
-    flex-direction: column; padding: 0.65rem; align-items: stretch; gap: 0.4rem; 
-    margin-bottom: 0.4rem; cursor: pointer; border-left: 3px solid transparent;
+    position: relative;
+    flex-direction: column; 
+    padding: 0.75rem 0.85rem; 
+    align-items: stretch; 
+    gap: 0.4rem; 
+    margin-bottom: 0.6rem; 
+    cursor: pointer; 
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
+    border-radius: 0.85rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 .sidebar .tracking-card:hover { background: rgba(255, 255, 255, 0.04); }
 .sidebar .tracking-card.active { 
-    background: rgba(250, 250, 250, 0.08); 
-    border-left-color: var(--primary); 
-    border-color: rgba(250, 250, 250, 0.1);
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+    border-color: rgba(var(--primary-rgb, 59, 130, 246), 0.3);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 0 10px rgba(var(--primary-rgb, 59, 130, 246), 0.1);
+    transform: translateY(-2px);
 }
 
 .sidebar .tracking-card.eng-active {
@@ -1520,22 +1530,22 @@ hr {
 .sidebar .tracking-card.active::before {
     content: '';
     position: absolute;
-    left: -18px;
+    left: 8px; /* Moved inside slightly for better padding alignment */
     top: 50%;
     transform: translateY(-50%);
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
     background-color: var(--indicator-color, var(--primary));
     border-radius: 50%;
-    box-shadow: 0 0 8px var(--indicator-color, var(--primary));
-    animation: ping-pong 2.5s infinite ease-in-out;
+    box-shadow: 0 0 10px var(--indicator-color, var(--primary));
+    animation: ping-pong 2s infinite ease-in-out;
     z-index: 5;
 }
 
 @keyframes ping-pong {
-    0% { transform: scale(1) translateY(-50%); opacity: 1; }
-    50% { transform: scale(1.15) translateY(-50%); opacity: 0.85; }
-    100% { transform: scale(1) translateY(-50%); opacity: 1; }
+    0% { transform: scale(1) translateY(-50%); opacity: 0.8; }
+    50% { transform: scale(1.3) translateY(-50%); opacity: 1; box-shadow: 0 0 12px var(--indicator-color, var(--primary)); }
+    100% { transform: scale(1) translateY(-50%); opacity: 0.8; }
 }
 
 .light-mode .pendencia-item .item-right {
