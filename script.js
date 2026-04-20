@@ -1774,7 +1774,7 @@ function renderTracking() {
     });
     
     if(trackableProjects.length === 0) {
-        trackingContainer.innerHTML = '<p style="color:var(--text-muted); padding: 1rem; border: 1px dashed rgba(255,255,255,0.1); border-radius:0.5rem;"><i class="ph ph-warning"></i> Nenhum empreendimento ativo criado ainda. Primeiramente, crie no Acesso APF.</p>';
+        trackingContainer.innerHTML = '<p style="color:var(--text-muted); padding: 1rem; border: 1px dashed var(--divider-color); border-radius:0.5rem;"><i class="ph ph-warning"></i> Nenhum empreendimento ativo criado ainda. Primeiramente, crie no Acesso APF.</p>';
         return;
     }
 
@@ -2229,7 +2229,7 @@ function updateProjectProgressUI(curr) {
         
         analysisSectionHTML = `
             <!-- DIVISOR VERTICAL -->
-            <div style="height: 60px; width: 1px; background: rgba(255,255,255,0.12);"></div>
+            <div class="divider-v" style="height: 60px; background: var(--divider-color);"></div>
             
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; flex-grow: 1; max-width: 480px;">
         `;
@@ -2244,7 +2244,7 @@ function updateProjectProgressUI(curr) {
             const grade = getGrade(sPct);
 
             analysisSectionHTML += `
-                <div style="display: flex; align-items: center; gap: 0.6rem; padding: 0.35rem 0.6rem; background: rgba(255,255,255,0.03); border-radius: 0.6rem; border: 1px solid rgba(255,255,255,0.05);">
+                <div class="adaptive-card" style="display: flex; align-items: center; gap: 0.6rem; padding: 0.35rem 0.6rem;">
                     <div style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: ${grade.bg}; border-radius: 50%; font-size: 0.8rem; font-weight: 900; color: ${grade.color}; box-shadow: inset 0 0 8px ${grade.color}22;">
                         ${grade.g}
                     </div>
@@ -2266,9 +2266,9 @@ function updateProjectProgressUI(curr) {
             const sectorGrade = getGrade(sectorAnalysisPct);
             
             analysisSectionHTML = `
-                <div style="height: 48px; width: 1px; background: rgba(255,255,255,0.12);"></div>
+                <div class="divider-v" style="height: 48px; background: var(--divider-color);"></div>
                 <div style="display: flex; align-items: center; gap: 1rem; min-width: 180px;">
-                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 54px; height: 54px; background: ${sectorGrade?.bg || 'rgba(255,255,255,0.05)'}; border-radius: 50%; border: 1px solid ${sectorGrade?.color || 'rgba(255,255,255,0.1)'}44; box-shadow: inset 0 0 15px ${sectorGrade?.color || 'transparent'}11;">
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 54px; height: 54px; background: ${sectorGrade?.bg || 'var(--card-bg-subtle)'}; border-radius: 50%; border: 1px solid ${sectorGrade?.color || 'var(--divider-color)'};">
                         <span style="font-size: 1.25rem; font-weight: 900; color: ${sectorGrade?.color || 'var(--text-muted)'}; line-height: 1;">${sectorGrade?.g || '-'}</span>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 0rem;">
@@ -2286,7 +2286,7 @@ function updateProjectProgressUI(curr) {
         progressSectionHTML = `
             <div style="display: flex; align-items: center; gap: 1.25rem;">
                 <div class="circular-progress-container" style="width: 58px; height: 58px;">
-                    <div class="circular-progress" style="--progress: ${generalProgressPct}%; background: conic-gradient(var(--accent) var(--progress), rgba(255,255,255,0.1) 0);"></div>
+                    <div class="circular-progress" style="--progress: ${generalProgressPct}%; background: conic-gradient(var(--accent) var(--progress), var(--progress-track) 0);"></div>
                     <span class="progress-text" style="font-size: 1rem; font-weight: 800; color: var(--text-main);">${generalProgressPct}%</span>
                 </div>
                 <div style="display: flex; flex-direction: column;">
@@ -2306,7 +2306,7 @@ function updateProjectProgressUI(curr) {
             <div style="display: flex; align-items: center; gap: 2.5rem;">
                 <div style="display: flex; align-items: center; gap: 1.25rem;">
                     <div class="circular-progress-container" style="width: 54px; height: 54px;">
-                        <div class="circular-progress" style="--progress: ${sPct}%; background: conic-gradient(var(--accent) var(--progress), rgba(255,255,255,0.1) 0);"></div>
+                        <div class="circular-progress" style="--progress: ${sPct}%; background: conic-gradient(var(--accent) var(--progress), var(--progress-track) 0);"></div>
                         <span class="progress-text" style="font-size: 0.9rem; font-weight: 800; color: var(--text-main);">${sPct}%</span>
                     </div>
                     <div style="display: flex; flex-direction: column;">
@@ -2314,9 +2314,9 @@ function updateProjectProgressUI(curr) {
                         <span style="font-size: 1.05rem; font-weight: 800; color: var(--text-main);">Progresso</span>
                     </div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 0.8rem; opacity: 0.65; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 1.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.8rem; opacity: 0.8; border-left: 1px solid var(--divider-color); padding-left: 1.5rem;">
                     <div class="circular-progress-container" style="width: 38px; height: 38px;">
-                        <div class="circular-progress" style="--progress: ${generalProgressPct}%; background: conic-gradient(var(--text-muted) var(--progress), rgba(255,255,255,0.05) 0);"></div>
+                        <div class="circular-progress" style="--progress: ${generalProgressPct}%; background: conic-gradient(var(--text-muted) var(--progress), var(--progress-track) 0);"></div>
                         <span class="progress-text" style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted);">${generalProgressPct}%</span>
                     </div>
                     <div style="display: flex; flex-direction: column;">
@@ -2333,10 +2333,10 @@ function updateProjectProgressUI(curr) {
         const pends = curr.pendencias || [];
         let pPct = pends.length > 0 ? Math.round((pends.filter(p => p.attachments?.length > 0).length / pends.length) * 100) : 0;
         pendenciasHTML = `
-            <div style="height: 40px; width: 1px; background: rgba(255,255,255,0.12);"></div>
+            <div class="divider-v" style="height: 40px; background: var(--divider-color);"></div>
             <div style="display: flex; align-items: center; gap: 0.8rem;">
                 <div class="circular-progress-container" style="width: 44px; height: 44px;">
-                    <div class="circular-progress" style="--progress: ${pPct}%; background: conic-gradient(var(--warning) var(--progress), rgba(255,255,255,0.1) 0);"></div>
+                    <div class="circular-progress" style="--progress: ${pPct}%; background: conic-gradient(var(--warning) var(--progress), var(--progress-track) 0);"></div>
                     <span class="progress-text" style="font-size: 0.75rem; font-weight: 700; color: var(--warning);">${pPct}%</span>
                 </div>
                 <div style="display: flex; flex-direction: column;">
@@ -2349,21 +2349,21 @@ function updateProjectProgressUI(curr) {
 
     container.innerHTML = `
             ${progressSectionHTML}
-            <div style="height: 48px; width: 1px; background: rgba(255,255,255,0.12); flex-shrink:0;"></div>
+            <div class="divider-v" style="height: 48px; background: var(--divider-color);"></div>
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.35rem; width: 300px; flex-shrink: 0;">
-                <div class="dashboard-card accent ${treeSearchFilter === 'validado' ? 'active' : ''}" onclick="handleDashboardFilter('validado', ${validated})" style="padding: 0.4rem 0.6rem; background: rgba(255,255,255,0.03); border: none; box-shadow: none; border-radius: 0.75rem;">
+                <div class="dashboard-card accent adaptive-card ${treeSearchFilter === 'validado' ? 'active' : ''}" onclick="handleDashboardFilter('validado', ${validated})" style="padding: 0.4rem 0.6rem;">
                     <span class="card-value" style="font-size: 1rem; line-height: 1;">${validated}</span>
                     <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7;">Validados</span>
                 </div>
-                <div class="dashboard-card warning ${treeSearchFilter === 'analise' ? 'active' : ''}" onclick="handleDashboardFilter('analise', ${inAnalysis})" style="padding: 0.4rem 0.6rem; background: rgba(255,255,255,0.03); border: none; box-shadow: none; border-radius: 0.75rem;">
+                <div class="dashboard-card warning adaptive-card ${treeSearchFilter === 'analise' ? 'active' : ''}" onclick="handleDashboardFilter('analise', ${inAnalysis})" style="padding: 0.4rem 0.6rem;">
                     <span class="card-value" style="font-size: 1rem; line-height: 1;">${inAnalysis}</span>
                     <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7;">Análise</span>
                 </div>
-                <div class="dashboard-card danger ${treeSearchFilter === 'pendente' ? 'active' : ''}" onclick="handleDashboardFilter('pendente', ${pending})" style="padding: 0.4rem 0.6rem; background: rgba(255,255,255,0.03); border: none; box-shadow: none; border-radius: 0.75rem;">
+                <div class="dashboard-card danger adaptive-card ${treeSearchFilter === 'pendente' ? 'active' : ''}" onclick="handleDashboardFilter('pendente', ${pending})" style="padding: 0.4rem 0.6rem;">
                     <span class="card-value" style="font-size: 1rem; line-height: 1;">${pending}</span>
                     <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7;">Pendentes</span>
                 </div>
-                <div class="dashboard-card danger ${treeSearchFilter === 'apontamento' ? 'active' : ''}" onclick="handleDashboardFilter('apontamento', ${withPoints})" style="padding: 0.4rem 0.6rem; background: rgba(255,255,255,0.03); border: none; box-shadow: none; border-radius: 0.75rem;">
+                <div class="dashboard-card danger adaptive-card ${treeSearchFilter === 'apontamento' ? 'active' : ''}" onclick="handleDashboardFilter('apontamento', ${withPoints})" style="padding: 0.4rem 0.6rem;">
                     <span class="card-value" style="font-size: 1rem; line-height: 1;">${withPoints}</span>
                     <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7;">REVISAR</span>
                 </div>
@@ -3732,7 +3732,7 @@ function renderAnalysisPanels() {
     }
 
     // Cabeçalho com nome do projeto em destaque no Painel
-    const projHeader = `<div style="font-size:0.7rem; color:var(--text-muted); margin-bottom:0.8rem; padding-bottom:0.5rem; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; gap:0.4rem;">
+    const projHeader = `<div style="font-size:0.7rem; color:var(--text-muted); margin-bottom:0.8rem; padding-bottom:0.5rem; border-bottom:1px solid var(--divider-color); display:flex; align-items:center; gap:0.4rem;">
         <i class="ph ph-buildings"></i>
         <span style="font-weight:700; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${curr.name}</span>
     </div>`;
@@ -3787,14 +3787,14 @@ function renderAnalysisPanels() {
         `;
 
         return `
-            <div style="padding:0.65rem 0.75rem; border-radius:0.5rem; margin-bottom:0.4rem; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);">
+            <div class="adaptive-card" style="padding:0.65rem 0.75rem; margin-bottom:0.4rem;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem; gap:0.5rem;">
                     <div class="sector-name-wrapper">
                         <span class="sector-name-text">${root.name}</span>
                     </div>
                     <span style="font-size:0.7rem; font-weight:800; color:${grade.color}; background:${grade.bg}; padding:0.15rem 0.45rem; border-radius:0.3rem; border:1px solid ${grade.color}44; white-space:nowrap;">${grade.g} - ${grade.label}</span>
                 </div>
-                <div style="height:4px; background:rgba(255,255,255,0.08); border-radius:2px; margin-bottom:0.35rem; overflow:hidden;">
+                <div class="progress-track" style="height:4px; margin-bottom:0.35rem; overflow:hidden;">
                     <div style="height:100%; width:${pct}%; background:${grade.color}; border-radius:2px; transition:width 0.6s ease;"></div>
                 </div>
                 <div style="font-size:0.65rem; color:var(--text-muted); letter-spacing:0.02em;">${delivered}/${total} documentos entregues - ${pct}%</div>

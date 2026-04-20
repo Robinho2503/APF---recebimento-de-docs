@@ -1,4 +1,4 @@
-:root {
+﻿:root {
     --bg-dark: #09090b;
     --panel-bg: rgba(24, 24, 27, 0.8);
     --panel-border: rgba(39, 39, 42, 0.6);
@@ -23,7 +23,7 @@
     --danger: #dc2626;
     --warning: #d97706;
     --warning-dark: #92400e;
-    --info: #0ea5e9;
+    --info: #0ea5e9; --progress-track: #f1f5f9; --divider-color: rgba(15, 23, 42, 0.08); --card-bg-subtle: #f8fafc;
     --text-main: #020617;
     --text-muted: #475569;
 }
@@ -413,7 +413,7 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
 }
 .input-modern:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2); }
 
-/* Melhoria de contraste para opções de dropdown nativo */
+/* Melhoria de contraste para opÃ§Ãµes de dropdown nativo */
 .input-modern option {
     background-color: #1a1a1e !important;
     color: #ffffff !important;
@@ -643,7 +643,7 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
 .inline-attachment .icon-btn:hover { color: var(--primary); }
 .inline-attachment .icon-btn.delete:hover { color: var(--danger); }
 
-/* Estilos para o Relatório de Impressão */
+/* Estilos para o RelatÃ³rio de ImpressÃ£o */
 @media print {
     body * { visibility: hidden; }
     .print-report, .print-report * { visibility: visible; }
@@ -662,7 +662,7 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
     .print-note { font-style: italic; color: #555 !important; margin-left: 1rem; }
 }
 
-/* Campo de previsão preenchido */
+/* Campo de previsÃ£o preenchido */
 .input-modern[type="date"].has-value {
     background-color: rgba(239, 68, 68, 0.15) !important;
     border-color: rgba(239, 68, 68, 0.3) !important;
@@ -1208,7 +1208,7 @@ hr {
     min-width: 0;
 }
 
-/* Wrapper dos dois painéis de análise */
+/* Wrapper dos dois painÃ©is de anÃ¡lise */
 .analysis-panels-wrapper {
     width: 300px;
     flex-shrink: 0;
@@ -1493,14 +1493,14 @@ hr {
 /* Utility Classes */
 .hidden { display: none !important; }
 
-/* Sidebar Pendência Destaque - Reforçado */
+/* Sidebar PendÃªncia Destaque - ReforÃ§ado */
 .sidebar .tracking-card.pendencia-active {
     border: 2px solid var(--danger) !important;
     border-left-width: 6px !important;
     box-shadow: 0 0 15px rgba(239, 68, 68, 0.1);
 }
 
-/* Pendência Item Layout - Fixed Right */
+/* PendÃªncia Item Layout - Fixed Right */
 .pendencia-item {
     display: flex !important;
     flex-wrap: nowrap !important;
@@ -1530,7 +1530,7 @@ hr {
     content: '';
     position: absolute;
     left: 8px;
-    top: 1.1rem; /* Alinhado verticalmente com o centro da primeira linha (ícone) */
+    top: 1.1rem; /* Alinhado verticalmente com o centro da primeira linha (Ã­cone) */
     transform: translateY(-50%);
     width: 6px;
     height: 6px;
@@ -1818,18 +1818,18 @@ hr {
 
     .app-container {
         margin-left: 0 !important;
-        padding-top: 4rem !important; /* Espaço para a top bar (50px + margem) */
+        padding-top: 4rem !important; /* EspaÃ§o para a top bar (50px + margem) */
         padding-left: 0.5rem !important;
         padding-right: 0.5rem !important;
     }
 
     .sidebar {
         width: 300px;
-        left: -300px; /* Escondida por padrão */
+        left: -300px; /* Escondida por padrÃ£o */
         z-index: 1002;
         transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         box-shadow: 20px 0 50px rgba(0, 0, 0, 0.5);
-        background: var(--bg-dark); /* Fundo sólido para mobile para não sobrepor */
+        background: var(--bg-dark); /* Fundo sÃ³lido para mobile para nÃ£o sobrepor */
     }
 
     .sidebar.mobile-active {
@@ -1888,7 +1888,7 @@ hr {
         border-top: 1px solid rgba(255, 255, 255, 0.05);
     }
 
-    /* Otimização da Árvore de Documentos */
+    /* OtimizaÃ§Ã£o da Ãrvore de Documentos */
     .tree-item {
         padding: 0.4rem 0.5rem !important;
     }
@@ -1898,10 +1898,10 @@ hr {
     }
 
     .tree-children {
-        margin-left: 0.75rem !important; /* Reduz indentação para ganhar espaço lateral */
+        margin-left: 0.75rem !important; /* Reduz indentaÃ§Ã£o para ganhar espaÃ§o lateral */
     }
 
-    /* Otimização Sidebar Content */
+    /* OtimizaÃ§Ã£o Sidebar Content */
     .sidebar .tracking-card {
         padding: 0.6rem !important;
         gap: 0.25rem !important;
@@ -1942,7 +1942,7 @@ hr {
         font-size: 0.9rem !important;
     }
 
-    /* Empilhar botões de controle - APF */
+    /* Empilhar botÃµes de controle - APF */
     .management-controls div {
         flex-direction: column;
         align-items: stretch !important;
@@ -1954,7 +1954,7 @@ hr {
         justify-content: center;
     }
 
-    /* Pendências Layout */
+    /* PendÃªncias Layout */
     .pendencia-item {
         flex-direction: column !important;
         gap: 1rem !important;
@@ -1968,7 +1968,7 @@ hr {
         padding-top: 1rem !important;
     }
 
-    /* Ajuste de tamanho de botões para facilitar touch sem ocupar espaço excessivo */
+    /* Ajuste de tamanho de botÃµes para facilitar touch sem ocupar espaÃ§o excessivo */
     .btn, .icon-btn {
         min-height: 38px;
         padding: 0.4rem 0.75rem !important;
@@ -1981,7 +1981,7 @@ hr {
         gap: 0.5rem;
     }
 
-    /* Redução de fontes globais em mobile */
+    /* ReduÃ§Ã£o de fontes globais em mobile */
     body {
         font-size: 14px;
     }
@@ -2003,7 +2003,7 @@ hr {
     flex-direction: column;
     padding: 0.6rem;
     gap: 0.4rem;
-    background: rgba(24, 24, 27, 0.98); /* Fundo quase sólido para máximo contraste */
+    background: rgba(24, 24, 27, 0.98); /* Fundo quase sÃ³lido para mÃ¡ximo contraste */
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 1rem;
     box-shadow: 0 20px 40px rgba(0,0,0,0.5);
@@ -2274,7 +2274,7 @@ hr {
 .light-mode .btn-outline:hover { background: #f8fafc !important; border-color: #0f172a !important; }
 .light-mode .management-controls { border-top: 1px solid rgba(0,0,0,0.05); padding-top: 1rem; }
 
-/* Divisórias Adaptativas */
+/* DivisÃ³rias Adaptativas */
 .divider-v { width: 1px; height: 12px; background: rgba(255, 255, 255, 0.1); flex-shrink: 0; }
 .divider-h { height: 1px; width: 100%; background: rgba(255, 255, 255, 0.1); margin: 0.5rem 0; }
 
@@ -2298,6 +2298,13 @@ hr {
 
 
 
-/* Corre��o de Contraste para Gr�ficos de Progresso Circulares */
+/* Correção de Contraste para Gráficos de Progresso Circulares */
 .light-mode .circular-progress { background: conic-gradient(var(--primary) var(--progress), rgba(15, 23, 42, 0.08) 0) !important; }
 .light-mode .circular-progress-container .progress-text { color: var(--text-main) !important; }
+
+/* Utilitários Adaptativos - Revisão de Sistêmica */
+.divider-v { width: 1px; height: 12px; background: var(--divider-color); flex-shrink: 0; }
+.divider-h { height: 1px; width: 100%; background: var(--divider-color); margin: 0.5rem 0; }
+.progress-track { background: var(--progress-track); border-radius: 2px; }
+.adaptive-card { background: var(--card-bg-subtle); border-radius: 0.75rem; border: 1px solid var(--divider-color); }
+.circular-progress-bg { background: conic-gradient(var(--accent) var(--progress), var(--progress-track) 0) !important; }
