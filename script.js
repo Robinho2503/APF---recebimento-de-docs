@@ -1560,7 +1560,7 @@ function updateGlobalDateUI() {
     const isAPF = authenticatedSector === 'APF';
     if(btnRenameProject) btnRenameProject.style.display = isAPF ? 'inline-flex' : 'none';
     if(btnDeleteProject) btnDeleteProject.style.display = isAPF ? 'inline-flex' : 'none';
-    if(dueDateContainer) dueDateContainer.style.display = isAPF ? 'flex' : 'none';
+    if(dueDateContainer) dueDateContainer.style.display = 'none';
     if(projectDueDateInp) { projectDueDateInp.disabled = !isAPF; projectDueDateInp.value = p.dueDate || ''; }
 
     // RENDERIZAR PAINEL UNIFICADO
