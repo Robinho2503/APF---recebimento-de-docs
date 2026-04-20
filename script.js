@@ -432,7 +432,7 @@ let newProjectModalTitle, btnConfirmNewProjectText, newProjectModalInfo;
 let editingProjectId = null;
 let uploadToast, uploadToastText, uploadToastSub, uploadToastIcon;
 let confirmModal, confirmModalTitle, confirmModalMessage, confirmModalIconContainer, btnConfirmYes, btnConfirmNo;
-let headerMgmtActions;
+let headerMgmtActions, headerActionsSegment, apfChecklistControls;
 
 function initDOMElements() {
     // Auth
@@ -457,9 +457,10 @@ function initDOMElements() {
     btnToggleEng = document.getElementById('btn-toggle-eng');
     btnDeleteProject = document.getElementById('btn-delete-project');
     btnRenameProject = document.getElementById('btn-rename-project');
-    const headerActionsSegment = document.getElementById('header-actions-segment');
+    headerActionsSegment = document.getElementById('header-actions-segment');
     btnOpenTemplate = document.getElementById('btn-open-template');
     btnAddRoot = document.getElementById('btn-add-root');
+    apfChecklistControls = document.getElementById('apf-checklist-controls');
     btnSettings = document.getElementById('btn-settings');
     
     // Containers
@@ -1397,6 +1398,20 @@ function applyAuthState(silentRedirect = false) {
 
     if (headerMgmtActions) {
         headerMgmtActions.style.display = (authenticatedSector === 'APF') ? 'flex' : 'none';
+    }
+
+    if (headerActionsSegment) {
+        headerActionsSegment.style.display = (authenticatedSector === 'APF') ? 'flex' : 'none';
+    }
+
+    if (apfChecklistControls) {
+        apfChecklistControls.style.display = (authenticatedSector === 'APF') ? 'flex' : 'none';
+    }
+
+    if (projectDueDateInp) {
+        projectDueDateInp.disabled = (authenticatedSector !== 'APF');
+        projectDueDateInp.style.opacity = (authenticatedSector === 'APF') ? '1' : '0.5';
+        projectDueDateInp.style.pointerEvents = (authenticatedSector === 'APF') ? 'auto' : 'none';
     }
 
     if (apfSubmenu) apfSubmenu.style.display = (isMgmt && authenticatedSector === 'APF') ? 'flex' : 'none';
@@ -3232,6 +3247,19 @@ function createNode(item, level) {
 
 // Logic implementations
 function handleAddFolder(parentId) {
+    // Permission Check
+    if (authenticatedSector !== 'APF') {
+        if (parentId === null) {
+            showTemporaryMessage("Apenas APF pode criar novos setores raízes.");
+            return;
+        }
+        const targetSector = getItemSector(parentId);
+        if (targetSector !== authenticatedSector) {
+            showTemporaryMessage(`Acesso negado. Você só pode adicionar itens ao setor "${authenticatedSector}".`);
+            return;
+        }
+    }
+
     const parentItem = parentId ? getItems().find(i => i.id === parentId) : null;
     const name = prompt('Nome da nova pasta/item:');
     if(name && name.trim()){
@@ -3262,6 +3290,15 @@ function handleAddFolder(parentId) {
 }
 
 function handleDeleteFolder(id) {
+    // Permission Check
+    if (authenticatedSector !== 'APF') {
+        const targetSector = getItemSector(id);
+        if (targetSector !== authenticatedSector) {
+            showTemporaryMessage("Acesso negado. Você não tem permissão para excluir itens de outros setores.");
+            return;
+        }
+    }
+
     showConfirm({
         title: 'Excluir Pasta',
         message: 'Tem certeza que deseja excluir esta pasta e todo o seu conteúdo permanentemente?',
@@ -3287,6 +3324,15 @@ function handleDeleteFolder(id) {
 }
 
 function handleRenameFolder(id) {
+    // Permission Check
+    if (authenticatedSector !== 'APF') {
+        const targetSector = getItemSector(id);
+        if (targetSector !== authenticatedSector) {
+            showTemporaryMessage("Acesso negado. Você não tem permissão para renomear itens de outros setores.");
+            return;
+        }
+    }
+
     const item = getItems().find(i => i.id === id);
     if(!item) return;
     const newName = prompt('Novo nome para a pasta/item:', item.name);
@@ -3567,6 +3613,15 @@ window.handleFileUpload = async function(itemId, files, isPendencia = false) {
         targetItem = getItems().find(i => i.id === itemId);
     }
     
+    // Permission Check
+    if (authenticatedSector !== 'APF') {
+        const itemSector = isPendencia ? targetItem?.sector : getItemSector(itemId);
+        if (itemSector !== authenticatedSector) {
+            showTemporaryMessage(`Acesso negado. Você só pode enviar documentos para o setor "${authenticatedSector}".`);
+            return;
+        }
+    }
+    
     if(targetItem && currProject) {
         const sanitizedProjName = sanitizePathSegment(currProject.name);
         const folderPath = isPendencia ? 'PENDENCIAS' : getItemPath(itemId, true);
@@ -3666,6 +3721,15 @@ window.handleFileUpload = async function(itemId, files, isPendencia = false) {
 }
 
 window.handleDeleteFile = async function(itemId, fileId, isPendencia = false) {
+    // Permission Check
+    if (authenticatedSector !== 'APF') {
+        const itemSector = isPendencia ? getCurrentProject()?.pendencias.find(p => p.id === itemId)?.sector : getItemSector(itemId);
+        if (itemSector !== authenticatedSector) {
+            showTemporaryMessage("Acesso negado. Você não tem permissão para excluir documentos de outros setores.");
+            return;
+        }
+    }
+
     const currProject = getCurrentProject();
     if (!currProject) return;
 
