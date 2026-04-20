@@ -2387,27 +2387,27 @@ function updateProjectProgressUI(curr) {
 
     container.innerHTML = `
             ${progressSectionHTML}
-            ${pendenciasHTML}
-            <div style="height: 40px; width: 1px; background: rgba(255,255,255,0.12); flex-shrink:0;"></div>
-            <div style="display: flex; gap: 0.5rem; align-items: center; flex-shrink: 0;">
-                <div class="dashboard-card accent ${treeSearchFilter === 'validado' ? 'active' : ''}" onclick="handleDashboardFilter('validado', ${validated})" style="padding: 0.4rem 0.75rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 0.6rem; display: flex; flex-direction: column; align-items: center; min-width: 75px;">
-                    <span class="card-value" style="font-size: 1.1rem; line-height: 1; font-weight: 800;">${validated}</span>
-                    <span class="card-label" style="font-size: 0.5rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7; font-weight: 700;">Validados</span>
+            <div style="height: 48px; width: 1px; background: rgba(255,255,255,0.12); flex-shrink:0;"></div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.35rem; width: 300px; flex-shrink: 0;">
+                <div class="dashboard-card accent ${treeSearchFilter === 'validado' ? 'active' : ''}" onclick="handleDashboardFilter('validado', ${validated})" style="padding: 0.4rem 0.6rem; background: rgba(255,255,255,0.03); border: none; box-shadow: none; border-radius: 0.75rem;">
+                    <span class="card-value" style="font-size: 1rem; line-height: 1;">${validated}</span>
+                    <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7;">Validados</span>
                 </div>
-                <div class="dashboard-card warning ${treeSearchFilter === 'analise' ? 'active' : ''}" onclick="handleDashboardFilter('analise', ${inAnalysis})" style="padding: 0.4rem 0.75rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 0.6rem; display: flex; flex-direction: column; align-items: center; min-width: 75px;">
-                    <span class="card-value" style="font-size: 1.1rem; line-height: 1; font-weight: 800;">${inAnalysis}</span>
-                    <span class="card-label" style="font-size: 0.5rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7; font-weight: 700;">Análise</span>
+                <div class="dashboard-card warning ${treeSearchFilter === 'analise' ? 'active' : ''}" onclick="handleDashboardFilter('analise', ${inAnalysis})" style="padding: 0.4rem 0.6rem; background: rgba(255,255,255,0.03); border: none; box-shadow: none; border-radius: 0.75rem;">
+                    <span class="card-value" style="font-size: 1rem; line-height: 1;">${inAnalysis}</span>
+                    <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7;">Análise</span>
                 </div>
-                <div class="dashboard-card danger ${treeSearchFilter === 'pendente' ? 'active' : ''}" onclick="handleDashboardFilter('pendente', ${pending})" style="padding: 0.4rem 0.75rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 0.6rem; display: flex; flex-direction: column; align-items: center; min-width: 75px;">
-                    <span class="card-value" style="font-size: 1.1rem; line-height: 1; font-weight: 800;">${pending}</span>
-                    <span class="card-label" style="font-size: 0.5rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7; font-weight: 700;">Pendente</span>
+                <div class="dashboard-card danger ${treeSearchFilter === 'pendente' ? 'active' : ''}" onclick="handleDashboardFilter('pendente', ${pending})" style="padding: 0.4rem 0.6rem; background: rgba(255,255,255,0.03); border: none; box-shadow: none; border-radius: 0.75rem;">
+                    <span class="card-value" style="font-size: 1rem; line-height: 1;">${pending}</span>
+                    <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7;">Pendentes</span>
                 </div>
-                <div class="dashboard-card danger ${treeSearchFilter === 'apontamento' ? 'active' : ''}" onclick="handleDashboardFilter('apontamento', ${withPoints})" style="padding: 0.4rem 0.75rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 0.6rem; display: flex; flex-direction: column; align-items: center; min-width: 75px;">
-                    <span class="card-value" style="font-size: 1.1rem; line-height: 1; font-weight: 800;">${withPoints}</span>
-                    <span class="card-label" style="font-size: 0.5rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7; font-weight: 700;">Revisar</span>
+                <div class="dashboard-card danger ${treeSearchFilter === 'apontamento' ? 'active' : ''}" onclick="handleDashboardFilter('apontamento', ${withPoints})" style="padding: 0.4rem 0.6rem; background: rgba(255,255,255,0.03); border: none; box-shadow: none; border-radius: 0.75rem;">
+                    <span class="card-value" style="font-size: 1rem; line-height: 1;">${withPoints}</span>
+                    <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7;">REVISAR</span>
                 </div>
             </div>
             ${analysisSectionHTML}
+            ${pendenciasHTML}
     `;
 }
 
