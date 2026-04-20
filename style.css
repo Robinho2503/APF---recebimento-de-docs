@@ -14,18 +14,18 @@
 }
 
 :root.light-mode {
-    --bg-dark: #f4f4f5;
-    --panel-bg: rgba(255, 255, 255, 0.95);
-    --panel-border: rgba(228, 228, 231, 0.8);
-    --primary: #18181b;
-    --primary-hover: #27272a;
+    --bg-dark: #f8fafc;
+    --panel-bg: #ffffff;
+    --panel-border: rgba(15, 23, 42, 0.12);
+    --primary: #0f172a;
+    --primary-hover: #1e293b;
     --accent: #059669;
     --danger: #dc2626;
     --warning: #d97706;
     --warning-dark: #92400e;
     --info: #0ea5e9;
-    --text-main: #09090b;
-    --text-muted: #71717a;
+    --text-main: #020617;
+    --text-muted: #475569;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
@@ -2201,5 +2201,75 @@ hr {
 .icon-btn-premium { background: rgba(255, 255, 255, 0.05); color: var(--text-main); }
 .icon-btn-highlight:hover, .icon-btn-premium:hover { transform: translateY(-2px); background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); }
 .icon-btn-highlight:hover { box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3); }
-.light-mode .icon-btn-premium { background: rgba(0,0,0,0.05); color: var(--text-dark); border-color: rgba(0,0,0,0.1); }
-.light-mode .icon-btn-premium:hover { background: rgba(0,0,0,0.1); }
+.light-mode .icon-btn-highlight { background: rgba(99, 102, 241, 0.08); border-color: rgba(99, 102, 241, 0.2); }
+.light-mode .icon-btn-premium { background: rgba(0, 0, 0, 0.03); color: var(--text-main); border-color: rgba(0, 0, 0, 0.1); }
+.light-mode .icon-btn-highlight:hover, .light-mode .icon-btn-premium:hover { background: rgba(0, 0, 0, 0.05); border-color: rgba(0, 0, 0, 0.15); }
+
+/* Melhorias Gerais de Contraste - Modo Claro */
+.light-mode .glass-panel {
+    background: #ffffff;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.light-mode .sidebar {
+    background: #ffffff;
+    border-right: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.light-mode .sidebar .tracking-card {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.light-mode .sidebar .tracking-card:hover {
+    background: #f8fafc;
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+.light-mode .sidebar .tracking-card.active {
+    background: #f1f5f9;
+    border-color: var(--primary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.light-mode .sidebar-header {
+    background: #ffffff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.light-mode .analysis-panel {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.light-mode .tree-item {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.light-mode .tree-item:hover {
+    background: #f8fafc;
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+
+/* Legibilidade de Badges e Indicadores - Modo Claro */
+.light-mode .badge-analise { background: rgba(14, 165, 233, 0.12) !important; color: #0369a1 !important; border-color: rgba(14, 165, 233, 0.2) !important; }
+.light-mode .badge-validado, .light-mode .badge-entregue { background: rgba(5, 150, 105, 0.12) !important; color: #065f46 !important; border-color: rgba(5, 150, 105, 0.2) !important; }
+.light-mode .badge-apontamento, .light-mode .badge-pendente { background: rgba(220, 38, 38, 0.08) !important; color: #991b1b !important; border-color: rgba(220, 38, 38, 0.2) !important; }
+.light-mode .badge-na { background: #f1f5f9 !important; color: #475569 !important; border-color: #e2e8f0 !important; }
+.light-mode .presence-indicator { background: #ffffff !important; border: 1px solid rgba(0,0,0,0.1) !important; color: var(--text-main) !important; box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important; }
+.light-mode .input-modern { background: #ffffff !important; border-color: rgba(0,0,0,0.15) !important; color: #0f172a !important; }
+.light-mode .input-modern:focus { border-color: #3b82f6 !important; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important; }
+.light-mode .status-badge-solid { box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important; }
+
+/* Final Light Mode Contrast Polish */
+.light-mode .tab-btn { color: #64748b !important; border-bottom: 2px solid transparent !important; opacity: 0.8; }
+.light-mode .tab-btn:hover { color: #1e293b !important; opacity: 1; background: rgba(0,0,0,0.02) !important; }
+.light-mode .tab-btn.active { color: #0f172a !important; border-bottom-color: #0f172a !important; background: transparent !important; font-weight: 700 !important; opacity: 1; }
+.light-mode #login-sector option { background-color: #ffffff !important; color: #18181b !important; }
+.light-mode .btn-outline { border-color: rgba(0,0,0,0.2) !important; color: #0f172a !important; }
+.light-mode .btn-outline:hover { background: #f8fafc !important; border-color: #0f172a !important; }
+.light-mode .management-controls { border-top: 1px solid rgba(0,0,0,0.05); padding-top: 1rem; }
