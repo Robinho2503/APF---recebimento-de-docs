@@ -2273,3 +2273,31 @@ hr {
 .light-mode .btn-outline { border-color: rgba(0,0,0,0.2) !important; color: #0f172a !important; }
 .light-mode .btn-outline:hover { background: #f8fafc !important; border-color: #0f172a !important; }
 .light-mode .management-controls { border-top: 1px solid rgba(0,0,0,0.05); padding-top: 1rem; }
+
+/* DivisÃ³rias Adaptativas */
+.divider-v { width: 1px; height: 12px; background: rgba(255, 255, 255, 0.1); flex-shrink: 0; }
+.divider-h { height: 1px; width: 100%; background: rgba(255, 255, 255, 0.1); margin: 0.5rem 0; }
+
+.light-mode .divider-v, .light-mode .divider-h { background: rgba(15, 23, 42, 0.12) !important; }
+
+/* Banners de Status */
+.status-banner {
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.65rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 2rem;
+}
+.status-banner-danger { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: var(--danger); }
+.status-banner-info { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); color: var(--info); }
+
+.light-mode .status-banner-danger { background: rgba(239, 68, 68, 0.08) !important; border-color: rgba(239, 68, 68, 0.15) !important; color: #991b1b !important; }
+.light-mode .status-banner-info { background: rgba(59, 130, 246, 0.08) !important; border-color: rgba(59, 130, 246, 0.15) !important; color: #0369a1 !important; }
+
+
+
+/* Correção de Contraste para Gráficos de Progresso Circulares */
+.light-mode .circular-progress { background: conic-gradient(var(--primary) var(--progress), rgba(15, 23, 42, 0.08) 0) !important; }
+.light-mode .circular-progress-container .progress-text { color: var(--text-main) !important; }

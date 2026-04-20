@@ -1872,7 +1872,7 @@ function renderTracking() {
             const displayDays = diffDays >= 0 ? diffDays : 0;
             
             trackingLine = `
-                <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: var(--danger); font-weight: 700; display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.65rem; padding: 0.25rem 0.5rem; border-radius: 2rem;">
+                <div class="status-banner status-banner-danger">
                     <i class="ph ph-warning-diamond" style="font-size: 0.8rem;"></i> Resolução de pendências │ ${displayDays}d
                 </div>
             `;
@@ -1887,7 +1887,7 @@ function renderTracking() {
                 daysDisplay = diff >= 0 ? diff : 0;
             }
             trackingLine = `
-                <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); color: var(--info); font-weight: 700; display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.65rem; padding: 0.25rem 0.5rem; border-radius: 2rem;">
+                <div class="status-banner status-banner-info">
                     <i class="ph ph-calendar" style="font-size: 0.8rem;"></i> Análise CAIXA │ ${daysDisplay}d
                 </div>
             `;
@@ -1900,7 +1900,7 @@ function renderTracking() {
             trackingLine = `
                 <div style="display: flex; align-items: center; width: 100%; font-size: 0.72rem; gap: 0.6rem;">
                     <span style="color: var(--text-muted); font-weight: 500; display: flex; align-items: center; gap: 0.25rem;"><i class="ph ph-calendar-blank" style="font-size: 0.8rem;"></i> ${dateText}</span>
-                    <div style="width: 1px; height: 12px; background: rgba(255,255,255,0.1);"></div>
+                    <div class="divider-v"></div>
                     <div style="display: flex; flex-direction: column; color: ${statusCol};">
                         <span style="font-weight: 700; letter-spacing: 0.01em;">${barePrazo}</span>
                         ${bizHtml ? `<span style="font-size: 0.65rem; opacity: 0.7; font-weight: 500;">${bizHtml.replace(/<div.*?>|<\/div>/g, '')}</span>` : ''}
