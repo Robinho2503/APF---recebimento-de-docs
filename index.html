@@ -147,29 +147,23 @@
                             <label style="font-size: 0.55rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; letter-spacing: 0.08em; margin-bottom: 0.2rem; opacity: 0.7;">Prazo Geral</label>
                             <input type="date" id="project-due-date" class="input-modern" style="max-width: 140px; padding: 0.25rem 0.5rem; font-size: 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.5rem; color: var(--text-main);">
                         </div>
-                        <!-- Grupo de Gestão (Conforme Imagem) -->
-                        <div style="display: flex; gap: 0.6rem; align-items: center;">
-                            <button id="btn-add-root" class="icon-btn-sm" title="Adicionar Novo Setor" style="background: rgba(255,255,255,0.05); color: var(--text-main); border: 1px solid rgba(255,255,255,0.1); width: 34px; height: 34px; border-radius: 0.6rem; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-                                <i class="ph ph-folder-plus" style="font-size: 1.1rem;"></i>
+                        <!-- Ações de Estado e Gestão do Empreendimento -->
+                        <div style="display: flex; gap: 0.75rem; align-items: center;">
+                            <button id="btn-toggle-eng" class="btn btn-outline btn-sm" title="Sinalizar abertura de análise de engenharia" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; border-radius: 0.6rem;">
+                                <i class="ph ph-calendar"></i> Abrir Engenharia
                             </button>
+                            
+                            <div class="v-divider"></div>
+
+                            <button id="btn-toggle-pendencias" class="btn btn-outline btn-sm" title="Iniciar resolução de PENDÊNCIAS CAIXA" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; border-radius: 0.6rem;">
+                                <i class="ph ph-warning-diamond"></i> Resolução de pendências
+                            </button>
+
                             <button id="btn-rename-project" class="icon-btn-sm" title="Renomear Empreendimento" style="background: rgba(255,255,255,0.05); color: var(--text-main); border: 1px solid rgba(255,255,255,0.1); width: 34px; height: 34px; border-radius: 0.6rem; display: flex; align-items: center; justify-content: center; cursor: pointer;">
                                 <i class="ph ph-pencil-simple" style="font-size: 1.1rem;"></i>
                             </button>
                             <button id="btn-delete-project" class="icon-btn-sm" title="Excluir Empreendimento" style="background: rgba(239, 68, 68, 0.08); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.15); width: 34px; height: 34px; border-radius: 0.6rem; display: flex; align-items: center; justify-content: center; cursor: pointer;">
                                 <i class="ph ph-trash" style="font-size: 1.1rem;"></i>
-                            </button>
-                        </div>
-
-                        <!-- Linha Divisória -->
-                        <div class="v-divider"></div>
-
-                        <!-- Outras Ações (Alternância de Estado) -->
-                        <div style="display: flex; gap: 0.75rem; align-items: center;">
-                            <button id="btn-toggle-eng" class="btn btn-outline btn-sm" title="Sinalizar abertura de análise de engenharia" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; border-radius: 0.6rem;">
-                                <i class="ph ph-calendar"></i> Abrir Engenharia
-                            </button>
-                            <button id="btn-toggle-pendencias" class="btn btn-outline btn-sm" title="Iniciar resolução de PENDÊNCIAS CAIXA" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; border-radius: 0.6rem;">
-                                <i class="ph ph-warning-diamond"></i> Resolução de pendências
                             </button>
                         </div>
                     </div>
@@ -189,13 +183,53 @@
                         <!-- Progress Line -->
                         <!-- Top Stats Row: Progresso e Cards lado a lado -->
                         <!-- Busca Global (Agora ocupando a linha toda abaixo dos stats) -->
+                        <!-- Controles Superiores APF (Novo Setor, Relatórios, Exportar) -->
+                        <div id="apf-checklist-controls" style="display: none; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                            <div style="display: flex; gap: 1rem; align-items: center;">
+                                <button id="btn-add-root" class="btn btn-primary btn-sm">
+                                    <i class="ph ph-folder-plus"></i> Novo setor
+                                </button>
+                                <div class="v-divider" style="height: 20px; opacity: 0.5;"></div>
+                                <button id="btn-toggle-all-checklist" class="btn-toggle-all" title="Mostrar/Ocultar todos" style="width: auto; padding: 0.3rem 0.75rem; border: 1px solid rgba(255,255,255,0.1);">
+                                    <span class="label">Mostrar tudo</span>
+                                </button>
+                            </div>
+
+                            <div style="display: flex; gap: 1.5rem; align-items: center; position: relative;">
+                                <!-- Menu de Relatórios -->
+                                <div class="reports-wrapper" style="position: relative;">
+                                    <button id="btn-reports-menu" class="btn btn-outline btn-sm" title="Ver opções de relatórios">
+                                        <i class="ph ph-file-text"></i> Relatórios <i class="ph ph-caret-down" style="font-size: 0.7rem;"></i>
+                                    </button>
+                                    <div id="reports-dropdown" class="reports-dropdown glass-panel hidden">
+                                        <button class="report-opt" data-mode="only_points">
+                                            <i class="ph ph-warning-circle"></i> Relatório de apontamentos
+                                        </button>
+                                        <button class="report-opt" data-mode="eng_pendencies">
+                                            <i class="ph ph-hard-hat"></i> Pendências de engenharia
+                                        </button>
+                                        <button class="report-opt" data-mode="all_pendent_pointed">
+                                            <i class="ph ph-stack"></i> Pendentes e Apontamentos
+                                        </button>
+                                        <button class="report-opt" data-mode="only_pendent">
+                                            <i class="ph ph-clock"></i> Documentos pendentes
+                                        </button>
+                                        <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 0.25rem 0;"></div>
+                                        <button class="report-opt" data-mode="ai_project_report" style="color: var(--accent);">
+                                            <i class="ph ph-sparkle" style="color: var(--accent);"></i> Relatório do empreendimento (IA)
+                                        </button>
+                                    </div>
+                                </div>
+                                <button id="btn-export-zip" class="btn btn-primary btn-sm" title="Exportar ZIP" style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;">
+                                    <i class="ph ph-file-zip" style="font-size: 1.2rem;"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Busca Global -->
                         <div class="search-dashboard-row" style="margin-bottom: 1.5rem;">
                             <div class="global-search-wrapper" style="width: 100%;">
-                                <div style="display: flex; gap: 0.5rem;">
-                                    <button id="btn-toggle-all-checklist" class="btn-toggle-all" title="Mostrar/Ocultar todos os itens do empreendimento" style="width: auto; padding: 0.3rem 0.75rem; border: 1px solid rgba(255,255,255,0.1);">
-                                        <span class="label">Mostrar tudo</span>
-                                    </button>
-                                </div>
+                                <!-- Input will be injected here or already exists -->
                             </div>
                         </div>
 
@@ -252,37 +286,6 @@
                         </div>
 
                     </div>
-                        <div style="display: flex; gap: 0.5rem; align-items: center; position: relative;">
-                            <!-- Menu de Relatórios -->
-                            <div class="reports-wrapper" style="position: relative;">
-                                <button id="btn-reports-menu" class="btn btn-outline btn-sm" title="Ver opções de relatórios">
-                                    <i class="ph ph-file-text"></i> Relatórios <i class="ph ph-caret-down" style="font-size: 0.7rem;"></i>
-                                </button>
-                                <div id="reports-dropdown" class="reports-dropdown glass-panel hidden">
-                                    <button class="report-opt" data-mode="only_points">
-                                        <i class="ph ph-革 ph-warning-circle"></i> Relatório de apontamentos
-                                    </button>
-                                    <button class="report-opt" data-mode="eng_pendencies">
-                                        <i class="ph ph-hard-hat"></i> Pendências de engenharia
-                                    </button>
-                                    <button class="report-opt" data-mode="all_pendent_pointed">
-                                        <i class="ph ph-stack"></i> Pendentes e Apontamentos
-                                    </button>
-                                    <button class="report-opt" data-mode="only_pendent">
-                                        <i class="ph ph-clock"></i> Documentos pendentes
-                                    </button>
-                                    <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 0.25rem 0;"></div>
-                                    <button class="report-opt" data-mode="ai_project_report" style="color: var(--accent);">
-                                        <i class="ph ph-sparkle" style="color: var(--accent);"></i> Relatório do empreendimento (IA)
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Botão Exportar Tudo (ZIP) -->
-                            <button id="btn-export-zip" class="btn btn-primary btn-sm" title="Exportar todas as pastas e arquivos deste projeto em ZIP" style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;">
-                                <i class="ph ph-archive-box" style="font-size: 1.1rem;"></i>
-                            </button>
-                        </div>
                     </div>
                     <div id="eng-analysis-mgmt-panel" class="glass-panel mb-4 hidden" style="padding: 1.25rem; border-color: #3b82f6 !important; background: rgba(59, 130, 246, 0.05);">
                         <div class="flex-between">

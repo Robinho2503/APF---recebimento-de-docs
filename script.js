@@ -1562,6 +1562,10 @@ function updateGlobalDateUI() {
     const headerActionsSegment = document.getElementById('header-actions-segment');
     if(headerActionsSegment) headerActionsSegment.style.display = isAPF ? 'flex' : 'none';
     
+    // Controles acima do checklist (Novo Setor, Relatórios, etc)
+    const apfChecklistControls = document.getElementById('apf-checklist-controls');
+    if(apfChecklistControls) apfChecklistControls.style.display = isAPF ? 'flex' : 'none';
+
     if(btnRenameProject) btnRenameProject.style.display = isAPF ? 'inline-flex' : 'none';
     if(btnDeleteProject) btnDeleteProject.style.display = isAPF ? 'inline-flex' : 'none';
     if(btnAddRoot) btnAddRoot.style.display = isAPF ? 'inline-flex' : 'none';
