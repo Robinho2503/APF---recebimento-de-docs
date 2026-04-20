@@ -422,7 +422,7 @@ let btnSettings, btnSaveSettings, btnResetModel, geminiModelInp, geminiKeyInp, b
 let btnTogglePendencias, pendenciasMgmtPanel, btnAddPendencia, pendenciaStartDateInp, modalOverlay, btnCloseModal;
 let engAnalysisMgmtPanel, engAnalysisStartDateInp;
 let btnShowHistory, historyModal, btnCloseHistory;
-let projectDueDateInp, currentProjectName, projectGlobalCountdown, headerLocationInfo;
+let projectDueDateInp, projectGlobalCountdown, headerLocationInfo;
 let globalLogin, loginSector;
 let btnLogout, topAuthInfo, authNavTabs, btnLoginThemeToggle;
 let btnMobileMenu, sidebarBackdrop;
@@ -499,7 +499,7 @@ function initDOMElements() {
 
     // Inputs
     projectDueDateInp = document.getElementById('project-due-date');
-    currentProjectName = document.getElementById('current-project-name');
+
     projectGlobalCountdown = document.getElementById('project-global-countdown');
 
     // History Modal
@@ -1563,7 +1563,7 @@ function updateGlobalDateUI() {
         }
     }
 
-    if(currentProjectName) currentProjectName.textContent = p.name;
+
     const isAPF = authenticatedSector === 'APF';
     if(btnRenameProject) btnRenameProject.style.display = isAPF ? 'inline-flex' : 'none';
     if(btnDeleteProject) btnDeleteProject.style.display = isAPF ? 'inline-flex' : 'none';
