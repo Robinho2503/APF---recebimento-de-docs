@@ -432,6 +432,7 @@ let newProjectModalTitle, btnConfirmNewProjectText, newProjectModalInfo;
 let editingProjectId = null;
 let uploadToast, uploadToastText, uploadToastSub, uploadToastIcon;
 let confirmModal, confirmModalTitle, confirmModalMessage, confirmModalIconContainer, btnConfirmYes, btnConfirmNo;
+let headerMgmtActions;
 
 function initDOMElements() {
     // Auth
@@ -439,6 +440,7 @@ function initDOMElements() {
     loginSector = document.getElementById('login-sector');
     topAuthInfo = document.getElementById('top-auth-info');
     authNavTabs = document.getElementById('auth-nav-tabs');
+    headerMgmtActions = document.getElementById('header-mgmt-actions');
     btnLoginThemeToggle = document.getElementById('btn-login-theme-toggle');
     btnLogout = document.getElementById('btn-logout');
     btnMobileMenu = document.getElementById('btn-mobile-menu');
@@ -1388,6 +1390,10 @@ function applyAuthState(silentRedirect = false) {
             checklistTab.classList.add('active');
             checklistTab.style.display = '';
         }
+    }
+
+    if (headerMgmtActions) {
+        headerMgmtActions.style.display = (authenticatedSector === 'APF') ? 'flex' : 'none';
     }
 
     if (apfSubmenu) apfSubmenu.style.display = (isMgmt && authenticatedSector === 'APF') ? 'flex' : 'none';

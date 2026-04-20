@@ -89,7 +89,16 @@
             <!-- Conteúdo Real (Abas, Checklist, Análise) -->
             <div id="main-content-wrapper" style="display: none;">
                 <div class="flex-between mb-2">
-                <div style="flex-grow: 1;"></div>
+                    <!-- Esquerda: Ações de Gestão (Visível apenas para APF) -->
+                    <div id="header-mgmt-actions" style="display: none; align-items: center; gap: 0.75rem;">
+                        <button id="btn-new-project" class="icon-btn-highlight" title="Novo Empreendimento">
+                            <i class="ph ph-plus"></i>
+                        </button>
+                        <button id="btn-open-template" class="icon-btn-premium" title="Modelo de Entrega">
+                            <i class="ph ph-layout"></i>
+                        </button>
+                    </div>
+                    <div style="flex-grow: 1;"></div>
                 <div style="display: flex; gap: 0.5rem; align-items: center; position: relative;">
                     <div id="presence-indicator" class="presence-indicator"></div>
                     <div class="apf-nav-group">
@@ -206,10 +215,9 @@
             <section id="tab-management" class="tab-content glass-panel mt-4">
                 <!-- Management Content -->
                 <div id="management-content" style="display: none;">
-                    <div class="management-controls mb-4">
+                    <!-- Management Controls moved to header -->
+                    <div class="management-controls mb-4" style="display: none;">
                         <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-                            <button id="btn-open-template" class="btn btn-outline" title="Acessar e editar a estrutura do Modelo de Entrega"><i class="ph ph-layout"></i> Modelo de Entrega</button>
-                            <button id="btn-new-project" class="btn btn-primary"><i class="ph ph-plus-circle"></i> Novo Empreendimento</button>
                         </div>
                     </div>
 

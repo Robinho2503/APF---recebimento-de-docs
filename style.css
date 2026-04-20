@@ -2192,3 +2192,14 @@ hr {
         padding: 1.25rem !important;
     }
 }
+
+/* Management Header Actions */
+.icon-btn-highlight, .icon-btn-premium {
+    width: 38px; height: 38px; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); border: 1px solid rgba(255, 255, 255, 0.1); font-size: 1.25rem;
+}
+.icon-btn-highlight { background: rgba(99, 102, 241, 0.1); color: var(--primary); border-color: rgba(99, 102, 241, 0.2); }
+.icon-btn-premium { background: rgba(255, 255, 255, 0.05); color: var(--text-main); }
+.icon-btn-highlight:hover, .icon-btn-premium:hover { transform: translateY(-2px); background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); }
+.icon-btn-highlight:hover { box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3); }
+.light-mode .icon-btn-premium { background: rgba(0,0,0,0.05); color: var(--text-dark); border-color: rgba(0,0,0,0.1); }
+.light-mode .icon-btn-premium:hover { background: rgba(0,0,0,0.1); }
