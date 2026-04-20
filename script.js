@@ -1394,8 +1394,7 @@ function applyAuthState(silentRedirect = false) {
                 checklistTab.style.display = ''; // Garante visibilidade
             }
             
-            const checklistBtn = document.querySelector('[data-tab="checklist"]');
-            if (checklistBtn) checklistBtn.classList.add('active');
+
             
             if (isCurrentlyMgmt && !silentRedirect) {
                 showTemporaryMessage("Redirecionado: Você não possui permissão de APF.");
