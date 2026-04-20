@@ -1635,11 +1635,6 @@ function updateGlobalDateUI() {
         }
 
         const label = `Análise CAIXA │ ${daysDisplay} dias`;
-
-        if (subtitleEl) {
-            subtitleEl.innerHTML = `<i class="ph ph-map-pin" style="opacity: 0.7;"></i> ${locationStr} │ <i class="ph ph-calendar"></i> ${label}`;
-            subtitleEl.className = 'badge-eng-subtitle';
-        }
         if (btnToggleEngEl) {
             btnToggleEngEl.innerHTML = `<i class="ph ph-calendar"></i> ${label}`;
             btnToggleEngEl.className = 'btn';
