@@ -1493,7 +1493,7 @@ function logout() {
     }
     
     applyAuthState(true);
-    renderTree();
+    window.location.reload();
 }
 
 
