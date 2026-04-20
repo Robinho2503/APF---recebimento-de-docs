@@ -1630,8 +1630,6 @@ hr {
     max-width: 440px;
     padding: 3.5rem 2.5rem;
     background: var(--panel-bg);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid var(--panel-border);
     border-radius: 2rem;
     text-align: center;
