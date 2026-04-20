@@ -427,7 +427,7 @@ let globalLogin, loginSector;
 let btnLogout, topAuthInfo, authNavTabs, btnLoginThemeToggle;
 let btnMobileMenu, sidebarBackdrop;
 let btnForgotPassword, forgotPasswordModal, btnCloseForgot;
-let newProjectModal, btnCloseNewProject, btnConfirmNewProject, newProjNameInp, newProjUfInp, newProjCityInp;
+let newProjectModal, btnCloseNewProject, btnConfirmNewProject, newProjNameInp, newProjUfInp, newProjCityInp, newProjDueDateInp;
 let newProjectModalTitle, btnConfirmNewProjectText, newProjectModalInfo;
 let editingProjectId = null;
 let uploadToast, uploadToastText, uploadToastSub, uploadToastIcon;
@@ -533,6 +533,7 @@ function initDOMElements() {
     newProjNameInp = document.getElementById('new-proj-name');
     newProjUfInp = document.getElementById('new-proj-uf');
     newProjCityInp = document.getElementById('new-proj-city');
+    newProjDueDateInp = document.getElementById('new-proj-due-date');
     newProjectModalTitle = document.getElementById('new-project-modal-title');
     btnConfirmNewProjectText = document.getElementById('btn-confirm-new-project-text');
     newProjectModalInfo = document.getElementById('new-project-modal-info');
@@ -793,6 +794,7 @@ function initEventListeners() {
                 if (newProjNameInp) newProjNameInp.value = '';
                 if (newProjUfInp) newProjUfInp.value = '';
                 if (newProjCityInp) newProjCityInp.value = '';
+                if (newProjDueDateInp) newProjDueDateInp.value = '';
                 newProjectModal.classList.remove('hidden');
                 if (newProjNameInp) newProjNameInp.focus();
             }
@@ -800,10 +802,10 @@ function initEventListeners() {
     }
 
     if (btnConfirmNewProject) {
-        btnConfirmNewProject.addEventListener('click', () => {
             const name = newProjNameInp.value.trim();
             const uf = newProjUfInp.value;
             const city = newProjCityInp.value.trim();
+            const dueDate = newProjDueDateInp.value;
 
             if (!name) {
                 alert('O nome do empreendimento é obrigatório.');
@@ -817,6 +819,7 @@ function initEventListeners() {
                     proj.name = name;
                     proj.uf = uf;
                     proj.cidade = city;
+                    proj.dueDate = dueDate;
                     showTemporaryMessage(`Empreendimento "${name}" atualizado com sucesso!`);
                 }
             } else {
@@ -835,7 +838,7 @@ function initEventListeners() {
                     name: name,
                     uf: uf,
                     cidade: city,
-                    dueDate: '',
+                    dueDate: dueDate,
                     engAnalysisOpened: false,
                     createdAt: new Date().toISOString().split('T')[0],
                     pendenciaActive: false,
@@ -1045,6 +1048,7 @@ function initEventListeners() {
                 if (newProjNameInp) newProjNameInp.value = curr.name || '';
                 if (newProjUfInp) newProjUfInp.value = curr.uf || '';
                 if (newProjCityInp) newProjCityInp.value = curr.cidade || '';
+                if (newProjDueDateInp) newProjDueDateInp.value = curr.dueDate || '';
 
                 newProjectModal.classList.remove('hidden');
                 if (newProjNameInp) newProjNameInp.focus();
