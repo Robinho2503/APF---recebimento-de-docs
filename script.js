@@ -4432,4 +4432,130 @@ document.addEventListener('DOMContentLoaded', () => {
     if (modal) {
         modal.onclick = (e) => { if (e.target === modal) closeChangePasswordModal(); };
     }
+
+    // --- Plexus Background Logic ---
+    initPlexusBackground();
 });
+
+/**
+ * Inicializa o fundo interativo Plexus no Canvas
+ */
+function initPlexusBackground() {
+    const canvas = document.getElementById('plexus-canvas');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    const mouse = { x: null, y: null, radius: 150 };
+
+    // Cores base solicitadas
+    const particleColors = ['#ef4444', '#f59e0b', '#ffffff'];
+
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        initParticles();
+    }
+
+    class Particle {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height;
+            this.size = Math.random() * 2 + 1;
+            this.speedX = (Math.random() - 0.5) * 0.8;
+            this.speedY = (Math.random() - 0.5) * 0.8;
+            
+            // Atribui uma cor aleatória do conjunto
+            const colorIndex = Math.floor(Math.random() * particleColors.length);
+            this.color = particleColors[colorIndex];
+        }
+
+        update() {
+            this.x += this.speedX;
+            this.y += this.speedY;
+
+            if (this.x > canvas.width) this.x = 0;
+            else if (this.x < 0) this.x = canvas.width;
+            if (this.y > canvas.height) this.y = 0;
+            else if (this.y < 0) this.y = canvas.height;
+
+            // Interação com o mouse
+            let dx = mouse.x - this.x;
+            let dy = mouse.y - this.y;
+            let distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < mouse.radius) {
+                if (mouse.x < this.x && this.x < canvas.width - this.size * 10) this.x += 1;
+                if (mouse.x > this.x && this.x > this.size * 10) this.x -= 1;
+                if (mouse.y < this.y && this.y < canvas.height - this.size * 10) this.y += 1;
+                if (mouse.y > this.y && this.y > this.size * 10) this.y -= 1;
+            }
+        }
+
+        draw() {
+            ctx.fillStyle = this.color;
+            // Se estiver em modo claro, garantir que o branco não "suma"
+            if (document.documentElement.classList.contains('light-mode') && this.color === '#ffffff') {
+                ctx.fillStyle = '#94a3b8'; // Cinza azulado para pontos brancos no modo claro
+            }
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    function initParticles() {
+        particles = [];
+        const quantity = Math.floor((canvas.width * canvas.height) / 9000); // Densidade dinâmica
+        for (let i = 0; i < Math.min(quantity, 150); i++) {
+            particles.push(new Particle());
+        }
+    }
+
+    function connect() {
+        const isLight = document.documentElement.classList.contains('light-mode');
+        const maxDistance = 150;
+        
+        for (let a = 0; a < particles.length; a++) {
+            for (let b = a; b < particles.length; b++) {
+                let dx = particles[a].x - particles[b].x;
+                let dy = particles[a].y - particles[b].y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < maxDistance) {
+                    let opacity = 1 - (distance / maxDistance);
+                    ctx.strokeStyle = isLight 
+                        ? `rgba(15, 23, 42, ${opacity * 0.15})` 
+                        : `rgba(255, 255, 255, ${opacity * 0.15})`;
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(particles[a].x, particles[a].y);
+                    ctx.lineTo(particles[b].x, particles[b].y);
+                    ctx.stroke();
+                }
+            }
+        }
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < particles.length; i++) {
+            particles[i].update();
+            particles[i].draw();
+        }
+        connect();
+        requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('resize', resize);
+    window.addEventListener('mousemove', (e) => {
+        mouse.x = e.x;
+        mouse.y = e.y;
+    });
+    window.addEventListener('mouseout', () => {
+        mouse.x = null;
+        mouse.y = null;
+    });
+
+    resize();
+    animate();
+}

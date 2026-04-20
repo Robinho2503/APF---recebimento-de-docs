@@ -11,10 +11,7 @@
     --info: #60a5fa; --progress-track: rgba(255, 255, 255, 0.08); --divider-color: rgba(255, 255, 255, 0.18); --card-bg-subtle: rgba(255, 255, 255, 0.03);
     --text-main: #fafafa;
     --text-muted: #a1a1aa;
-    --beam-red: #ef4444;
-    --beam-yellow: #f59e0b;
-    --beam-white: #ffffff;
-    --grid-color: rgba(255, 255, 255, 0.03);
+    --bg-dark: #121212;
 }
 
 :root.light-mode {
@@ -30,10 +27,7 @@
     --info: #0ea5e9; --progress-track: #f1f5f9; --divider-color: rgba(15, 23, 42, 0.12); --card-bg-subtle: #f8fafc;
     --text-main: #020617;
     --text-muted: #475569;
-    --beam-red: #dc2626;
-    --beam-yellow: #d97706;
-    --beam-white: #020617;
-    --grid-color: rgba(0, 0, 0, 0.05);
+    --bg-dark: #ffffff;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
@@ -46,7 +40,7 @@ body {
     overflow-x: hidden;
 }
 
-/* Fundo Blueprint Digital (Profissional e Técnico) */
+/* Fundo Plexus (Conexão Interativa) */
 .animated-bg {
     position: fixed;
     top: 0;
@@ -59,62 +53,11 @@ body {
     pointer-events: none;
 }
 
-/* Malha Técnica (Grid) */
-.animated-bg::before {
-    content: '';
-    position: absolute;
+#plexus-canvas {
+    display: block;
     width: 100%;
     height: 100%;
-    background-image: 
-        linear-gradient(var(--grid-color) 1px, transparent 1px),
-        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
-    background-size: 50px 50px;
-}
-
-/* Feixes de Dados (Data Beams) */
-.animated-bg::after,
-.animated-bg-extra {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-repeat: no-repeat;
-    will-change: background-position, opacity;
-}
-
-.animated-bg::after {
-    background-image: 
-        linear-gradient(90deg, transparent, var(--beam-red), transparent),
-        linear-gradient(0deg, transparent, var(--beam-yellow), transparent);
-    background-size: 200px 2px, 2px 200px;
-    animation: beamSweepHorizontal 12s infinite linear, beamSweepVertical 15s infinite linear 2s;
-    opacity: 0.15;
-}
-
-.animated-bg-extra {
-    background-image: 
-        linear-gradient(90deg, transparent, var(--beam-white), transparent);
-    background-size: 300px 1px;
-    animation: beamSweepHorizontal 20s infinite linear reverse;
-    opacity: 0.1;
-}
-
-@keyframes beamSweepHorizontal {
-    0% { background-position: -500px 20%, 0 0; }
-    100% { background-position: 150% 20%, 0 0; }
-}
-
-@keyframes beamSweepVertical {
-    0% { background-position: 0 0, 80% -500px; }
-    100% { background-position: 0 0, 80% 150%; }
-}
-
-/* Flash de Interseção (Sutil) */
-@keyframes gridFlash {
-    0%, 100% { opacity: 0.03; }
-    50% { opacity: 0.1; }
+    opacity: 0.8;
 }
 
 .main-layout { display: block; }
