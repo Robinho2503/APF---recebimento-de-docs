@@ -11,9 +11,9 @@
     --info: #60a5fa; --progress-track: rgba(255, 255, 255, 0.08); --divider-color: rgba(255, 255, 255, 0.18); --card-bg-subtle: rgba(255, 255, 255, 0.03);
     --text-main: #fafafa;
     --text-muted: #a1a1aa;
-    --bg-blob-1: rgba(16, 185, 129, 0.12);
-    --bg-blob-2: rgba(96, 165, 250, 0.12);
-    --bg-blob-3: rgba(167, 139, 250, 0.12);
+    --line-red: rgba(239, 68, 68, 0.12);
+    --line-yellow: rgba(245, 158, 11, 0.12);
+    --line-white: rgba(255, 255, 255, 0.05);
 }
 
 :root.light-mode {
@@ -29,9 +29,9 @@
     --info: #0ea5e9; --progress-track: #f1f5f9; --divider-color: rgba(15, 23, 42, 0.12); --card-bg-subtle: #f8fafc;
     --text-main: #020617;
     --text-muted: #475569;
-    --bg-blob-1: rgba(5, 150, 105, 0.06);
-    --bg-blob-2: rgba(14, 165, 233, 0.06);
-    --bg-blob-3: rgba(139, 92, 246, 0.06);
+    --line-red: rgba(239, 68, 68, 0.06);
+    --line-yellow: rgba(245, 158, 11, 0.06);
+    --line-white: rgba(0, 0, 0, 0.02);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
@@ -44,7 +44,7 @@ body {
     overflow-x: hidden;
 }
 
-/* Fundo Animado Premium */
+/* Fundo de Linhas Conectivas (Dinamismo e Colaboração) */
 .animated-bg {
     position: fixed;
     top: 0;
@@ -54,7 +54,6 @@ body {
     z-index: -1;
     overflow: hidden;
     background: var(--bg-dark);
-    filter: blur(100px);
     pointer-events: none;
 }
 
@@ -63,43 +62,55 @@ body {
 .animated-bg-extra {
     content: '';
     position: absolute;
-    width: 60vw;
-    height: 60vw;
-    border-radius: 50%;
-    opacity: 0.8;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
     will-change: transform;
 }
 
+/* Camada de Linhas Vermelhas (Energia/Ação) */
 .animated-bg::before {
-    background: var(--bg-blob-1);
-    top: -10%;
-    left: -10%;
-    animation: orbit 25s infinite linear;
+    background-image: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 80px,
+        var(--line-red) 80px,
+        var(--line-red) 81px
+    );
+    animation: moveLines 40s infinite linear;
 }
 
+/* Camada de Linhas Amarelas (Foco/Otimismo) */
 .animated-bg::after {
-    background: var(--bg-blob-2);
-    bottom: -10%;
-    right: -10%;
-    animation: orbit 35s infinite linear reverse;
+    background-image: repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 100px,
+        var(--line-yellow) 100px,
+        var(--line-yellow) 101px
+    );
+    animation: moveLines 60s infinite linear reverse;
 }
 
+/* Camada de Rede Branca Subtil (Colaboração/Conexão) */
 .animated-bg-extra {
-    background: var(--bg-blob-3);
-    top: 30%;
-    left: 30%;
-    animation: float 20s infinite ease-in-out;
+    background-image: 
+        linear-gradient(var(--line-white) 1px, transparent 1px),
+        linear-gradient(90deg, var(--line-white) 1px, transparent 1px);
+    background-size: 150px 150px;
+    opacity: 0.5;
+    animation: pulseGrid 15s infinite ease-in-out;
 }
 
-@keyframes orbit {
-    from { transform: rotate(0deg) translateX(15vw) rotate(0deg); }
-    to { transform: rotate(360deg) translateX(15vw) rotate(-360deg); }
+@keyframes moveLines {
+    from { transform: translate(0, 0); }
+    to { transform: translate(100px, 100px); }
 }
 
-@keyframes float {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    33% { transform: translate(10vw, 5vh) scale(1.1); }
-    66% { transform: translate(-5vw, 10vh) scale(0.9); }
+@keyframes pulseGrid {
+    0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.3; }
+    50% { transform: scale(1.05) translate(-10px, -10px); opacity: 0.6; }
 }
 
 .main-layout { display: block; }
