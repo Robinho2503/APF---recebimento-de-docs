@@ -134,9 +134,9 @@ function listenToActiveDevices() {
             indicator.style.display = isMgmtActive() ? 'flex' : 'none';
         }
 
-        if (isMgmtActive()) {
-            updateManagementStatsUI();
-        }
+        updateGlobalDateUI();
+        const p = getCurrentProject();
+        if(p) updateProjectProgressUI(p);
     });
 }
 
@@ -1642,51 +1642,7 @@ function updateGlobalDateUI() {
     }
 }
 
-function updateManagementStatsUI() {
-    const p = getCurrentProject();
-    const dash = document.getElementById('management-dashboard');
-    if(!p || p.id === 'p_default' || !dash) {
-        if(dash) dash.style.display = 'none';
-        return;
-    }
 
-    let allItems;
-    if (p.pendenciaActive) {
-        allItems = p.pendencias || [];
-    } else {
-        allItems = p.items.filter(i => {
-            const hasChildren = p.items.some(child => child.parentId === i.id);
-            return !hasChildren && i.parentId !== null;
-        });
-    }
-
-    const applicableItems = allItems.filter(i => !i.isNotApplicable);
-    
-    const totalPending = applicableItems.filter(i => !i.attachments || i.attachments.length === 0).length;
-    const awaitingValidation = applicableItems.filter(i => {
-        const hasAtt = i.attachments && i.attachments.length > 0;
-        const isValidated = i.validationStatus === 'APF check' || i.validationStatus === 'Validado';
-        const isPointed = i.validationStatus === 'Apontamento';
-        return hasAtt && !isValidated && !isPointed;
-    }).length;
-
-    const totalPointed = applicableItems.filter(i => {
-        const hasAtt = i.attachments && i.attachments.length > 0;
-        return hasAtt && i.validationStatus === 'Apontamento';
-    }).length;
-
-    dash.style.display = 'grid';
-    dash.innerHTML = `
-        <div class="dashboard-card danger ${treeSearchFilter === 'pendente' ? 'active' : ''}" onclick="handleDashboardFilter('pendente', ${totalPending})">
-            <span class="card-value">${totalPending}</span>
-            <span class="card-label">Documentos Pendentes</span>
-        </div>
-        <div class="dashboard-card warning ${treeSearchFilter === 'analise' ? 'active' : ''}" onclick="handleDashboardFilter('analise', ${awaitingValidation})">
-            <span class="card-value">${awaitingValidation}</span>
-            <span class="card-label">Em Análise APF</span>
-        </div>
-    `;
-}
 
 // Global filter handler for dashboard cards
 window.handleDashboardFilter = function(filter, count) {
@@ -2625,12 +2581,8 @@ function renderTree() {
         }
     }
 
-    if (!mgmt) {
-        updateProjectProgressUI(currProj);
-        updateGlobalDateUI();
-    } else {
-        updateManagementStatsUI();
-    }
+    updateProjectProgressUI(currProj);
+    updateGlobalDateUI();
     renderAnalysisPanels();
 
     // Novo: Ajuste dinâmico de fonte para nomes longos
