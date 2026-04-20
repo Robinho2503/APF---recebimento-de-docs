@@ -1325,10 +1325,6 @@ function applyAuthState(silentRedirect = false) {
     if(!globalLogin || !managementContent) return;
 
     const tabsNav = document.querySelector('.tabs');
-    const isMgmt = isMgmtActive();
-    const apfSubmenu = document.getElementById('apf-submenu');
-    const apfBtn = document.querySelector('.apf-access-btn');
-
     // Restore session if exists and not yet set
     if (!isAuthenticated) {
         const savedSector = sessionStorage.getItem('apf_session_sector');
@@ -1337,6 +1333,10 @@ function applyAuthState(silentRedirect = false) {
             authenticatedSector = savedSector;
         }
     }
+
+    const isMgmt = (authenticatedSector === 'APF') ? true : isMgmtActive();
+    const apfSubmenu = document.getElementById('apf-submenu');
+    const apfBtn = document.querySelector('.apf-access-btn');
 
     if (!isAuthenticated) {
         // Site Completely Locked
@@ -1365,40 +1365,28 @@ function applyAuthState(silentRedirect = false) {
         apfBtn.style.display = authenticatedSector === 'APF' ? 'inline-flex' : 'none';
     }
 
-    if (authenticatedSector === 'APF') {
-        const isCurrentlyMgmt = isMgmtActive();
-        if (!isCurrentlyMgmt) {
-            // Force Management tab for APF (Unification)
-            tabs.forEach(t => t.classList.remove('active'));
-            tabContents.forEach(tc => tc.classList.remove('active'));
-            
-            const mgmtTab = document.getElementById('tab-management');
-            if (mgmtTab) {
-                mgmtTab.classList.add('active');
-                mgmtTab.style.display = '';
-            }
-            
-            const mgmtBtn = document.querySelector('[data-tab="management"]');
-            if (mgmtBtn) mgmtBtn.classList.add('active');
+    if (isMgmt) {
+        // Force Management tab
+        tabs.forEach(t => t.classList.remove('active'));
+        tabContents.forEach(tc => tc.classList.remove('active'));
+        
+        const mgmtTab = document.getElementById('tab-management');
+        if (mgmtTab) {
+            mgmtTab.classList.add('active');
+            mgmtTab.style.display = '';
         }
+        
+        const mgmtBtn = document.querySelector('[data-tab="management"]');
+        if (mgmtBtn) mgmtBtn.classList.add('active');
     } else {
-        const isCurrentlyMgmt = isMgmtActive();
-        if (isCurrentlyMgmt || !document.getElementById('tab-checklist').classList.contains('active')) {
-            // Force Checklist tab for non-APF
-            tabs.forEach(t => t.classList.remove('active'));
-            tabContents.forEach(tc => tc.classList.remove('active'));
-            
-            const checklistTab = document.getElementById('tab-checklist');
-            if (checklistTab) {
-                checklistTab.classList.add('active');
-                checklistTab.style.display = ''; // Garante visibilidade
-            }
-            
-
-            
-            if (isCurrentlyMgmt && !silentRedirect) {
-                showTemporaryMessage("Redirecionado: Você não possui permissão de APF.");
-            }
+        // Site Default (non-APF) is Checklist
+        tabs.forEach(t => t.classList.remove('active'));
+        tabContents.forEach(tc => tc.classList.remove('active'));
+        
+        const checklistTab = document.getElementById('tab-checklist');
+        if (checklistTab) {
+            checklistTab.classList.add('active');
+            checklistTab.style.display = '';
         }
     }
 
