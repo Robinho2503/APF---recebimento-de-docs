@@ -1613,7 +1613,7 @@ hr {
 
 /* Login Redesign */
 .login-page-backdrop {
-    background: radial-gradient(circle at center, var(--login-bg-1, #1a1a1e) 0%, var(--login-bg-2, #09090b) 100%) !important;
+    background: transparent !important;
     display: flex;
     align-items: center;
     justify-content: center;
