@@ -422,7 +422,7 @@ let btnSettings, btnSaveSettings, btnResetModel, geminiModelInp, geminiKeyInp, b
 let btnTogglePendencias, pendenciasMgmtPanel, btnAddPendencia, pendenciaStartDateInp, modalOverlay, btnCloseModal;
 let engAnalysisMgmtPanel, engAnalysisStartDateInp;
 let btnShowHistory, historyModal, btnCloseHistory;
-let projectDueDateInp, currentProjectName, projectGlobalCountdown;
+let projectDueDateInp, currentProjectName, projectGlobalCountdown, headerLocationInfo;
 let globalLogin, loginSector;
 let btnLogout, topAuthInfo, authNavTabs, btnLoginThemeToggle;
 let btnMobileMenu, sidebarBackdrop;
@@ -466,6 +466,7 @@ function initDOMElements() {
     managementContainer = document.getElementById('management-render-area');
     trackingContainer = document.getElementById('tracking-render-area');
     dueDateContainer = document.getElementById('due-date-container');
+    headerLocationInfo = document.getElementById('header-location-info');
 
     // Tabs & Management
     tabs = document.querySelectorAll('.tab-btn');
@@ -1540,15 +1541,21 @@ function updateGlobalDateUI() {
     // 3. Caso Normal: Empreendimentos Reais
     if(nameEl) nameEl.textContent = p.name;
     
-    // Gerar subtítulo com localização
-    const locationStr = (p.cidade || p.uf) ? `${p.cidade || ''}${p.cidade && p.uf ? ' - ' : ''}${p.uf || ''}` : '';
-    const baseSubtitle = locationStr 
-        ? `<i class="ph ph-map-pin" style="opacity: 0.7;"></i> ${locationStr} │ Entrega de documentação` 
-        : 'Entrega de documentação';
-
+    // Subtítulo Superior: Apenas Fase
     if(subtitleEl) {
-        subtitleEl.innerHTML = baseSubtitle;
+        subtitleEl.innerHTML = `ENTREGA DE DOCUMENTAÇÃO`;
         subtitleEl.className = 'default-subtitle';
+    }
+
+    // Localização Abaixo do Nome
+    const locationStr = (p.cidade || p.uf) ? `${p.cidade || 'Cidade'}${p.cidade && p.uf ? ' - ' : ''}${p.uf || 'UF'}` : '';
+    if (headerLocationInfo) {
+        if (locationStr) {
+            headerLocationInfo.innerHTML = `<i class="ph ph-map-pin" style="opacity: 0.7;"></i> ${locationStr}`;
+            headerLocationInfo.style.display = 'flex';
+        } else {
+            headerLocationInfo.style.display = 'none';
+        }
     }
 
     if(currentProjectName) currentProjectName.textContent = p.name;
