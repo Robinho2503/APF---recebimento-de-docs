@@ -1341,16 +1341,18 @@ function applyAuthState(silentRedirect = false) {
     const apfSubmenu = document.getElementById('apf-submenu');
     const apfBtn = document.querySelector('.apf-access-btn');
 
+    const mainLayout = document.querySelector('.main-layout');
     if (!isAuthenticated) {
         // Site Completely Locked
-        globalLogin.style.display = 'flex';
-        document.querySelector('.main-layout').style.display = 'none';
+        if (globalLogin) globalLogin.classList.remove('hidden');
+        if (globalLogin) globalLogin.style.display = 'flex'; // Mantemos flex para o layout interno, mas removemos hidden
+        if (mainLayout) mainLayout.classList.add('hidden');
         populateLoginSectors();
         if (inputPassword) inputPassword.focus();
         return;
     } else {
-        globalLogin.style.display = 'none';
-        document.querySelector('.main-layout').style.display = 'block';
+        if (globalLogin) globalLogin.classList.add('hidden');
+        if (mainLayout) mainLayout.classList.remove('hidden');
     }
 
     // Update APF access button label
@@ -1473,12 +1475,15 @@ function logout() {
     sessionStorage.removeItem('apf_session_sector');
 
     // Return to login screen
-    if (globalLogin) globalLogin.style.display = 'flex';
+    if (globalLogin) {
+        globalLogin.classList.remove('hidden');
+        globalLogin.style.display = 'flex';
+    }
     if (authStatusBanner) authStatusBanner.style.display = 'none';
     if (btnLogout) btnLogout.style.display = 'none';
     
     const mainLayout = document.querySelector('.main-layout');
-    if (mainLayout) mainLayout.style.display = 'none';
+    if (mainLayout) mainLayout.classList.add('hidden');
     
     // Clear password input
     const inputPassword = document.getElementById('global-password-input');

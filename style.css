@@ -60,7 +60,10 @@ body {
     opacity: 0.35;
 }
 
-.main-layout { display: block; }
+.main-layout { 
+    display: block; 
+    transition: opacity 0.3s ease;
+}
 
 .app-container { max-width: 1400px; padding: 2rem; margin-left: 320px; overflow-x: hidden; }
 
@@ -1515,7 +1518,12 @@ hr {
 }
 
 /* Utility Classes */
-.hidden { display: none !important; }
+.hidden { 
+    display: none !important; 
+    pointer-events: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
 
 /* Sidebar PendÃƒÂªncia Destaque - ReforÃƒÂ§ado */
 .sidebar .tracking-card.pendencia-active {
