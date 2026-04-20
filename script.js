@@ -1566,19 +1566,44 @@ function updateGlobalDateUI() {
     // RENDERIZAR PAINEL UNIFICADO
     updateProjectProgressUI(p);
 
-    // Contagem Regressiva Global (Dias Úteis)
+    // Lógica Dinâmica de Contador no Cabeçalho (Relógio)
     if (projectGlobalCountdown) {
-        if (p.dueDate) {
+        let countdownHTML = '';
+        let countdownColor = '';
+        let showCountdown = false;
+
+        if (p.pendenciaActive) {
+            const start = p.pendenciaStartDate ? new Date(p.pendenciaStartDate) : new Date();
+            start.setHours(0,0,0,0);
+            const today = new Date(); today.setHours(0,0,0,0);
+            const diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
+            countdownHTML = `<i class="ph ph-clock"></i> Em resolução a ${diff >= 0 ? diff : 0} dias`;
+            countdownColor = 'var(--danger)';
+            showCountdown = true;
+        } else if (p.engAnalysisOpened) {
+            const start = p.engAnalysisStartDate ? new Date(p.engAnalysisStartDate) : new Date();
+            start.setHours(0,0,0,0);
+            const today = new Date(); today.setHours(0,0,0,0);
+            const diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
+            countdownHTML = `<i class="ph ph-clock"></i> Em análise a ${diff >= 0 ? diff : 0} dias`;
+            countdownColor = 'var(--info)';
+            showCountdown = true;
+        } else if (p.dueDate) {
             const bizDays = calculateBusinessDays(p.dueDate);
             const isExpired = new Date(p.dueDate) < new Date().setHours(0,0,0,0);
-            
             if (isExpired) {
-                projectGlobalCountdown.innerHTML = `<i class="ph ph-warning-circle"></i> Prazo Encerrado`;
-                projectGlobalCountdown.style.color = 'var(--danger)';
+                countdownHTML = `<i class="ph ph-warning-circle"></i> Prazo Encerrado`;
+                countdownColor = 'var(--danger)';
             } else {
-                projectGlobalCountdown.innerHTML = `<i class="ph ph-clock"></i> ${bizDays} dias úteis restantes`;
-                projectGlobalCountdown.style.color = bizDays <= 5 ? 'var(--warning)' : 'var(--accent)';
+                countdownHTML = `<i class="ph ph-clock"></i> ${bizDays} dias úteis restantes`;
+                countdownColor = bizDays <= 5 ? 'var(--warning)' : 'var(--accent)';
             }
+            showCountdown = true;
+        }
+
+        if (showCountdown) {
+            projectGlobalCountdown.innerHTML = countdownHTML;
+            projectGlobalCountdown.style.color = countdownColor;
             projectGlobalCountdown.style.display = 'block';
         } else {
             projectGlobalCountdown.style.display = 'none';
@@ -1619,8 +1644,7 @@ function updateGlobalDateUI() {
         if (engAnalysisStartDateInp) {
             engAnalysisStartDateInp.value = p.engAnalysisStartDate || '';
         }
-        // Quando engenharia está aberta, escondemos o countdown de entrega (fase anterior)
-        if (projectGlobalCountdown) projectGlobalCountdown.style.display = 'none';
+        // O contador global (relógio) agora é gerenciado dinamicamente no início da função
     } else {
         if (btnToggleEngEl) {
             btnToggleEngEl.innerHTML = '<i class="ph ph-calendar"></i> Abrir Engenharia';
