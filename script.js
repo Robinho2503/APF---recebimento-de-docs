@@ -2223,7 +2223,7 @@ function updateProjectProgressUI(curr) {
         container.style.display = 'none';
         return;
     }
-    container.style.display = 'block';
+    container.style.display = 'flex';
 
     const isAPF = authenticatedSector === 'APF';
 
