@@ -147,12 +147,29 @@
                             <label style="font-size: 0.55rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; letter-spacing: 0.08em; margin-bottom: 0.2rem; opacity: 0.7;">Prazo Geral</label>
                             <input type="date" id="project-due-date" class="input-modern" style="max-width: 140px; padding: 0.25rem 0.5rem; font-size: 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.5rem; color: var(--text-main);">
                         </div>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <button id="btn-rename-project" class="icon-btn-sm" title="Renomear Empreendimento" style="background: rgba(255,255,255,0.05); color: var(--text-main); border: 1px solid rgba(255,255,255,0.1); width: 34px; height: 34px; border-radius: 0.6rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease;">
+                        <!-- Grupo de Gestão (Conforme Imagem) -->
+                        <div style="display: flex; gap: 0.6rem; align-items: center;">
+                            <button id="btn-add-root" class="icon-btn-sm" title="Adicionar Novo Setor" style="background: rgba(255,255,255,0.05); color: var(--text-main); border: 1px solid rgba(255,255,255,0.1); width: 34px; height: 34px; border-radius: 0.6rem; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                                <i class="ph ph-folder-plus" style="font-size: 1.1rem;"></i>
+                            </button>
+                            <button id="btn-rename-project" class="icon-btn-sm" title="Renomear Empreendimento" style="background: rgba(255,255,255,0.05); color: var(--text-main); border: 1px solid rgba(255,255,255,0.1); width: 34px; height: 34px; border-radius: 0.6rem; display: flex; align-items: center; justify-content: center; cursor: pointer;">
                                 <i class="ph ph-pencil-simple" style="font-size: 1.1rem;"></i>
                             </button>
-                            <button id="btn-delete-project" class="icon-btn-sm" title="Excluir Empreendimento" style="background: rgba(239, 68, 68, 0.08); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.15); width: 34px; height: 34px; border-radius: 0.6rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease;">
+                            <button id="btn-delete-project" class="icon-btn-sm" title="Excluir Empreendimento" style="background: rgba(239, 68, 68, 0.08); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.15); width: 34px; height: 34px; border-radius: 0.6rem; display: flex; align-items: center; justify-content: center; cursor: pointer;">
                                 <i class="ph ph-trash" style="font-size: 1.1rem;"></i>
+                            </button>
+                        </div>
+
+                        <!-- Linha Divisória -->
+                        <div class="v-divider"></div>
+
+                        <!-- Outras Ações (Alternância de Estado) -->
+                        <div style="display: flex; gap: 0.75rem; align-items: center;">
+                            <button id="btn-toggle-eng" class="btn btn-outline btn-sm" title="Sinalizar abertura de análise de engenharia" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; border-radius: 0.6rem;">
+                                <i class="ph ph-calendar"></i> Abrir Engenharia
+                            </button>
+                            <button id="btn-toggle-pendencias" class="btn btn-outline btn-sm" title="Iniciar resolução de PENDÊNCIAS CAIXA" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; border-radius: 0.6rem;">
+                                <i class="ph ph-warning-diamond"></i> Resolução de pendências
                             </button>
                         </div>
                     </div>
@@ -235,18 +252,6 @@
                         </div>
 
                     </div>
-                    <div class="mb-4 flex-between">
-                        <div style="display:flex; gap:1rem;">
-                            <button id="btn-add-root" class="btn btn-primary">
-                                <i class="ph ph-folder-plus"></i> Novo setor
-                            </button>
-                            <button id="btn-toggle-eng" class="btn btn-outline" title="Sinalizar abertura de análise de engenharia">
-                                <i class="ph ph-calendar"></i> Abrir Engenharia
-                            </button>
-                            <button id="btn-toggle-pendencias" class="btn btn-outline" title="Iniciar resolução de PENDÊNCIAS CAIXA">
-                                <i class="ph ph-warning-diamond"></i> Resolução de pendências
-                            </button>
-                        </div>
                         <div style="display: flex; gap: 0.5rem; align-items: center; position: relative;">
                             <!-- Menu de Relatórios -->
                             <div class="reports-wrapper" style="position: relative;">

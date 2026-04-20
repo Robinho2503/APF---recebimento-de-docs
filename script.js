@@ -457,6 +457,7 @@ function initDOMElements() {
     btnToggleEng = document.getElementById('btn-toggle-eng');
     btnDeleteProject = document.getElementById('btn-delete-project');
     btnRenameProject = document.getElementById('btn-rename-project');
+    const headerActionsSegment = document.getElementById('header-actions-segment');
     btnOpenTemplate = document.getElementById('btn-open-template');
     btnAddRoot = document.getElementById('btn-add-root');
     btnSettings = document.getElementById('btn-settings');
@@ -1558,8 +1559,12 @@ function updateGlobalDateUI() {
 
 
     const isAPF = authenticatedSector === 'APF';
+    const headerActionsSegment = document.getElementById('header-actions-segment');
+    if(headerActionsSegment) headerActionsSegment.style.display = isAPF ? 'flex' : 'none';
+    
     if(btnRenameProject) btnRenameProject.style.display = isAPF ? 'inline-flex' : 'none';
     if(btnDeleteProject) btnDeleteProject.style.display = isAPF ? 'inline-flex' : 'none';
+    if(btnAddRoot) btnAddRoot.style.display = isAPF ? 'inline-flex' : 'none';
     if(dueDateContainer) dueDateContainer.style.display = 'none';
     if(projectDueDateInp) { projectDueDateInp.disabled = !isAPF; projectDueDateInp.value = p.dueDate || ''; }
 
