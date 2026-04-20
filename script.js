@@ -1552,10 +1552,11 @@ function updateGlobalDateUI() {
     }
 
     if(currentProjectName) currentProjectName.textContent = p.name;
-    if(btnRenameProject) btnRenameProject.style.display = 'inline-flex';
-    if(btnDeleteProject) btnDeleteProject.style.display = 'inline-flex';
-    if(dueDateContainer) dueDateContainer.style.display = 'flex';
-    if(projectDueDateInp) { projectDueDateInp.disabled = false; projectDueDateInp.value = p.dueDate || ''; }
+    const isAPF = authenticatedSector === 'APF';
+    if(btnRenameProject) btnRenameProject.style.display = isAPF ? 'inline-flex' : 'none';
+    if(btnDeleteProject) btnDeleteProject.style.display = isAPF ? 'inline-flex' : 'none';
+    if(dueDateContainer) dueDateContainer.style.display = isAPF ? 'flex' : 'none';
+    if(projectDueDateInp) { projectDueDateInp.disabled = !isAPF; projectDueDateInp.value = p.dueDate || ''; }
 
     // RENDERIZAR PAINEL UNIFICADO
     updateProjectProgressUI(p);
