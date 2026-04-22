@@ -873,7 +873,7 @@ function initEventListeners() {
     }
 
     if (btnConfirmNewProject) {
-        btnConfirmNewProject.addEventListener('click', () => {
+        btnConfirmNewProject.addEventListener('click', async () => {
             const name = newProjNameInp.value.trim();
             const uf = newProjUfInp.value;
             const city = newProjCityInp.value.trim();
