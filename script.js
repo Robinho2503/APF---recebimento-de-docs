@@ -1783,15 +1783,24 @@ window.handleDashboardFilter = function(filter, count) {
 function triggerPanelAnimation() {
     const mainCol = document.querySelector('.checklist-main-col');
     const analysisPanels = document.querySelector('.analysis-panels-wrapper');
+    const headerDeck = document.getElementById('unified-header-deck');
+
+    const animClass = 'animate-smooth-entry';
+
     if (mainCol) {
-        mainCol.classList.remove('animate-slide-in');
+        mainCol.classList.remove(animClass);
         void mainCol.offsetWidth;
-        mainCol.classList.add('animate-slide-in');
+        mainCol.classList.add(animClass);
     }
     if (analysisPanels) {
-        analysisPanels.classList.remove('animate-slide-in');
+        analysisPanels.classList.remove(animClass);
         void analysisPanels.offsetWidth;
-        analysisPanels.classList.add('animate-slide-in');
+        analysisPanels.classList.add(animClass);
+    }
+    if (headerDeck) {
+        headerDeck.classList.remove(animClass);
+        void headerDeck.offsetWidth;
+        headerDeck.classList.add(animClass);
     }
 }
 
