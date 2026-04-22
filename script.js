@@ -540,8 +540,7 @@ function initDOMElements() {
     // Buttons
     btnNewProject = document.getElementById('btn-new-project');
     btnExportZip = document.getElementById('btn-export-zip');
-    const btnReportsMenu = document.getElementById('btn-reports-menu');
-    const reportsDropdown = document.getElementById('reports-dropdown');
+    btnExportPoints = document.getElementById('btn-export-points');
     btnToggleEng = document.getElementById('btn-toggle-eng');
     btnDeleteProject = document.getElementById('btn-delete-project');
     btnRenameProject = document.getElementById('btn-rename-project');
@@ -829,33 +828,10 @@ function initEventListeners() {
     }
 
     // Sidebar & Project Management Listeners
-    if (document.getElementById('btn-reports-menu')) {
-        const btn = document.getElementById('btn-reports-menu');
-        const dropdown = document.getElementById('reports-dropdown');
-        btn.onclick = (e) => {
-            e.stopPropagation();
-            dropdown.classList.toggle('hidden');
+    if (btnExportPoints) {
+        btnExportPoints.onclick = () => {
+            generateProjectReport('only_points');
         };
-        
-        // Clique fora para fechar
-        document.addEventListener('click', (e) => {
-            if (!dropdown.classList.contains('hidden') && !dropdown.contains(e.target) && e.target !== btn) {
-                dropdown.classList.add('hidden');
-            }
-        });
-
-        // Opções de relatório
-        document.querySelectorAll('.report-opt').forEach(opt => {
-            opt.onclick = () => {
-                const mode = opt.dataset.mode;
-                dropdown.classList.add('hidden');
-                if (mode === 'ai_project_report') {
-                    if (typeof generateProjectReportAI === 'function') generateProjectReportAI();
-                } else {
-                    generateProjectReport(mode);
-                }
-            };
-        });
     }
 
     if (projectDueDateInp) {
