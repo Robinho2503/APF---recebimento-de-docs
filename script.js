@@ -1338,7 +1338,9 @@ function applyAuthState(silentRedirect = false) {
         }
     }
 
-    const isMgmt = (authenticatedSector === 'APF') ? true : isMgmtActive();
+    // isMgmt deve ser verdadeiro APENAS se o setor autenticado for APF.
+    // Usuários de outros setores nunca devem estar no modo de gestão/administração.
+    const isMgmt = (authenticatedSector === 'APF');
     const apfSubmenu = document.getElementById('apf-submenu');
     const apfBtn = document.querySelector('.apf-access-btn');
 
@@ -1418,6 +1420,7 @@ function applyAuthState(silentRedirect = false) {
     
     if (authNavTabs) {
         authNavTabs.style.display = (authenticatedSector === 'APF') ? 'flex' : 'none';
+        
         if (authenticatedSector === 'APF' && isMgmt) {
             listenToActiveDevices();
         }
@@ -1488,6 +1491,15 @@ function logout() {
     isAuthenticated = false;
     authenticatedSector = null;
     sessionStorage.removeItem('apf_session_sector');
+
+    // Limpar estado visual de abas antes de sair
+    if (tabs) tabs.forEach(t => t.classList.remove('active'));
+    if (tabContents) tabContents.forEach(tc => tc.classList.remove('active'));
+    
+    // Garantir que nenhum elemento administrativo fique visível se o reload demorar
+    if (headerMgmtActions) headerMgmtActions.style.display = 'none';
+    if (headerActionsSegment) headerActionsSegment.style.display = 'none';
+    if (apfChecklistControls) apfChecklistControls.style.display = 'none';
 
     // Return to login screen
     if (globalLogin) {
