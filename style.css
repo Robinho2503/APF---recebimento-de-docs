@@ -574,7 +574,7 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
 
 /* Tab Content Visibility */
 .tab-content { display: none; }
-.tab-content.active { display: block; animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.tab-content.active { display: block; } /* Removida animação slideUpFade para evitar conflito com a nova animação lateral */
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUpFade { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -1238,7 +1238,7 @@ hr {
     display: flex;
     gap: 1.25rem;
     align-items: flex-start;
-    animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    /* Animação slideUpFade removida para permitir o novo efeito smoothEntryLeft */
 }
 
 .checklist-main-col {
@@ -2414,5 +2414,9 @@ hr {
 
 .analysis-panels-wrapper.animate-smooth-entry {
     animation-delay: 0.25s;
+}
+
+#management-render-area.animate-smooth-entry {
+    animation-delay: 0.05s;
 }
 
