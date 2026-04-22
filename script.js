@@ -51,6 +51,9 @@ let treeSearchQuery = '';
 let treeSearchFilter = 'all'; // all, pendente, apontamento
 let activeDevicesCount = 1;
 let presenceUnsubscribe = null;
+let globalFileInput = null;
+let activeUploadItemId = null;
+let isUploadPendencia = false;
 
 // Presence System
 const DEVICE_ID_KEY = 'apf_device_id';
@@ -555,6 +558,9 @@ function initDOMElements() {
     confirmModalIconContainer = document.getElementById('confirm-modal-icon-container');
     btnConfirmYes = document.getElementById('btn-confirm-yes');
     btnConfirmNo = document.getElementById('btn-confirm-no');
+    
+    // Global optimized elements
+    globalFileInput = document.getElementById('global-file-input');
 }
 
 // Init
@@ -1244,6 +1250,15 @@ function initEventListeners() {
             renderTree();
         });
     });
+
+    // Global file input handler (Optimized)
+    if (globalFileInput) {
+        globalFileInput.onchange = (e) => {
+            if (activeUploadItemId && e.target.files.length > 0) {
+                window.handleFileUpload(activeUploadItemId, e.target.files, isUploadPendencia);
+            }
+        };
+    }
 }
 
 
@@ -2180,13 +2195,12 @@ function renderPendenciasChecklist(curr) {
         btnAttach.className = 'icon-btn attach-icon-btn';
         btnAttach.title = 'Anexar documento de pendência';
         btnAttach.innerHTML = '<i class="ph ph-paperclip"></i>';
-        
-        const fileInput = document.createElement('input');
-        fileInput.type = 'file';
-        fileInput.className = 'hidden';
-        fileInput.multiple = true;
-        fileInput.onchange = (e) => window.handleFileUpload(p.id, e.target.files, true);
-        btnAttach.onclick = () => fileInput.click();
+        btnAttach.onclick = (e) => {
+            e.stopPropagation();
+            activeUploadItemId = p.id;
+            isUploadPendencia = true;
+            if (globalFileInput) globalFileInput.click();
+        };
         
         statusRow.appendChild(btnAttach);
         itemRight.appendChild(statusRow);
@@ -2911,13 +2925,6 @@ function createNode(item, level) {
     if(!isMgmt) {
         if(!isRootFolder && !hasChildren) {
             const hasAtt = item.attachments && item.attachments.length > 0;
-            const fileInput = document.createElement('input');
-            fileInput.type = 'file';
-            fileInput.className = 'file-input-hidden';
-            fileInput.multiple = true;
-            fileInput.onchange = (e) => window.handleFileUpload(item.id, e.target.files);
-            itemRight.appendChild(fileInput);
-
             const statusRow = document.createElement('div');
             statusRow.className = 'item-status-row';
 
@@ -2932,20 +2939,23 @@ function createNode(item, level) {
             btnAttach.className = 'icon-btn attach-icon-btn';
             btnAttach.title = 'Anexar documento';
             btnAttach.innerHTML = '<i class="ph ph-paperclip"></i>';
-            btnAttach.onclick = () => fileInput.click();
+            btnAttach.onclick = (e) => {
+                e.stopPropagation();
+                activeUploadItemId = item.id;
+                isUploadPendencia = false;
+                if (globalFileInput) globalFileInput.click();
+            };
             
             if (item.isNotApplicable) {
                 btnAttach.disabled = true;
                 btnAttach.style.opacity = '0.5';
                 btnAttach.title = currProj.id === 'p_default' ? 'Anexar documento' : 'Documento dispensado';
-                fileInput.disabled = true;
             }
 
             if (!canEdit) {
                 btnAttach.disabled = true;
                 btnAttach.style.opacity = '0.3';
                 btnAttach.title = 'Apenas o setor proprietário pode anexar';
-                fileInput.disabled = true;
             }
 
             if (hasAtt) {
@@ -3163,18 +3173,16 @@ function createNode(item, level) {
 
             // NOVO: Renderizar Botão de Anexo na ADM para APF
             if (isAPF && !hasChildren && currProj.id !== 'p_default') {
-                const fileInput = document.createElement('input');
-                fileInput.type = 'file';
-                fileInput.className = 'file-input-hidden';
-                fileInput.multiple = true;
-                fileInput.onchange = (e) => window.handleFileUpload(item.id, e.target.files);
-                itemRight.appendChild(fileInput);
-
                 const btnAttach = document.createElement('button');
                 btnAttach.className = 'icon-btn attach-icon-btn';
                 btnAttach.title = 'Anexar documento';
                 btnAttach.innerHTML = '<i class="ph ph-paperclip"></i>';
-                btnAttach.onclick = () => fileInput.click();
+                btnAttach.onclick = (e) => {
+                    e.stopPropagation();
+                    activeUploadItemId = item.id;
+                    isUploadPendencia = false;
+                    if (globalFileInput) globalFileInput.click();
+                };
                 if (item.isNotApplicable) {
                     btnAttach.disabled = true;
                     btnAttach.style.opacity = '0.5';
@@ -3751,6 +3759,7 @@ window.handleFileUpload = async function(itemId, files, isPendencia = false) {
                 updateToast('error', 'Erro no upload', 'Ocorreu um problema ao enviar os arquivos.');
                 setTimeout(() => uploadToast?.classList.add('hidden'), 5000);
             }
+            if (globalFileInput) globalFileInput.value = ''; // Reset global input
         }
     }
 }
