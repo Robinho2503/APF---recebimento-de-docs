@@ -82,7 +82,7 @@ body {
     z-index: 10;
     
     /* Efeito de navegação sem fundo sólido */
-    background: transparent !important;
+    background: rgba(255, 255, 255, 0.02) !important;
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
     box-shadow: 15px 0 45px rgba(0, 0, 0, 0.2);
@@ -131,7 +131,10 @@ body {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
-.sidebar .tracking-card:hover { background: rgba(255, 255, 255, 0.04); }
+.sidebar .tracking-card:hover { 
+    background: rgba(255, 255, 255, 0.06); 
+    transform: translateX(6px) translateY(0); /* Deslocamento para a direita e anula o translateY global */
+}
 .sidebar .tracking-card.active { 
     background: linear-gradient(145deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
     border-color: rgba(var(--primary-rgb, 59, 130, 246), 0.3);
