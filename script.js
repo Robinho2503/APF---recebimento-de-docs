@@ -269,15 +269,18 @@ async function migrateDataIfNeeded() {
     const legacySnap = await getDoc(legacyRef);
 
     if (legacySnap.exists() && !isMigrating) {
-        console.log("⚠️ Migração de dados iniciada...");
-        isMigrating = true;
         const legacyData = legacySnap.data();
+        if (legacyData.isMigrated) return false; // Já migrado, abortar.
+        
+        console.log("⚠️ Migração de dados iniciada...");
 
         try {
             // 1. Migrar Projetos
             for (const p of legacyData.projects) {
                 console.log(`Migrando projeto: ${p.name}`);
-                await setDoc(doc(db, PROJECTS_COLLECTION, p.id), p);
+                // Calcular estatísticas para garantir que a barra de progresso apareça
+                const stats = calculateProjectStats(p);
+                await setDoc(doc(db, PROJECTS_COLLECTION, p.id), { ...p, stats });
             }
 
             // 2. Migrar Configurações
@@ -324,6 +327,11 @@ async function loadState() {
         const settingsSnap = await getDoc(settingsRef);
         if (settingsSnap.exists()) {
             state.settings = settingsSnap.data();
+        } else if (migrated) {
+            // Se acabou de migrar e não encontrou, tenta forçar um pequeno delay para consistência eventual
+            await new Promise(r => setTimeout(r, 500));
+            const retry = await getDoc(settingsRef);
+            if (retry.exists()) state.settings = retry.data();
         }
     } catch (e) { console.warn("Erro ao carregar configurações", e); }
 
@@ -1530,7 +1538,18 @@ function applyAuthState(silentRedirect = false) {
     }
 
     if (headerActionsSegment) {
-        headerActionsSegment.style.display = (authenticatedSector === 'APF') ? 'flex' : 'none';
+        headerActionsSegment.style.display = 'flex'; // Sempre visível se autenticado
+    }
+
+    if (btnToggleEng) {
+        btnToggleEng.style.display = (authenticatedSector === 'APF') ? 'inline-flex' : 'none';
+    }
+
+    if (btnReportsMenu) {
+        // Relatórios visíveis para todos, ou apenas APF? 
+        // Mantendo apenas APF para seguir a lógica original dos controles antigos.
+        const reportsWrapper = btnReportsMenu.closest('.reports-wrapper');
+        if (reportsWrapper) reportsWrapper.style.display = (authenticatedSector === 'APF') ? 'block' : 'none';
     }
 
     if (apfChecklistControls) {
@@ -1728,8 +1747,15 @@ function updateGlobalDateUI() {
     if(btnRenameProject) btnRenameProject.style.display = isAPF ? 'inline-flex' : 'none';
     if(btnDeleteProject) btnDeleteProject.style.display = isAPF ? 'inline-flex' : 'none';
     if(btnAddRoot) btnAddRoot.style.display = isAPF ? 'inline-flex' : 'none';
-    if(dueDateContainer) dueDateContainer.style.display = 'none';
-    if(projectDueDateInp) { projectDueDateInp.disabled = !isAPF; projectDueDateInp.value = p.dueDate || ''; }
+    
+    // Corrigido: Mostrar o container de data se houver data definida ou se for APF
+    if(dueDateContainer) {
+        dueDateContainer.style.display = (p.dueDate || isAPF) ? 'flex' : 'none';
+    }
+    if(projectDueDateInp) { 
+        projectDueDateInp.disabled = !isAPF; 
+        projectDueDateInp.value = p.dueDate || ''; 
+    }
 
     // RENDERIZAR PAINEL UNIFICADO
     console.log('Rendering unified dashboard for:', p.name);
@@ -4320,9 +4346,9 @@ async function renderAuditLog() {
     if (state.auditLog.length === 0) {
         try {
             const q = query(collection(db, LOGS_COLLECTION), orderBy('timestamp', 'desc'), limit(50));
-            const { getDocs } = await import("firebase/firestore"); // Import dinâmico se necessário ou garantir que está no topo
             const snap = await getDocs(q); 
-        } catch (e) { console.warn(e); }
+            state.auditLog = snap.docs.map(d => d.data());
+        } catch (e) { console.warn("Erro ao carregar logs:", e); }
     }
 
     auditLogList.innerHTML = '';
