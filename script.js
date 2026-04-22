@@ -1605,6 +1605,7 @@ function updateGlobalDateUI() {
     if(projectDueDateInp) { projectDueDateInp.disabled = !isAPF; projectDueDateInp.value = p.dueDate || ''; }
 
     // RENDERIZAR PAINEL UNIFICADO
+    console.log('Rendering unified dashboard for:', p.name);
     updateProjectProgressUI(p);
 
     // Lógica Dinâmica de Contador no Cabeçalho (Relógio)
@@ -2240,12 +2241,17 @@ function renderPendenciasChecklist(curr) {
 
 function updateProjectProgressUI(curr) {
     const container = document.getElementById('unified-top-dashboard');
-    if (!container) return;
+    if (!container) {
+        console.warn('Dashboard container not found!');
+        return;
+    }
     
     if (!curr || curr.id === 'p_default' || curr.id === 'none') {
         container.style.display = 'none';
         return;
     }
+    
+    console.log('Updating Dashboard for:', curr.name);
     container.style.display = 'flex';
 
     const isAPF = authenticatedSector === 'APF';
