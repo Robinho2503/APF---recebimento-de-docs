@@ -2195,22 +2195,6 @@ hr {
     z-index: 10;
     position: relative;
     backdrop-filter: blur(20px);
-    overflow: hidden; /* Importante para conter a aura */
-}
-
-.project-aura {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 150%;
-    height: 150%;
-    background: radial-gradient(circle at center, var(--aura-color, var(--accent)) 0%, transparent 60%);
-    opacity: 0.08;
-    filter: blur(80px);
-    pointer-events: none;
-    z-index: -1;
-    transition: background 1.5s ease-in-out;
 }
 
 #unified-header-deck #checklist-proj-name {
@@ -2388,37 +2372,3 @@ hr {
 .progress-track { background: var(--progress-track); border-radius: 2px; }
 .adaptive-card { background: var(--card-bg-subtle); border-radius: 0.75rem; border: 1px solid var(--divider-color); }
 .circular-progress-bg { background: conic-gradient(var(--accent) var(--progress), var(--progress-track) 0) !important; }
-
-/* Efeito Magnético Premium */
-.magnetic-card {
-    position: relative;
-    overflow: hidden;
-}
-
-.magnetic-card::before {
-    content: '';
-    position: absolute;
-    inset: -1px;
-    background: radial-gradient(
-        250px circle at var(--mouse-x, 0) var(--mouse-y, 0), 
-        rgba(255, 255, 255, 0.12), 
-        transparent 40%
-    );
-    z-index: 1;
-    opacity: 0;
-    transition: opacity 0.4s ease;
-    pointer-events: none;
-    border-radius: inherit;
-}
-
-.magnetic-card:hover::before {
-    opacity: 1;
-}
-
-.light-mode .magnetic-card::before {
-    background: radial-gradient(
-        250px circle at var(--mouse-x, 0) var(--mouse-y, 0), 
-        rgba(15, 23, 42, 0.08), 
-        transparent 40%
-    );
-}
