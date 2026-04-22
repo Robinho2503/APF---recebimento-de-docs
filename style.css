@@ -1044,14 +1044,6 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
     display: block !important;
 }
 
-/* Fix for folder toggle when filtering */
-.tree-node.force-visible {
-    display: block !important;
-}
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: var(--text-main);
-}
 .tk-labels { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); font-weight: 500;}
 
 /* Hidden file input */
