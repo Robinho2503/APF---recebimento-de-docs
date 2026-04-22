@@ -1,6 +1,6 @@
 // Firebase Imports
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc, onSnapshot, getDoc, collection, query, where, serverTimestamp, deleteDoc } from "firebase/firestore";
+import { getFirestore, doc, setDoc, onSnapshot, getDoc, collection, query, where, serverTimestamp, deleteDoc, addDoc, orderBy, limit, updateDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 
 // Firebase Configuration & Initialization
@@ -17,7 +17,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
-const GLOBAL_DOC_PATH = "apf_data/v2_global_state";
+
+// Caminhos Otimizados
+const LEGACY_GLOBAL_DOC_PATH = "apf_data/v2_global_state"; // Documento antigo para migração
+const SETTINGS_DOC_PATH = "settings/global";
+const PROJECTS_COLLECTION = "projects";
+const LOGS_COLLECTION = "audit_logs";
 
 // Data Models & State Initialization
 const DEFAULT_ITEMS = [
@@ -28,18 +33,20 @@ const DEFAULT_ITEMS = [
 ];
 
 let state = {
-    projects: [
-        { id: 'p_default', name: 'Modelo de Entrega', items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)), dueDate: '', createdAt: new Date().toISOString().split('T')[0], engAnalysisOpened: false, pendencias: [], pendenciaStartDate: '' }
-    ],
+    projects: [], // Agora armazenará apenas SUMÁRIOS (metadados) para a sidebar
+    activeProject: null, // Armazenará o projeto COMPLETO sendo visualizado no momento
     settings: {
-        sectorPasswords: { "APF": "1234" } // Senha padrão inicial
+        sectorPasswords: { "APF": "1234" }
     },
-    auditLog: []
+    auditLog: [] // Cache local dos logs recentes
 };
 let isAuthenticated = false;
 let authenticatedSector = null;
 let editingPendenciaId = null;
 let isInitialCloudLoad = true;
+let isMigrating = false; // Flag para evitar salvamentos durante a migração
+let projectUnsubscribe = null; // Listener para o projeto ativo
+let summariesUnsubscribe = null; // Listener para a lista de projetos
 
 // UI State (Local-only, per device/browser)
 let localUI = {
@@ -168,8 +175,23 @@ function saveLocalUI() {
 
 // Helpers
 function generateId() { return Math.random().toString(36).substr(2, 9); }
-function getCurrentProject() { return state.projects.find(p => p.id === localUI.currentProjectId); }
-function getItems() { return getCurrentProject()?.items || []; }
+
+/**
+ * Retorna o projeto completo carregado no momento.
+ * Se o projeto ativo na UI for diferente do carregado, este helper ajuda a identificar a inconsistência.
+ */
+function getCurrentProject() { 
+    if (state.activeProject && state.activeProject.id === localUI.currentProjectId) {
+        return state.activeProject;
+    }
+    // Fallback para busca no cache de sumários se necessário (embora não contenha itens)
+    return state.projects.find(p => p.id === localUI.currentProjectId); 
+}
+
+function getItems() { 
+    const p = getCurrentProject();
+    return (p && p.items) ? p.items : []; 
+}
 function isMgmtActive() {
     const activeTabObj = Array.from(tabs).find(t => t.classList.contains('active'));
     return activeTabObj && activeTabObj.dataset.tab === 'management';
@@ -177,7 +199,7 @@ function isMgmtActive() {
 
 function getItemSector(itemId) {
     const p = getCurrentProject();
-    if (!p) return null;
+    if (!p || !p.items) return null;
     let item = p.items.find(i => i.id === itemId);
     if (!item) return null;
     
@@ -236,70 +258,137 @@ window.showConfirm = function({ title, message, confirmText, cancelText, type, o
     btnConfirmNo.onclick = () => { cleanup(); };
 };
 
-// Persistence
-const CACHE_KEY = 'apf_global_state_cache_v2';
+// Persistence & Migration
+const CACHE_KEY = 'apf_global_state_cache_v3'; // Versão alterada para refletir nova arquitetura
 
-async function loadState() {
-    // 1. First, check if there's local cache for instant load
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (cached) {
+/**
+ * Migra os dados do documento único antigo para a nova estrutura fragmentada.
+ */
+async function migrateDataIfNeeded() {
+    const legacyRef = doc(db, LEGACY_GLOBAL_DOC_PATH);
+    const legacySnap = await getDoc(legacyRef);
+
+    if (legacySnap.exists() && !isMigrating) {
+        console.log("⚠️ Migração de dados iniciada...");
+        isMigrating = true;
+        const legacyData = legacySnap.data();
+
         try {
-            state = JSON.parse(cached);
-            console.log("Loaded from local cache.");
-            renderAfterUpdate();
-        } catch(e) { console.warn("Cache error", e); }
-    }
+            // 1. Migrar Projetos
+            for (const p of legacyData.projects) {
+                console.log(`Migrando projeto: ${p.name}`);
+                await setDoc(doc(db, PROJECTS_COLLECTION, p.id), p);
+            }
 
-    // 2. Setup Silent Cloud Load
-    await syncWithCloud();
+            // 2. Migrar Configurações
+            if (legacyData.settings) {
+                await setDoc(doc(db, SETTINGS_DOC_PATH), legacyData.settings);
+            }
+
+            // 3. Migrar Logs (Opcional: Limitar aos últimos 200 para evitar timeout)
+            const logs = legacyData.auditLog || [];
+            for (const log of logs.slice(-200)) {
+                await addDoc(collection(db, LOGS_COLLECTION), {
+                    ...log,
+                    migrated: true
+                });
+            }
+
+            // 4. Marcar como migrado (Podemos renomear o doc legado ou excluí-lo)
+            // Para segurança, vamos apenas renomear as chaves internas por enquanto
+            await updateDoc(legacyRef, { isMigrated: true, migrationDate: serverTimestamp() });
+            
+            console.log("✅ Migração concluída com sucesso!");
+            isMigrating = false;
+            return true;
+        } catch (e) {
+            console.error("❌ Falha na migração:", e);
+            isMigrating = false;
+        }
+    }
+    return false;
 }
 
-async function syncWithCloud() {
-    const docRef = doc(db, GLOBAL_DOC_PATH);
-    try {
-        const snapshot = await getDoc(docRef);
-        if (snapshot.exists()) {
-            const cloudData = snapshot.data();
-            console.log("Cloud data fetched:", cloudData);
-            
-            // Basic Migrations
-            for (const p of cloudData.projects) {
-                if (!p.createdAt) p.createdAt = new Date().toISOString().split('T')[0];
-                if (p.engAnalysisOpened === undefined) p.engAnalysisOpened = false;
-                if (!p.pendencias) p.pendencias = [];
-            }
-            
-            if (!cloudData.settings) cloudData.settings = {};
-            if (!cloudData.settings.sectorPasswords) cloudData.settings.sectorPasswords = { "APF": "1234" };
+const CACHE_KEY_LEGACY = 'apf_global_state_cache_v2';
 
-            state = cloudData;
-            localStorage.setItem(CACHE_KEY, JSON.stringify(state)); // Update cache
-            
-            if (isInitialCloudLoad) {
-                isInitialCloudLoad = false;
-                if (!state.projects.find(p => p.id === localUI.currentProjectId)) {
-                    localUI.currentProjectId = null;
-                }
-            }
-
-            renderAfterUpdate();
-        } else {
-            // Check for legacy migration
-            const localSaved = localStorage.getItem('apf_checklist_v2.2');
-            if (localSaved && isInitialCloudLoad) {
-                console.log("Migrating legacy data...");
-                state = JSON.parse(localSaved);
-                isInitialCloudLoad = false;
-                saveState();
-            } else if (isInitialCloudLoad) {
-                console.log("Starting default state.");
-                isInitialCloudLoad = false;
-                saveState();
-            }
-        }
-    } catch(e) {
-        console.error("Cloud sync error:", e);
+async function loadState() {
+    // 1. Verificar se há necessidade de migração antes de qualquer coisa
+    const migrated = await migrateDataIfNeeded();
+    if (migrated) {
+        console.log("Reiniciando carregamento após migração...");
     }
+
+    // 2. Carregar Configurações Globais
+    const settingsRef = doc(db, SETTINGS_DOC_PATH);
+    try {
+        const settingsSnap = await getDoc(settingsRef);
+        if (settingsSnap.exists()) {
+            state.settings = settingsSnap.data();
+        }
+    } catch (e) { console.warn("Erro ao carregar configurações", e); }
+
+    // 3. Iniciar Monitoramento de Sumários (Sidebar)
+    listenToProjectSummaries();
+}
+
+/**
+ * Escuta a coleção de projetos para manter a sidebar e metadados atualizados
+ * sem baixar o checklist completo de todos.
+ */
+function listenToProjectSummaries() {
+    if (summariesUnsubscribe) return;
+
+    const q = query(collection(db, PROJECTS_COLLECTION));
+    summariesUnsubscribe = onSnapshot(q, (snapshot) => {
+        state.projects = snapshot.docs.map(doc => {
+            const data = doc.data();
+            // Retornamos apenas o metadado necessário para a UI global (sem items)
+            const { items, ...summary } = data;
+            return summary;
+        });
+
+        console.log(`Sumários de ${state.projects.length} projetos carregados.`);
+        
+        // Se temos um projeto selecionado mas não carregado, iniciamos o carregamento detalhado
+        if (localUI.currentProjectId && (!state.activeProject || state.activeProject.id !== localUI.currentProjectId)) {
+            loadProjectDetails(localUI.currentProjectId);
+        }
+
+        renderTracking();
+        updateGlobalDateUI();
+    });
+}
+
+/**
+ * Carrega o checklist completo e detalhes de um projeto específico.
+ */
+function loadProjectDetails(projectId) {
+    if (projectUnsubscribe) {
+        projectUnsubscribe();
+        projectUnsubscribe = null;
+    }
+
+    if (!projectId) return;
+
+    console.log(`Carregando detalhes do projeto: ${projectId}`);
+    const docRef = doc(db, PROJECTS_COLLECTION, projectId);
+    
+    projectUnsubscribe = onSnapshot(docRef, (snapshot) => {
+        if (snapshot.exists()) {
+            state.activeProject = snapshot.data();
+            console.log(`Projeto ${state.activeProject.name} sincronizado.`);
+            
+            // Renderização focada no projeto ativo
+            renderTree();
+            const p = getCurrentProject();
+            if(p) updateProjectProgressUI(p);
+            applyAuthState();
+        } else {
+            console.warn("Projeto não encontrado na nuvem.");
+            state.activeProject = null;
+            renderTree();
+        }
+    });
 }
 
 function renderAfterUpdate() {
@@ -308,68 +397,64 @@ function renderAfterUpdate() {
     renderTracking();
     updateThemeIcon();
     renderAuditLog();
-    applyAuthState(); // Garante que a tela de login ou status de acesso sejam atualizados com os dados da nuvem
+    applyAuthState();
 }
 
 let saveTimeout = null;
 function saveState() {
-    // Save structure to Firestore (Debounced to avoid rapid writes)
+    // Se estiver migrando ou não houver projeto ativo, não salvamos para evitar inconsistências
+    if (isMigrating || !state.activeProject) return;
+
     if (saveTimeout) clearTimeout(saveTimeout);
     
     saveTimeout = setTimeout(async () => {
-        const docRef = doc(db, GLOBAL_DOC_PATH);
-        const saveableState = {
-            projects: state.projects.map(p => {
-                // Pre-calculate stats for the project before saving
-                const stats = p.id !== 'p_default' ? calculateProjectStats(p) : { pendente: 0, apontamento: 0 };
-                
-                return {
-                    ...p,
-                    stats, // Save pre-calculated stats
-                    engAnalysisOpened: p.engAnalysisOpened || false,
-                    engAnalysisStartDate: p.engAnalysisStartDate || '',
-                    pendenciaActive: p.pendenciaActive || false,
-                    pendencias: (p.pendencias || []).map(pend => ({
-                        id: pend.id,
-                        docName: pend.docName,
-                        sector: pend.sector,
-                        specification: pend.specification || '',
-                        attachments: (pend.attachments || []).map(att => ({
-                            ...att,
-                            downloadUrl: att.downloadUrl || att.objectUrl || att.dropboxUrl || '',
-                            objectUrl: att.downloadUrl || att.objectUrl || att.dropboxUrl || '',
-                            source: att.source || 'firebase'
-                        })),
-                        observation: pend.observation || ''
-                    })),
-                    pendenciaStartDate: p.pendenciaStartDate || '',
-                    items: p.items.map(item => {
-                        const { expanded, ...rest } = item;
-                        return {
-                            ...rest,
-                            attachments: (item.attachments || []).map(att => ({
-                                ...att,
-                                downloadUrl: att.downloadUrl || att.objectUrl || att.dropboxUrl || '',
-                                objectUrl: att.downloadUrl || att.objectUrl || att.dropboxUrl || '',
-                                source: att.source || 'firebase'
-                            }))
-                        };
-                    })
-                };
-            }),
-            auditLog: state.auditLog || []
-        };
+        const p = state.activeProject;
+        const docRef = doc(db, PROJECTS_COLLECTION, p.id);
         
-        // Update Local Cache Immediately
-        localStorage.setItem(CACHE_KEY, JSON.stringify(saveableState));
+        // Pre-calcula estatísticas apenas para o projeto ativo
+        const stats = p.id !== 'p_default' ? calculateProjectStats(p) : { pendente: 0, apontamento: 0 };
+        
+        const saveableProject = {
+            ...p,
+            stats,
+            engAnalysisOpened: p.engAnalysisOpened || false,
+            engAnalysisStartDate: p.engAnalysisStartDate || '',
+            pendenciaActive: p.pendenciaActive || false,
+            pendencias: (p.pendencias || []).map(pend => ({
+                id: pend.id,
+                docName: pend.docName,
+                sector: pend.sector,
+                specification: pend.specification || '',
+                attachments: (pend.attachments || []).map(att => ({
+                    ...att,
+                    downloadUrl: att.downloadUrl || att.objectUrl || att.dropboxUrl || '',
+                    objectUrl: att.downloadUrl || att.objectUrl || att.dropboxUrl || '',
+                    source: att.source || 'firebase'
+                })),
+                observation: pend.observation || ''
+            })),
+            pendenciaStartDate: p.pendenciaStartDate || '',
+            items: p.items.map(item => {
+                const { expanded, ...rest } = item;
+                return {
+                    ...rest,
+                    attachments: (item.attachments || []).map(att => ({
+                        ...att,
+                        downloadUrl: att.downloadUrl || att.objectUrl || att.dropboxUrl || '',
+                        objectUrl: att.downloadUrl || att.objectUrl || att.dropboxUrl || '',
+                        source: att.source || 'firebase'
+                    }))
+                };
+            })
+        };
 
         try {
-            await setDoc(docRef, saveableState);
-            console.log("State synced to cloud & cache.");
+            await setDoc(docRef, saveableProject);
+            console.log(`Projeto ${p.name} sincronizado com a nuvem.`);
         } catch (e) {
-            console.error("Error syncing to cloud:", e);
+            console.error("Erro ao salvar projeto:", e);
         }
-    }, 500); // 500ms debounce
+    }, 800); // Debounce levemente aumentado para 800ms
 }
 
 function calculateProjectStats(project) {
@@ -824,19 +909,33 @@ function initEventListeners() {
             }
 
             if (editingProjectId) {
-                // Modo Edição
-                const proj = state.projects.find(p => p.id === editingProjectId);
-                if (proj) {
-                    proj.name = name;
-                    proj.uf = uf;
-                    proj.cidade = city;
-                    proj.dueDate = dueDate;
-                    showTemporaryMessage(`Empreendimento "${name}" atualizado com sucesso!`);
+                // Modo Edição: Atualizamos o sumário local e o projeto ativo se for o mesmo
+                const summary = state.projects.find(p => p.id === editingProjectId);
+                if (summary) {
+                    summary.name = name;
+                    summary.uf = uf;
+                    summary.cidade = city;
+                    summary.dueDate = dueDate;
                 }
+
+                if (state.activeProject && state.activeProject.id === editingProjectId) {
+                    state.activeProject.name = name;
+                    state.activeProject.uf = uf;
+                    state.activeProject.cidade = city;
+                    state.activeProject.dueDate = dueDate;
+                    saveState(); // Salva o projeto completo
+                } else {
+                    // Se não estiver ativo, salvamos apenas as alterações no documento do projeto
+                    const docRef = doc(db, PROJECTS_COLLECTION, editingProjectId);
+                    updateDoc(docRef, { name, uf, cidade: city, dueDate }).catch(e => console.error(e));
+                }
+                showTemporaryMessage(`Empreendimento "${name}" atualizado com sucesso!`);
             } else {
                 // Modo Criação
-                const baseProj = state.projects.find(p => p.id === 'p_default') || state.projects[0];
-                const duplicatedItems = JSON.parse(JSON.stringify(baseProj.items)).map(item => {
+                const baseProjSnap = await getDoc(doc(db, PROJECTS_COLLECTION, 'p_default'));
+                const baseItems = baseProjSnap.exists() ? baseProjSnap.data().items : DEFAULT_ITEMS;
+                
+                const duplicatedItems = JSON.parse(JSON.stringify(baseItems)).map(item => {
                     item.attachments = [];
                     item.validationStatus = 'Em Análise';
                     item.observation = '';
@@ -857,16 +956,20 @@ function initEventListeners() {
                     items: duplicatedItems
                 };
 
-                state.projects.push(newProj);
+                // No novo modelo, salvamos o novo documento imediatamente
+                await setDoc(doc(db, PROJECTS_COLLECTION, newProj.id), newProj);
+                
                 localUI.currentProjectId = newProj.id;
                 localUI.expandedIds.clear();
                 showTemporaryMessage(`Empreendimento "${name}" criado com sucesso!`);
+                
+                // Gatilha o carregamento detalhado
+                loadProjectDetails(newProj.id);
             }
             
             newProjectModal.classList.add('hidden');
             
             saveLocalUI();
-            saveState();
             updateGlobalDateUI();
             renderTree();
             renderTracking();
@@ -1030,14 +1133,23 @@ function initEventListeners() {
                 message: `Tem certeza que deseja excluir permanentemente o empreendimento "${curr.name}" e todos os seus documentos?`,
                 type: 'danger',
                 confirmText: 'Excluir permanentemente',
-                onConfirm: () => {
-                    const nextProj = state.projects.find(p => p.id !== localUI.currentProjectId) || state.projects[0];
-                    state.projects = state.projects.filter(p => p.id !== localUI.currentProjectId);
-                    localUI.currentProjectId = nextProj.id;
+                onConfirm: async () => {
+                    const nextProjId = state.projects.find(p => p.id !== localUI.currentProjectId)?.id || null;
+                    
+                    // Exclusão fragmentada
+                    await deleteDoc(doc(db, PROJECTS_COLLECTION, localUI.currentProjectId));
+                    
+                    localUI.currentProjectId = nextProjId;
                     saveLocalUI();
-                    saveState();
                     updateGlobalDateUI();
-                    renderTree();
+                    
+                    if (nextProjId) {
+                        loadProjectDetails(nextProjId);
+                    } else {
+                        state.activeProject = null;
+                        renderTree();
+                    }
+                    
                     renderTracking();
                     showTemporaryMessage(`Empreendimento removido.`);
                 }
@@ -1893,12 +2005,15 @@ function renderTracking() {
                 }
                 return;
             }
+            
             localUI.currentProjectId = p.id;
-            localUI.expandedIds.clear(); // Garantir que as pastas fiquem ocultas por padrão ao trocar de projeto
+            localUI.expandedIds.clear();
             saveLocalUI();
+            
+            // Carregamento sob demanda acionado pela troca na UI
+            loadProjectDetails(p.id);
+            
             updateGlobalDateUI();
-            renderTree();
-            renderTracking();
             triggerPanelAnimation();
 
             // Fechar sidebar no mobile após seleção
@@ -4175,67 +4290,66 @@ window.autoAnalyzeDocumentAI = async function(att, itemId, originalFile = null, 
 
 // --- AUDIT LOG SYSTEM ---
 
-function addAuditLog(action, details, type = 'info') {
-    if (!state.auditLog) state.auditLog = [];
-    const entry = {
-        id: generateId(),
+async function addAuditLog(action, details, type = 'info') {
+    const logEntry = {
         timestamp: new Date().toISOString(),
         action,
         details,
         type,
-        projectId: localUI.currentProjectId,
-        projectName: getCurrentProject()?.name || 'Desconhecido',
-        sector: authenticatedSector || 'Sistema'
+        user: authenticatedSector || 'Sistema'
     };
-    state.auditLog.unshift(entry);
-    // Limit to 200 items for performance
-    if (state.auditLog.length > 200) state.auditLog = state.auditLog.slice(0, 200);
-    saveState();
+    
+    // Adição local imediata
+    state.auditLog.unshift(logEntry);
+    if (state.auditLog.length > 50) state.auditLog.pop();
+    
+    // Gravação fragmentada na nova coleção de logs
+    try {
+        await addDoc(collection(db, LOGS_COLLECTION), logEntry);
+    } catch (e) {
+        console.error("Erro ao gravar log no Firestore:", e);
+    }
+    
     renderAuditLog();
 }
 
-function renderAuditLog() {
-    const container = document.getElementById('audit-log-container');
-    if (!container) return;
+async function renderAuditLog() {
+    if(!auditLogList) return;
     
-    if (!state.auditLog || state.auditLog.length === 0) {
-        container.innerHTML = '<p style="text-align: center; color: var(--text-muted); font-size: 0.55rem; font-weight: 700; padding: 2rem;">Nenhuma ação registrada ainda.</p>';
+    // Se o cache local estiver vazio (primeiro carregamento), buscamos os últimos logs
+    if (state.auditLog.length === 0) {
+        try {
+            const q = query(collection(db, LOGS_COLLECTION), orderBy('timestamp', 'desc'), limit(50));
+            const { getDocs } = await import("firebase/firestore"); // Import dinâmico se necessário ou garantir que está no topo
+            const snap = await getDocs(q); 
+        } catch (e) { console.warn(e); }
+    }
+
+    auditLogList.innerHTML = '';
+    
+    if (state.auditLog.length === 0) {
+        auditLogList.innerHTML = '<div style="text-align:center; padding:2rem; opacity:0.5;">Nenhum registro de atividade encontrado.</div>';
         return;
     }
 
-    container.innerHTML = state.auditLog.map(log => {
+    state.auditLog.forEach(log => {
+        const item = document.createElement('div');
+        item.className = `audit-item audit-${log.type || 'info'}`;
+        
         const date = new Date(log.timestamp);
         const day = date.toLocaleDateString('pt-BR');
         const time = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         
-        let typeClass = '';
-        let iconAction = 'ph-info';
-        if (log.type === 'danger') { typeClass = 'danger'; iconAction = 'ph-warning-circle'; }
-        else if (log.type === 'warning') { typeClass = 'warning'; iconAction = 'ph-warning-diamond'; }
-        else if (log.type === 'success') { typeClass = 'success'; iconAction = 'ph-check-circle'; }
-
-        return `
-            <div class="audit-entry ${typeClass}">
-                <div class="audit-body">
-                    <div class="audit-row-project">
-                        <i class="ph ph-buildings"></i> <b>${log.projectName}</b>
-                    </div>
-                    <div class="audit-row-user">
-                        <i class="ph ph-user-focus"></i> Responsável: <b>${log.sector || 'Sistema'}</b>
-                    </div>
-                    <div class="audit-row-action">
-                        <i class="ph ${iconAction}"></i> ${log.action}
-                    </div>
-                    <div class="audit-row-time">
-                        <i class="ph ph-clock"></i> ${time} | ${day}
-                    </div>
-                    <div class="audit-row-desc">
-                        ${log.details}
-                    </div>
-                </div>
+        item.innerHTML = `
+            <div class="audit-header" style="display: flex; justify-content: space-between; font-size: 0.65rem; margin-bottom: 0.2rem; opacity: 0.8;">
+                <span style="font-weight: 700;">${log.action}</span>
+                <span>${day} às ${time}</span>
             </div>
+            <div style="font-size: 0.72rem; line-height: 1.4; color: var(--text-main);">${log.details}</div>
+            <div style="font-size: 0.6rem; margin-top: 0.3rem; opacity: 0.6;">Setor: <strong>${log.user || 'Sistema'}</strong></div>
         `;
-    }).join('');
+        auditLogList.appendChild(item);
+    });
 }
 
 window.generateProjectReportAI = async function() {
