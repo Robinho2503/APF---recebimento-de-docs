@@ -1244,6 +1244,10 @@ hr {
 .checklist-main-col {
     flex: 1;
     min-width: 0;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important; /* Removendo padding para alinhar com o fundo transparente */
 }
 
 /* Wrapper dos dois painÃƒÂ©is de anÃƒÂ¡lise */
