@@ -138,7 +138,7 @@ body {
 }
 .sidebar .tracking-card.active { 
     background: linear-gradient(145deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
-    border-color: rgba(var(--primary-rgb, 59, 130, 246), 0.3);
+    border-color: rgba(255, 255, 255, 0.15); /* Removido azul, trocado por branco sutil */
     transform: translateX(12px); /* Mantém o card à frente/direita quando selecionado */
     box-shadow: none !important;
 }
