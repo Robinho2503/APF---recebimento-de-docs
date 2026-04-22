@@ -1631,9 +1631,9 @@ function updateGlobalDateUI() {
             showCountdown = true;
         } else if (p.dueDate) {
             const bizDays = calculateBusinessDays(p.dueDate);
-            const isExpired = new Date(p.dueDate) < new Date().setHours(0,0,0,0);
+            const diff = calculateDays(p.dueDate);
             if (isExpired) {
-                countdownHTML = `<i class="ph ph-warning-circle"></i> Prazo Encerrado`;
+                countdownHTML = `<i class="ph ph-warning-circle"></i> Atrasado ${Math.abs(diff)} dia(s)`;
                 countdownColor = 'var(--danger)';
             } else {
                 countdownHTML = `<i class="ph ph-clock"></i> ${bizDays} dias úteis restantes`;
