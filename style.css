@@ -129,16 +129,18 @@ body {
     background: linear-gradient(145deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
     border-radius: 0.15rem 0.85rem 0.85rem 0.85rem;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: none !important;
 }
 .sidebar .tracking-card:hover { 
     background: rgba(255, 255, 255, 0.06); 
-    transform: translateX(6px) translateY(0); /* Deslocamento para a direita e anula o translateY global */
+    transform: translateX(6px) translateY(0);
+    box-shadow: none !important;
 }
 .sidebar .tracking-card.active { 
     background: linear-gradient(145deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
     border-color: rgba(var(--primary-rgb, 59, 130, 246), 0.3);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 0 10px rgba(var(--primary-rgb, 59, 130, 246), 0.1);
+    transform: translateX(12px); /* Mantém o card à frente/direita quando selecionado */
+    box-shadow: none !important;
 }
 
 .sidebar .tracking-card.eng-active {
