@@ -1,373 +1,357 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APF Checklist | Sistema de Recebimento de Documentos</title>
-    
-    <!-- Icons & Fonts -->
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
-    
-    <link rel="stylesheet" href="style.css?v=20260417">
+    <link rel="icon" type="image/png" href="/favicon.png?v=2">
+    <!-- Vercel Rebuild Trigger: 2026-04-13-10:43 -->
+    <title>Entrega de documentação</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/@phosphor-icons/web@2.0.3/src/regular/style.css" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css?v=20260417">
+    <!-- Firebase SDK v10 (Gerenciado por Vite) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
-    <!-- Global Login Overlay -->
-    <div id="global-login-overlay" class="login-page-backdrop">
-        <div class="login-card glass-panel">
-            <div class="login-header">
-                <div class="brand-logo">
-                    <i class="ph ph-shield-check"></i>
-                </div>
-                <h1>APF <span>Checklist</span></h1>
-                <p>Recebimento de Documentação Técnica</p>
+    <!-- Premium Plexus Background -->
+    <div class="animated-bg">
+        <canvas id="plexus-canvas"></canvas>
+    </div>
+
+    <!-- Global Login Screen -->
+    <div id="global-login" class="modal-backdrop login-page-backdrop hidden" style="z-index: 9999;">
+        <div id="password-lock" class="login-card stagger-enter">
+            <button id="btn-login-theme-toggle" class="login-theme-toggle" title="Alternar Modo Escuro/Claro">
+                <i class="ph ph-sun"></i>
+            </button>
+            <div class="apf-logo-box">
+                <img src="/login_icon_new.png" alt="Logo APF" class="login-logo-img">
+            </div>
+
+            <h2 class="login-title">Entrega de documentação</h2>
+            <p class="login-subtitle">Selecione seu setor e digite a senha para continuar</p>
+            
+            <div class="login-form-container">
+                <select id="login-sector" class="input-modern login-input" style="appearance: auto;">
+                    <option value="">Selecione seu setor...</option>
+                    <option value="APF">APF (Administrativo)</option>
+                    <!-- Dynamically populated -->
+                </select>
+                <input type="password" id="global-password-input" class="input-modern login-input text-center" placeholder="Senha" />
+                <button id="btn-unlock" class="btn btn-primary login-btn">
+                    <i class="ph ph-key"></i> Entrar
+                </button>
             </div>
             
-            <div class="login-body">
-                <div class="input-group">
-                    <label class="label-modern">Selecione o seu setor</label>
-                    <div class="select-wrapper">
-                        <select id="login-sector" class="input-modern">
-                            <option value="" disabled selected>Escolha uma opção...</option>
-                            <!-- Sectors populated via JS -->
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="input-group">
-                    <label class="label-modern">Senha de acesso</label>
-                    <div class="password-wrapper">
-                        <input type="password" id="login-password" class="input-modern" placeholder="••••••••">
-                        <button id="btn-toggle-login-password" class="icon-btn-sm" title="Mostrar/Ocultar"><i class="ph ph-eye"></i></button>
-                    </div>
-                </div>
-
-                <div style="margin-top: 0.5rem; text-align: left;">
-                    <p style="font-size: 0.75rem; color: var(--text-muted); font-style: italic;">
-                        <i class="ph ph-info"></i> Dica: Se o seu setor não estiver sendo exibido, recarregue a página (F5)
-                    </p>
-                </div>
-                
-                <button id="btn-login-submit" class="btn btn-primary btn-lg" style="width: 100%; justify-content: center; margin-top: 1.5rem;">
-                    Entrar no Sistema <i class="ph ph-arrow-right"></i>
-                </button>
-                
-                <div class="login-footer">
-                    <button id="btn-forgot-password" class="text-btn">Esqueci a senha</button>
-                    <div class="v-divider" style="height: 12px;"></div>
-                    <button id="btn-login-theme-toggle" class="icon-btn-sm" title="Trocar Tema"><i class="ph ph-sun"></i></button>
-                </div>
+            <p id="global-password-error" class="error-text mt-4 login-error" style="display: none;">
+                <i class="ph ph-warning-circle"></i> Credenciais incorretas. Tente novamente.
+            </p>
+            <div class="login-footer-links">
+                <button id="btn-forgot-password" class="link-btn">Esqueci a senha</button>
             </div>
+            <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 1.5rem; opacity: 0.8;">
+                Dica: Se o seu setor não estiver sendo exibido, recarregue a página (F5)
+            </p>
         </div>
     </div>
 
-    <div class="main-layout hidden">
-        <!-- Sidebar: Navigation & Project Context -->
-        <aside class="sidebar glass-panel">
-            <div class="sidebar-header">
-                <div class="brand-small">
-                    <i class="ph ph-shield-check"></i>
-                    <h2>APF <span>Checklist</span></h2>
-                </div>
-                <button id="btn-toggle-sidebar" class="icon-btn-sm"><i class="ph ph-caret-left"></i></button>
+    <div class="main-layout">
+        <!-- Mobile Header Toggle (Visible only on small screens) -->
+        <header class="mobile-top-bar">
+            <button id="btn-mobile-menu" class="mobile-menu-btn" title="Abrir Menu">
+                <i class="ph ph-list"></i>
+            </button>
+            <div class="mobile-logo-text">APF Documentação</div>
+        </header>
+
+        <!-- Sidebar Backdrop (Visible only on mobile when sidebar is open) -->
+        <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
+
+        <!-- Sidebar Acompanhamento sempre visível -->
+        <aside id="sidebar-apf" class="sidebar glass-panel">
+            <div class="sidebar-header" style="text-align: center; display: flex; flex-direction: column; gap: 0.2rem;">
+                <h2 style="font-size: 0.9rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin: 0; line-height: 1.2; letter-spacing: 0.05em; font-weight: 700;">EMPREENDIMENTOS</h2>
+                <div style="font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.6; font-weight: 600;">Entregas previstas</div>
             </div>
-
-            <div class="sidebar-content">
-                <div id="auth-nav-tabs" class="tabs-modern" style="display: none;">
-                    <button class="tab-btn active" data-tab="checklist">
-                        <i class="ph ph-list-checks"></i> Checklist
-                    </button>
-                    <button class="tab-btn" data-tab="management">
-                        <i class="ph ph-briefcase"></i> Gestão
-                    </button>
-                    <button class="tab-btn" data-tab="tracking">
-                        <i class="ph ph-chart-line-up"></i> Painel
-                    </button>
-                </div>
-
-                <div class="projects-section">
-                    <div class="section-header">
-                        <h3>Empreendimentos</h3>
-                        <div id="header-mgmt-actions" style="display: none; align-items: center; gap: 0.75rem;">
-                            <button id="btn-new-project" class="icon-btn-highlight" title="Novo Empreendimento">
-                                <i class="ph ph-plus"></i>
-                            </button>
-                            <button id="btn-open-template" class="icon-btn-premium" title="Modelo de Entrega">
-                                <i class="ph ph-layout"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div id="project-list" class="project-list-scroll">
-                        <!-- Project cards populated via JS -->
-                    </div>
-                </div>
+            <div id="collapsed-label" class="collapsed-label">
+                <span>ENTREGAS FUTURAS</span>
             </div>
-
-            <div class="sidebar-footer">
-                <div class="user-info">
-                    <div class="user-avatar" id="current-sector-initial">A</div>
-                    <div class="user-meta">
-                        <span id="current-sector-name">Setor APF</span>
-                        <small>Acesso Autorizado</small>
-                    </div>
-                </div>
-                <div class="footer-actions">
-                    <button id="btn-theme-toggle" class="icon-btn" title="Alternar Tema"><i class="ph ph-sun"></i></button>
-                    <button id="btn-settings" class="icon-btn" title="Configurações"><i class="ph ph-gear"></i></button>
-                    <button id="btn-logout" class="icon-btn danger" title="Sair do Sistema"><i class="ph ph-sign-out"></i></button>
-                </div>
+            <div id="tracking-render-area" class="sidebar-content">
+                <!-- Tracker rendered via JS -->
             </div>
         </aside>
 
-        <!-- Main Content Area -->
         <div class="app-container">
-            <header class="top-nav glass-panel">
-                <div class="nav-left">
-                    <button id="btn-mobile-menu" class="icon-btn"><i class="ph ph-list"></i></button>
-                    <div class="breadcrumb">
-                        <span>Checklist</span>
-                        <i class="ph ph-caret-right"></i>
-                        <span class="active-project-name">Selecione um projeto</span>
+
+        <!-- Main Content -->
+        <main class="content-area">
+            <!-- Mensagem de Placeholder: Nenhum projeto selecionado -->
+            <div id="no-project-selected" class="glass-panel" style="display: flex; justify-content: center; align-items: center; min-height: 50vh; text-align: center; margin-top: 2rem;">
+                <div style="max-width: 500px; padding: 2rem;">
+                    <i class="ph ph-hand-pointing" style="font-size: 3.5rem; color: var(--primary); margin-bottom: 1.5rem; display: block; opacity: 0.8;"></i>
+                    <h2 style="font-size: 1.4rem; color: var(--text-main); line-height: 1.5; font-weight: 500;">Selecione um dos empreendimentos na aba ao lado para visualizar</h2>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.75rem;">Ou acesse a aba APF para criar um novo registro.</p>
+                </div>
+            </div>
+
+            <!-- Conteúdo Real (Abas, Checklist, Análise) -->
+            <div id="main-content-wrapper" style="display: none;">
+                <div class="flex-between mb-2">
+                    <!-- Esquerda: Ações de Gestão (Visível apenas para APF) -->
+                    <div id="header-mgmt-actions" style="display: none; align-items: center; gap: 0.75rem;">
+                        <button id="btn-new-project" class="icon-btn-highlight" title="Novo Empreendimento">
+                            <i class="ph ph-plus"></i>
+                        </button>
+                        <button id="btn-open-template" class="icon-btn-premium" title="Modelo de Entrega">
+                            <i class="ph ph-layout"></i>
+                        </button>
+                    </div>
+                    <div style="flex-grow: 1;"></div>
+                <div style="display: flex; gap: 0.5rem; align-items: center; position: relative;">
+                    <div id="presence-indicator" class="presence-indicator"></div>
+                    <div class="apf-nav-group">
+                        <div id="top-auth-info" class="top-auth-info" style="display: none;"></div>
+                        <div id="auth-nav-tabs" class="auth-nav-tabs">
+
+                            <button class="tab-btn" data-tab="management">
+                                Administração
+                            </button>
+                        </div>
+                        <button id="btn-theme-toggle" class="icon-btn" title="Alternar Modo Escuro/Claro" style="margin-right: 0.25rem;">
+                            <i class="ph ph-sun"></i>
+                        </button>
+                        <div id="apf-submenu" class="apf-submenu" style="display:none;">
+                            <button id="btn-settings" class="icon-btn" title="Configurações">
+                                <i class="ph ph-gear"></i>
+                            </button>
+                            <button id="btn-show-history" class="icon-btn" title="Histórico de Ações">
+                                <i class="ph ph-clock-counter-clockwise"></i>
+                            </button>
+                            <!-- Dropbox connection hidden as we migrated to Firebase Storage -->
+                            <button id="btn-connect-dropbox" class="icon-btn" title="Conectar Dropbox" style="display: none;">
+                                <i class="ph ph-dropbox-logo"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <div class="nav-right">
-                    <div class="status-badge">
-                        <span class="pulse"></span>
-                        Sincronizado
+            </div>
+            
+            <!-- Unified Project Header Bar (Integrated Deck) -->
+            <div id="unified-header-deck" class="glass-panel" style="display: none; flex-direction: column; padding: 1.25rem 1.75rem; gap: 1.25rem; border-radius: 1.25rem; margin: 1rem 0 2rem; background: var(--panel-bg); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 12px 40px rgba(0,0,0,0.3);">
+                
+                <!-- Top Row: Info + Management -->
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; flex-wrap: wrap; gap: 1.5rem;">
+                    <!-- Zona 1: Identificação -->
+                    <div id="project-info-segment" style="display:flex; flex-direction: column; align-items: flex-start; gap: 0.1rem; min-width: 250px; flex: 1;">
+                        <span id="checklist-subtitle" class="default-subtitle" style="color: var(--text-muted); font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.8; display: flex; align-items: center; gap: 0.4rem;"></span>
+                        <strong id="checklist-proj-name" style="color: var(--text-main); font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1;"></strong>
+                        <div id="header-location-info" style="display: none; align-items: center; gap: 0.3rem; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-top: 0.2rem;"></div>
+                        <div id="project-global-countdown" class="date-info" style="font-size: 0.8rem; font-weight: 700; margin-top: 0.3rem; display: none; align-items: center; gap: 0.3rem;"></div>
+                    </div>
+
+                    <!-- Zona 3: Gestão e Ações -->
+                    <div id="header-actions-segment" style="display: flex; align-items: center; gap: 1.25rem; flex-shrink: 0; background: rgba(255,255,255,0.02); padding: 0.6rem 1.2rem; border-radius: 0.85rem; border: 1px solid rgba(255,255,255,0.04);">
+                        <div id="due-date-container" style="display: none; flex-direction: column; align-items: flex-start;">
+                            <label style="font-size: 0.55rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; letter-spacing: 0.08em; margin-bottom: 0.2rem; opacity: 0.7;">Prazo Geral</label>
+                            <input type="date" id="project-due-date" class="input-modern" style="max-width: 140px; padding: 0.25rem 0.5rem; font-size: 0.8rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.5rem; color: var(--text-main);">
+                        </div>
+                        <!-- Ações de Estado e Gestão do Empreendimento -->
+                        <div style="display: flex; gap: 0.75rem; align-items: center;">
+                            <button id="btn-toggle-eng" class="btn btn-outline btn-sm" title="Sinalizar abertura de análise de engenharia" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; border-radius: 0.6rem;">
+                                <i class="ph ph-calendar"></i> Abrir Engenharia
+                            </button>
+                            
+                            <button id="btn-toggle-pendencias" class="btn btn-outline btn-sm" title="Iniciar resolução de PENDÊNCIAS CAIXA" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; border-radius: 0.6rem;">
+                                <i class="ph ph-warning-diamond"></i> Resolução de pendências
+                            </button>
+
+                            <div class="v-divider"></div>
+
+                            <button id="btn-rename-project" class="icon-btn-sm" title="Renomear Empreendimento" style="background: rgba(255,255,255,0.05); color: var(--text-main); border: 1px solid rgba(255,255,255,0.1); width: 34px; height: 34px; border-radius: 0.6rem; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                                <i class="ph ph-pencil-simple" style="font-size: 1.1rem;"></i>
+                            </button>
+                            <button id="btn-delete-project" class="icon-btn-sm" title="Excluir Empreendimento" style="background: rgba(239, 68, 68, 0.08); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.15); width: 34px; height: 34px; border-radius: 0.6rem; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                                <i class="ph ph-trash" style="font-size: 1.1rem;"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </header>
 
-            <main class="content-body">
-                <div id="no-project-selected" class="empty-state">
-                    <i class="ph ph-folder-open"></i>
-                    <h3>Nenhum empreendimento selecionado</h3>
-                    <p>Escolha um projeto na barra lateral para começar a gerenciar os documentos.</p>
+                <!-- Bottom Row: Dynamic Progress Dashboard -->
+                <div id="unified-top-dashboard" style="display: flex; gap: 2rem; align-items: center; width: 100%; justify-content: flex-start; padding-top: 1.25rem; border-top: 1px solid rgba(255,255,255,0.06);">
+                    <!-- JS Injected Dashboard Components (Sector & Global Progress) -->
                 </div>
+            </div>
 
-                <div id="main-content-wrapper" style="display: none;">
-                    <!-- Unified Project Header Bar (Integrated Deck) -->
-                    <div id="unified-header-deck" class="glass-panel" style="display: none; flex-direction: column; padding: 1.25rem 1.75rem; gap: 1.25rem; border-radius: 1.25rem; margin: 1rem 0 2rem; background: var(--panel-bg); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 12px 40px rgba(0,0,0,0.3);">
+            <!-- Checklist - Always Visible -->
+            <section id="tab-checklist" class="tab-content active mt-4">
+                <div class="checklist-analysis-layout">
+                    <!-- Coluna principal: Checklist -->
+                    <div class="checklist-main-col glass-panel">
+                        <!-- Progress Line -->
+                        <!-- Top Stats Row: Progresso e Cards lado a lado -->
+                        <!-- Busca Global (Agora ocupando a linha toda abaixo dos stats) -->
+                        <!-- Controles Superiores APF (Novo Setor, Relatórios, Exportar) -->
+                        <div id="apf-checklist-controls" style="display: none; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                            <div style="display: flex; gap: 1rem; align-items: center;">
+                                <button id="btn-add-root" class="btn btn-primary btn-sm">
+                                    <i class="ph ph-folder-plus"></i> Novo setor
+                                </button>
+                                <div class="v-divider" style="height: 20px; opacity: 0.5;"></div>
+                                <button id="btn-toggle-all-checklist" class="btn-toggle-all" title="Mostrar/Ocultar todos" style="width: auto; padding: 0.3rem 0.75rem; border: 1px solid rgba(255,255,255,0.1);">
+                                    <span class="label">Mostrar tudo</span>
+                                </button>
+                            </div>
+
+                            <div style="display: flex; gap: 1.5rem; align-items: center; position: relative;">
+                                <!-- Menu de Relatórios -->
+                                <div class="reports-wrapper" style="position: relative;">
+                                    <button id="btn-reports-menu" class="btn btn-outline btn-sm" title="Ver opções de relatórios">
+                                        <i class="ph ph-file-text"></i> Relatórios <i class="ph ph-caret-down" style="font-size: 0.7rem;"></i>
+                                    </button>
+                                    <div id="reports-dropdown" class="reports-dropdown glass-panel hidden">
+                                        <button class="report-opt" data-mode="only_points">
+                                            <i class="ph ph-warning-circle"></i> Relatório de apontamentos
+                                        </button>
+                                        <button class="report-opt" data-mode="eng_pendencies">
+                                            <i class="ph ph-hard-hat"></i> Pendências de engenharia
+                                        </button>
+                                        <button class="report-opt" data-mode="all_pendent_pointed">
+                                            <i class="ph ph-stack"></i> Pendentes e Apontamentos
+                                        </button>
+                                        <button class="report-opt" data-mode="only_pendent">
+                                            <i class="ph ph-clock"></i> Documentos pendentes
+                                        </button>
+                                        <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 0.25rem 0;"></div>
+                                        <button class="report-opt" data-mode="ai_project_report" style="color: var(--accent);">
+                                            <i class="ph ph-sparkle" style="color: var(--accent);"></i> Relatório do empreendimento (IA)
+                                        </button>
+                                    </div>
+                                </div>
+                                <button id="btn-export-zip" class="btn btn-primary btn-sm" title="Exportar ZIP" style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;">
+                                    <i class="ph ph-file-zip" style="font-size: 1.2rem;"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Busca Global -->
+                        <div class="search-dashboard-row" style="margin-bottom: 1.5rem;">
+                            <div class="global-search-wrapper" style="width: 100%;">
+                                <!-- Input will be injected here or already exists -->
+                            </div>
+                        </div>
+
+                        <!-- Drag Info Map -->
+                        <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem;"><i class="ph ph-info"></i> Dica: Você pode anexar arquivos clicando em "Anexar" ou arrastando os arquivos diretamente para cima da subpasta desejada.</p>
+                        <div id="checklist-render-area" class="tree-container">
+                            <!-- Tree rendered via JS -->
+                        </div>
+                    </div>
+
+                        <!-- Wrapper dos dois painéis de Análise -->
+                        <div class="analysis-panels-wrapper">
+
+                            <!-- Painel 2: Análise por Setor -->
+                            <aside class="analysis-side-panel glass-panel">
+                                <div class="analysis-panel-header">
+                                    <h3><i class="ph ph-chart-pie" style="color:var(--accent);"></i> Análise por Setor</h3>
+                                    <button id="btn-refresh-analysis" class="icon-btn" title="Atualizar análise">
+                                        <i class="ph ph-arrows-clockwise"></i>
+                                    </button>
+                                </div>
+                            <div id="panel-sectors">
+                                <div style="text-align:center; padding:1.5rem; color:var(--text-muted); font-size:0.82rem;">
+                                    <i class="ph ph-spinner ph-spin" style="font-size:1.5rem;"></i>
+                                </div>
+                            </div>
+                        </aside>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- Acesso APF Tab Content -->
+            <section id="tab-management" class="tab-content glass-panel mt-4">
+                <!-- Management Content -->
+                <div id="management-content" style="display: none;">
+                    <!-- Management Controls moved to header -->
+                    <div class="management-controls mb-4" style="display: none;">
+                        <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                        </div>
+                    </div>
+
+
+                    
+                    <!-- Container Flex: Filtros e Quadros Lado a Lado na Aba APF -->
+                    <div class="search-dashboard-row" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start; margin-bottom: 1.5rem;">
+                        <!-- Layout intuitivo: Filtros de aba APF -->
+                        <div class="global-search-wrapper" style="flex: 1; min-width: 300px; margin-bottom: 0;">
+                            <div style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
+                            <button id="btn-toggle-all-mgmt" class="btn-toggle-all" title="Mostrar/Ocultar todos os itens do empreendimento" style="width: auto; padding: 0.3rem 0.75rem; border: 1px solid rgba(255,255,255,0.1);">
+                                <span class="label">Mostrar tudo</span>
+                            </button>
+                        </div>
+                        </div>
+
+                    </div>
+                    </div>
+                    <div id="eng-analysis-mgmt-panel" class="glass-panel mb-4 hidden" style="padding: 1.25rem; border-color: #3b82f6 !important; background: rgba(59, 130, 246, 0.05);">
+                        <div class="flex-between">
+                            <h3 style="color: #3b82f6; font-size: 1.1rem; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                                <i class="ph ph-calendar"></i> Análise CAIXA
+                            </h3>
+                            <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                                <label style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">Data de Abertura Real</label>
+                                <input type="date" id="eng-analysis-start-date" class="input-modern" style="max-width: 180px; padding: 0.4rem 0.75rem; font-size: 0.85rem; border-color: #3b82f6;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="pendencias-mgmt-panel" class="glass-panel mb-4 hidden" style="padding: 1.5rem; border-color: var(--danger) !important; background: rgba(239, 68, 68, 0.05);">
+                        <div class="flex-between mb-3">
+                            <h3 style="color: var(--danger); font-size: 1.1rem;"><i class="ph ph-warning-diamond"></i> Configurar pendências</h3>
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                                    <label style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.2rem;">Data de Início da Resolução</label>
+                                    <input type="date" id="pendencia-start-date" class="input-modern" style="max-width: 150px; padding: 0.3rem 0.6rem; font-size: 0.8rem; border-color: var(--danger);">
+                                </div>
+                            </div>
+                        </div>
                         
-                        <!-- Top Row: Info + Management -->
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; flex-wrap: wrap; gap: 1.5rem;">
-                            <!-- Zona 1: Identificação -->
-                            <div id="project-info-segment" style="display:flex; flex-direction: column; align-items: flex-start; gap: 0.1rem; min-width: 250px; flex: 1;">
-                                <span id="checklist-subtitle" class="default-subtitle" style="color: var(--text-muted); font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.8; display: flex; align-items: center; gap: 0.4rem;"></span>
-                                <strong id="checklist-proj-name" style="color: var(--text-main); font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1;"></strong>
-                                <div id="header-location-info" style="display: none; align-items: center; gap: 0.3rem; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-top: 0.2rem;"></div>
-                                <div id="project-global-countdown" class="date-info" style="font-size: 0.8rem; font-weight: 700; margin-top: 0.3rem; display: none; align-items: center; gap: 0.3rem;"></div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 1rem; align-items: flex-end; margin-bottom: 1.5rem; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 0.5rem;">
+                            <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                                <label style="font-size: 0.75rem; color: var(--text-muted);">Nome do Documento</label>
+                                <input type="text" id="new-pendencia-name" class="input-modern" style="width: 100%; border-color: var(--danger);" placeholder="Ex: Habite-se">
                             </div>
-
-                            <!-- Zona 3: Gestão e Ações -->
-                            <div id="header-actions-segment" style="display: flex; align-items: center; gap: 1.25rem; flex-shrink: 0; background: rgba(255,255,255,0.02); padding: 0.6rem 1.2rem; border-radius: 0.85rem; border: 1px solid rgba(255,255,255,0.04);">
-                                <div style="display: flex; gap: 0.75rem; align-items: center;">
-                                    <button id="btn-toggle-eng" class="btn btn-outline btn-sm" title="Sinalizar abertura de análise de engenharia" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; border-radius: 0.6rem;">
-                                        <i class="ph ph-calendar"></i> Abrir Engenharia
-                                    </button>
-                                    
-                                    <button id="btn-toggle-pendencias" class="btn btn-outline btn-sm" title="Iniciar resolução de PENDÊNCIAS CAIXA" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; border-radius: 0.6rem;">
-                                        <i class="ph ph-warning-diamond"></i> Resolução de pendências
-                                    </button>
-
-                                    <!-- Menu de Relatórios -->
-                                    <div class="reports-wrapper" style="position: relative;">
-                                        <button id="btn-reports-menu" class="btn btn-outline btn-sm" title="Ver opções de relatórios" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; border-radius: 0.6rem;">
-                                            <i class="ph ph-file-text"></i> Relatórios <i class="ph ph-caret-down" style="font-size: 0.7rem;"></i>
-                                        </button>
-                                        <div id="reports-dropdown" class="reports-dropdown glass-panel hidden">
-                                            <button class="report-opt" data-mode="only_points">
-                                                <i class="ph ph-warning-circle"></i> Relatório de apontamentos
-                                            </button>
-                                            <button class="report-opt" data-mode="eng_pendencies">
-                                                <i class="ph ph-hard-hat"></i> Pendências de engenharia
-                                            </button>
-                                            <button class="report-opt" data-mode="all_pendent_pointed">
-                                                <i class="ph ph-stack"></i> Pendentes e Apontamentos
-                                            </button>
-                                            <button class="report-opt" data-mode="only_pendent">
-                                                <i class="ph ph-clock"></i> Documentos pendentes
-                                            </button>
-                                            <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 0.25rem 0;"></div>
-                                            <button class="report-opt" data-mode="ai_project_report" style="color: var(--accent);">
-                                                <i class="ph ph-sparkle" style="color: var(--accent);"></i> Relatório do empreendimento (IA)
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <!-- Prazo Geral -->
-                                    <div id="due-date-container" style="display: none; flex-direction: column; align-items: flex-start; margin-left: 0.5rem;">
-                                        <label style="font-size: 0.5rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; letter-spacing: 0.08em; margin-bottom: 0.1rem; opacity: 0.7;">Prazo Geral</label>
-                                        <input type="date" id="project-due-date" class="input-modern" style="max-width: 130px; padding: 0.2rem 0.4rem; font-size: 0.75rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.4rem; color: var(--text-main);">
-                                    </div>
-
-                                    <div class="v-divider"></div>
-
-                                    <button id="btn-rename-project" class="icon-btn-sm" title="Renomear Empreendimento" style="background: rgba(255,255,255,0.05); color: var(--text-main); border: 1px solid rgba(255,255,255,0.1); width: 34px; height: 34px; border-radius: 0.6rem; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-                                        <i class="ph ph-pencil-simple" style="font-size: 1.1rem;"></i>
-                                    </button>
-                                    <button id="btn-delete-project" class="icon-btn-sm" title="Excluir Empreendimento" style="background: rgba(239, 68, 68, 0.08); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.15); width: 34px; height: 34px; border-radius: 0.6rem; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-                                        <i class="ph ph-trash" style="font-size: 1.1rem;"></i>
-                                    </button>
-                                </div>
+                            <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                                <label style="font-size: 0.75rem; color: var(--text-muted);">Setor Responsável</label>
+                                <select id="new-pendencia-sector" class="input-modern" style="width: 100%; border-color: var(--danger); appearance: auto;">
+                                    <option value="">Selecione o setor...</option>
+                                    <option value="other">Outra...</option>
+                                </select>
+                                <input type="text" id="new-pendencia-sector-other" class="input-modern hidden" style="width: 100%; border-color: var(--danger); margin-top: 0.3rem;" placeholder="Especifique o setor">
                             </div>
+                            <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                                <label style="font-size: 0.75rem; color: var(--text-muted);">Especificação da pendência</label>
+                                <input type="text" id="new-pendencia-spec" class="input-modern" style="width: 100%; border-color: var(--danger);" placeholder="Ex: Falta folha 02">
+                            </div>
+                            <button id="btn-add-pendencia" class="btn btn-danger" style="padding: 0.6rem 1rem;">
+                                <i class="ph ph-plus"></i> Adicionar
+                            </button>
                         </div>
 
-                        <!-- Bottom Row: Dynamic Progress Dashboard -->
-                        <div id="unified-top-dashboard" style="display: flex; gap: 2rem; align-items: center; width: 100%; justify-content: flex-start; padding-top: 1.25rem; border-top: 1px solid rgba(255,255,255,0.06);">
-                            <!-- JS Injected Dashboard Components (Sector & Global Progress) -->
+                        <div id="pendencias-list-mgmt" style="display: flex; flex-direction: column; gap: 1rem;">
+                            <!-- Listado via JS -->
                         </div>
                     </div>
-
-                    <!-- Checklist - Always Visible -->
-                    <section id="tab-checklist" class="tab-content active mt-4">
-                        <div class="checklist-analysis-layout">
-                            <!-- Coluna principal: Checklist -->
-                            <div class="checklist-main-col glass-panel">
-                                
-                                <!-- Controles Superiores APF (Novo Setor, Relatórios, Exportar) -->
-                                <div id="apf-checklist-controls" style="display: none; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-                                    <div style="display: flex; gap: 1rem; align-items: center;">
-                                        <button id="btn-add-root" class="btn btn-primary btn-sm">
-                                            <i class="ph ph-folder-plus"></i> Novo setor
-                                        </button>
-                                        <div class="v-divider" style="height: 20px; opacity: 0.5;"></div>
-                                        <button id="btn-toggle-all-checklist" class="btn-toggle-all" title="Mostrar/Ocultar todos" style="width: auto; padding: 0.3rem 0.75rem; border: 1px solid rgba(255,255,255,0.1);">
-                                            <span class="label">Mostrar tudo</span>
-                                        </button>
-                                    </div>
-
-                                    <div style="display: flex; gap: 1.5rem; align-items: center; position: relative;">
-                                        <button id="btn-export-zip" class="btn btn-primary btn-sm" title="Exportar ZIP" style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;">
-                                            <i class="ph ph-file-zip" style="font-size: 1.2rem;"></i>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- Busca Global -->
-                                <div class="search-dashboard-row" style="margin-bottom: 1.5rem;">
-                                    <div class="global-search-wrapper" style="width: 100%; position: relative; display: flex; align-items: center;">
-                                        <i class="ph ph-magnifying-glass" style="position: absolute; left: 1.25rem; color: var(--text-muted); opacity: 0.7; font-size: 1.1rem;"></i>
-                                        <input type="text" id="global-tree-search" class="input-modern" placeholder="Pesquisar documento ou pasta..." style="width: 100%; padding: 0.75rem 1.25rem 0.75rem 3rem; background: rgba(0,0,0,0.2); border-radius: 1rem; border: 1px solid rgba(255,255,255,0.08); font-size: 0.9rem;">
-                                        <button id="btn-clear-search" class="icon-btn" style="position: absolute; right: 1rem; display: none; background: rgba(255,255,255,0.08); width: 28px; height: 28px; border-radius: 50%; align-items: center; justify-content: center;">
-                                            <i class="ph ph-x" style="font-size: 0.9rem;"></i>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- Drag Info Map -->
-                                <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem;"><i class="ph ph-info"></i> Dica: Você pode anexar arquivos clicando em "Anexar" ou arrastando os arquivos diretamente para cima da subpasta desejada.</p>
-                                <div id="checklist-render-area" class="tree-container">
-                                    <!-- Tree rendered via JS -->
-                                </div>
-                            </div>
-
-                            <!-- Wrapper dos dois painéis de Análise -->
-                            <div class="analysis-panels-wrapper">
-
-                                <!-- Painel 2: Análise por Setor -->
-                                <aside class="analysis-side-panel glass-panel">
-                                    <div class="analysis-panel-header">
-                                        <h3><i class="ph ph-chart-pie" style="color:var(--accent);"></i> Análise por Setor</h3>
-                                        <button id="btn-refresh-analysis" class="icon-btn" title="Atualizar análise">
-                                            <i class="ph ph-arrows-clockwise"></i>
-                                        </button>
-                                    </div>
-                                    <div id="panel-sectors" class="panel-body">
-                                        <!-- Grid de notas por setor via JS -->
-                                    </div>
-                                </aside>
-
-                                <!-- Painel de Auditoria (Logs) -->
-                                <aside id="audit-log-panel" class="analysis-side-panel glass-panel mt-4">
-                                    <div class="analysis-panel-header">
-                                        <h3><i class="ph ph-activity" style="color:var(--primary);"></i> Atividade Recente</h3>
-                                        <button id="btn-open-history" class="icon-btn" title="Ver histórico completo"><i class="ph ph-clock-counter-clockwise"></i></button>
-                                    </div>
-                                    <div id="audit-log-list" class="panel-body" style="max-height: 400px; overflow-y: auto;">
-                                        <!-- Log items via JS -->
-                                    </div>
-                                </aside>
-                            </div>
-                        </div>
-                    </section>
-
-                    <!-- Administration/Management Tab Content -->
-                    <section id="tab-management" class="tab-content">
-                        <div class="management-grid">
-                            <div class="management-card glass-panel" style="grid-column: span 2;">
-                                <div class="card-header">
-                                    <h3><i class="ph ph-warning-diamond" style="color: var(--danger);"></i> Gestão de Pendências Críticas</h3>
-                                    <p>Documentos que impedem a validação final da APF.</p>
-                                </div>
-                                <div class="card-body">
-                                    <div class="pendencia-form-grid" style="margin-bottom: 2rem; padding: 1.5rem; background: rgba(0,0,0,0.2); border-radius: 1rem; border: 1px solid rgba(255,255,255,0.05);">
-                                        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                                            <div>
-                                                <label class="label-modern">Nome do Documento</label>
-                                                <input type="text" id="new-pendencia-name" class="input-modern" placeholder="Ex: Matrícula Atualizada">
-                                            </div>
-                                            <div>
-                                                <label class="label-modern">Setor Responsável</label>
-                                                <select id="new-pendencia-sector" class="input-modern">
-                                                    <option value="">Selecione...</option>
-                                                    <!-- Setores via JS -->
-                                                    <option value="other">Outra...</option>
-                                                </select>
-                                                <input type="text" id="new-pendencia-sector-other" class="input-modern hidden" placeholder="Digite o setor..." style="margin-top: 0.5rem;">
-                                            </div>
-                                        </div>
-                                        <div style="margin-bottom: 1.5rem;">
-                                            <label class="label-modern">Observação/Especificação (Opcional)</label>
-                                            <input type="text" id="new-pendencia-spec" class="input-modern" placeholder="Ex: Necessário carimbo do cartório">
-                                        </div>
-                                        <button id="btn-add-pendencia" class="btn btn-danger" style="width: 100%; justify-content: center;">
-                                            <i class="ph ph-plus"></i> Adicionar Pendência Crítica
-                                        </button>
-                                    </div>
-
-                                    <div class="pendencia-list-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding: 0 0.5rem;">
-                                        <h4 style="font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Lista de Pendências</h4>
-                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                            <label style="font-size: 0.75rem; color: var(--text-muted);">Início da Resolução:</label>
-                                            <input type="date" id="pendencia-start-date" class="input-modern btn-sm" style="width: 130px;">
-                                        </div>
-                                    </div>
-                                    <div id="pendencias-list-mgmt" class="pendencia-mgmt-container">
-                                        <!-- Pendências via JS -->
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-
-                    <!-- Tracking/Status Tab Content -->
-                    <section id="tab-tracking" class="tab-content">
-                        <div id="tracking-render-area" class="tracking-grid">
-                            <!-- Dashboard cards generated via JS -->
-                        </div>
-                    </section>
+                    <div id="management-render-area" class="tree-container management-mode">
+                        <!-- Tree rendered via JS -->
+                    </div>
                 </div>
-            </main>
-        </div> <!-- .app-container -->
+            </section>
+        </main>
+    </div> <!-- .app-container -->
     </div> <!-- .main-layout -->
-
-    <!-- Custom Confirm Modal -->
-    <div id="custom-confirm-modal" class="modal-backdrop hidden" style="z-index: 11000;">
-        <div class="modal glass-panel" style="max-width: 400px; text-align: center; padding: 2.5rem;">
-            <div id="confirm-modal-icon" style="margin-bottom: 1.5rem;">
-                <i class="ph ph-question" style="font-size: 3.5rem; color: var(--primary);"></i>
-            </div>
-            <h3 id="confirm-modal-title" style="font-size: 1.5rem; margin-bottom: 1rem;">Confirmar Ação</h3>
-            <p id="confirm-modal-message" style="color: var(--text-muted); line-height: 1.5; margin-bottom: 2rem;">Tem certeza que deseja prosseguir com esta operação?</p>
-            <div style="display: flex; gap: 1rem; justify-content: center;">
-                <button id="btn-confirm-no" class="btn btn-outline" style="min-width: 120px;">Não, cancelar</button>
-                <button id="btn-confirm-yes" class="btn btn-primary" style="min-width: 120px;">Sim, confirmar</button>
-            </div>
-        </div>
-    </div>
 
     <!-- History Modal (Audit Log) -->
     <div id="history-modal" class="modal-backdrop hidden">
@@ -448,6 +432,8 @@
                     <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem;">As senhas padrão são "1234". Recomendamos alterá-las.</p>
                 </div>
 
+
+
                 <hr style="border: 0; border-top: 1px solid var(--panel-border); margin: 1.5rem 0;">
                 <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5;">
                     Configurações salvas localmente. Para maior segurança, limpe o cache do navegador após o uso em máquinas públicas.
@@ -459,7 +445,7 @@
                 </button>
             </div>
         </div>
-    </div>
+    </div>    <script type="module" src="/script.js?v=20260417"></script>
 
     <!-- New Project Modal -->
     <div id="new-project-modal" class="modal-backdrop hidden" style="z-index: 10000;">
@@ -515,36 +501,71 @@
         <div class="modal glass-panel" style="max-width: 400px; padding: 2rem;">
             <div class="modal-header" style="margin-bottom: 1.5rem;">
                 <h3><i class="ph ph-lock-key"></i> Alterar Minha Senha</h3>
-                <button id="btn-close-change-password" class="icon-btn" title="Fechar"><i class="ph ph-x"></i></button>
+                <button id="btn-close-change-pass" class="icon-btn" title="Fechar"><i class="ph ph-x"></i></button>
             </div>
-            <div class="modal-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
-                <p style="font-size: 0.8rem; color: var(--text-muted);">Para sua segurança, informe sua senha atual para definir uma nova.</p>
-                
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem;">
                 <div>
-                    <label class="label-modern">Senha Atual</label>
-                    <input type="password" id="change-pass-current" class="input-modern" style="width: 100%;" placeholder="••••••••">
+                    <label class="label-modern" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.4rem; display: block;">Senha Atual</label>
+                    <input type="password" id="change-pass-current" class="input-modern" style="width: 100%; max-width: none;" placeholder="Digite a senha atual">
                 </div>
-                
-                <hr style="border:0; border-top: 1px solid var(--panel-border); margin: 0.5rem 0;">
-                
-                <div>
-                    <label class="label-modern">Nova Senha</label>
-                    <input type="password" id="change-pass-new" class="input-modern" style="width: 100%;" placeholder="Mínimo 4 caracteres">
+                <div style="border-top: 1px solid var(--panel-border); pt-4; margin-top: 0.5rem; padding-top: 1rem;">
+                    <label class="label-modern" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.4rem; display: block;">Nova Senha</label>
+                    <input type="password" id="change-pass-new" class="input-modern" style="width: 100%; max-width: none;" placeholder="Nova senha">
                 </div>
                 <div>
-                    <label class="label-modern">Confirmar Nova Senha</label>
-                    <input type="password" id="change-pass-confirm" class="input-modern" style="width: 100%;" placeholder="Repita a nova senha">
+                    <label class="label-modern" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.4rem; display: block;">Confirmar Nova Senha</label>
+                    <input type="password" id="change-pass-confirm" class="input-modern" style="width: 100%; max-width: none;" placeholder="Repita a nova senha">
                 </div>
             </div>
             <div class="modal-footer" style="margin-top: 2rem;">
-                <button id="btn-confirm-change-password" class="btn btn-primary" style="width: 100%; justify-content: center;">
-                    <i class="ph ph-check"></i> Atualizar Senha
+                <button id="btn-save-change-pass" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                    <i class="ph ph-check"></i> Salvar Nova Senha
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Firebase App Check & Logic -->
-    <script type="module" src="script.js?v=20260422"></script>
+    <!-- Forgot Password Modal -->
+    <div id="forgot-password-modal" class="modal-backdrop hidden" style="z-index: 10000;">
+        <div class="modal glass-panel" style="max-width: 400px; text-align: center; padding: 2rem;">
+            <i class="ph ph-info" style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem;"></i>
+            <h3 style="margin-bottom: 1rem;">Recuperar Acesso</h3>
+            <p style="color: var(--text-main); margin-bottom: 1.5rem; font-weight: 500;">entre em contato com APF para recuperar acesso</p>
+            <div style="background: rgba(var(--primary-rgb), 0.1); padding: 1.25rem; border-radius: 0.75rem; text-align: left; margin-bottom: 1.5rem; border: 1px solid rgba(var(--primary-rgb), 0.2);">
+                <p style="margin-bottom: 0.75rem; font-size: 0.95rem;"><i class="ph ph-microsoft-teams-logo" style="color: #6264A7;"></i> <strong>Teams:</strong> Robson Oliveira Viana</p>
+                <p style="font-size: 0.95rem;"><i class="ph ph-microsoft-teams-logo" style="color: #6264A7;"></i> <strong>Teams:</strong> Jose Luan Da Rocha</p>
+            </div>
+            <button id="btn-close-forgot" class="btn btn-primary" style="width: 100%;">Fechar</button>
+        </div>
+    </div>
+    <!-- Global Custom Confirmation Modal -->
+    <div id="confirm-modal" class="modal-backdrop hidden" style="z-index: 12000;">
+        <div class="modal glass-panel" style="max-width: 400px; padding: 2rem; text-align: center;">
+            <div id="confirm-modal-icon-container" style="margin-bottom: 1.25rem;">
+                <i class="ph ph-warning-circle" style="font-size: 3.5rem; color: var(--danger);"></i>
+            </div>
+            <h3 id="confirm-modal-title" style="font-size: 1.25rem; margin-bottom: 0.75rem;">Confirmar Ação</h3>
+            <p id="confirm-modal-message" style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 2rem;">Tem certeza que deseja realizar esta ação? Esta operação pode ser irreversível.</p>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <button id="btn-confirm-no" class="btn btn-outline" style="justify-content: center;">Não, cancelar</button>
+                <button id="btn-confirm-yes" class="btn btn-danger" style="justify-content: center;">Sim, confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global File Input (Optimized for performance) -->
+    <input type="file" id="global-file-input" style="display: none;" multiple>
+
+    <!-- Floating Upload Toast -->
+    <div id="upload-toast" class="upload-toast hidden">
+        <div class="toast-content" style="display: flex; align-items: center; gap: 1rem;">
+            <div id="upload-toast-icon" class="toast-spinner-mini"></div>
+            <div style="display: flex; flex-direction: column;">
+                <span id="upload-toast-text" style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">Realizando upload...</span>
+                <span id="upload-toast-sub" style="font-size: 0.75rem; color: var(--text-muted);">Por favor, aguarde a conclusão.</span>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
