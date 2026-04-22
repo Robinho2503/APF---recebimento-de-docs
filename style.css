@@ -216,10 +216,12 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
 /* Glass Panels */
 .glass-panel {
     background: var(--panel-bg);
-    border: 1px solid var(--panel-border);
-    border-radius: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1.25rem;
     padding: 1.5rem;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
 }
 
 /* Header */
@@ -1244,10 +1246,7 @@ hr {
 .checklist-main-col {
     flex: 1;
     min-width: 0;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    padding: 0 !important; /* Removendo padding para alinhar com o fundo transparente */
+    padding: 1.75rem !important;
 }
 
 /* Wrapper dos dois painÃƒÂ©is de anÃƒÂ¡lise */
@@ -1268,7 +1267,6 @@ hr {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    border-color: rgba(99, 102, 241, 0.25) !important;
     overflow: hidden;
 }
 
