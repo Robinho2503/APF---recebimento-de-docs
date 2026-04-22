@@ -1,6 +1,7 @@
 // Firebase Imports
+console.log("APF Script: Iniciando carregamento...");
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc, onSnapshot, getDoc, collection, query, where, serverTimestamp, deleteDoc } from "firebase/firestore";
+import { getFirestore, doc, setDoc, onSnapshot, getDoc, getDocs, collection, query, where, serverTimestamp, deleteDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 
 // Firebase Configuration & Initialization
@@ -297,6 +298,10 @@ async function syncWithCloud() {
                 saveState();
             }
         }
+        
+        // Verificação adicional de recuperação (caso o doc monolithic esteja vazio por conta da migração anterior)
+        await checkAndRecoverData();
+
     } catch(e) {
         console.error("Cloud sync error:", e);
     }
@@ -308,24 +313,20 @@ function renderAfterUpdate() {
     renderTracking();
     updateThemeIcon();
     renderAuditLog();
-    applyAuthState(); // Garante que a tela de login ou status de acesso sejam atualizados com os dados da nuvem
+    applyAuthState(); 
 }
 
 let saveTimeout = null;
 function saveState() {
-    // Save structure to Firestore (Debounced to avoid rapid writes)
     if (saveTimeout) clearTimeout(saveTimeout);
-    
     saveTimeout = setTimeout(async () => {
         const docRef = doc(db, GLOBAL_DOC_PATH);
         const saveableState = {
             projects: state.projects.map(p => {
-                // Pre-calculate stats for the project before saving
                 const stats = p.id !== 'p_default' ? calculateProjectStats(p) : { pendente: 0, apontamento: 0 };
-                
                 return {
                     ...p,
-                    stats, // Save pre-calculated stats
+                    stats,
                     engAnalysisOpened: p.engAnalysisOpened || false,
                     engAnalysisStartDate: p.engAnalysisStartDate || '',
                     pendenciaActive: p.pendenciaActive || false,
@@ -337,7 +338,6 @@ function saveState() {
                         attachments: (pend.attachments || []).map(att => ({
                             ...att,
                             downloadUrl: att.downloadUrl || att.objectUrl || att.dropboxUrl || '',
-                            objectUrl: att.downloadUrl || att.objectUrl || att.dropboxUrl || '',
                             source: att.source || 'firebase'
                         })),
                         observation: pend.observation || ''
@@ -350,7 +350,6 @@ function saveState() {
                             attachments: (item.attachments || []).map(att => ({
                                 ...att,
                                 downloadUrl: att.downloadUrl || att.objectUrl || att.dropboxUrl || '',
-                                objectUrl: att.downloadUrl || att.objectUrl || att.dropboxUrl || '',
                                 source: att.source || 'firebase'
                             }))
                         };
@@ -359,22 +358,41 @@ function saveState() {
             }),
             auditLog: state.auditLog || []
         };
-        
-        // Update Local Cache Immediately
         localStorage.setItem(CACHE_KEY, JSON.stringify(saveableState));
-
         try {
             await setDoc(docRef, saveableState);
-            console.log("State synced to cloud & cache.");
-        } catch (e) {
-            console.error("Error syncing to cloud:", e);
+            console.log("State synced to cloud.");
+        } catch (e) { console.error("Error syncing:", e); }
+    }, 500);
+}
+
+async function checkAndRecoverData() {
+    console.log("Verificando integridade dos dados...");
+    const projectsCol = collection(db, "projects");
+    try {
+        const projectsSnap = await getDocs(query(projectsCol));
+        if (!projectsSnap.empty && state.projects.length <= 1) {
+            console.warn("Recuperando dados da arquitetura fragmentada...");
+            let recovered = [];
+            projectsSnap.forEach(d => {
+                const data = d.data();
+                if (data.id && data.id !== 'p_default' && data.id !== 'v2_global_state') {
+                    recovered.push(data);
+                }
+            });
+            if (recovered.length > 0) {
+                state.projects = [state.projects[0], ...recovered];
+                saveState();
+                renderAfterUpdate();
+                console.log("Recuperação concluída.");
+            }
         }
-    }, 500); // 500ms debounce
 }
 
 function calculateProjectStats(project) {
     let pendente = 0;
     let apontamento = 0;
+    if (!project || !project.items) return { pendente: 0, apontamento: 0 };
     
     project.items.forEach(item => {
         const hasChildren = project.items.some(child => child.parentId === item.id);
@@ -958,7 +976,9 @@ function initEventListeners() {
     }
 
     if (btnExportPoints) {
-        btnExportPoints.addEventListener('click', exportPointsReport);
+        btnExportPoints.onclick = () => {
+            generateProjectReport('only_points');
+        };
     }
 
     if (btnToggleEng) {
