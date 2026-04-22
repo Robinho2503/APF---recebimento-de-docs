@@ -387,6 +387,9 @@ async function checkAndRecoverData() {
                 console.log("Recuperação concluída.");
             }
         }
+    } catch (e) {
+        console.warn("Aviso de recuperação:", e);
+    }
 }
 
 function calculateProjectStats(project) {
