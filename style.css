@@ -1572,8 +1572,8 @@ hr {
 .sidebar .tracking-card.active::before {
     content: '';
     position: absolute;
-    left: 8px;
-    top: 1.1rem; /* Alinhado verticalmente com o centro da primeira linha (ÃƒÂ­cone) */
+    left: -15px; /* Movido para fora do card, à esquerda */
+    top: 1.1rem;
     transform: translateY(-50%);
     width: 6px;
     height: 6px;
