@@ -1,7 +1,7 @@
 // Firebase Imports
 console.log("APF Script: Iniciando carregamento...");
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc, onSnapshot, getDoc, getDocs, collection, query, where, serverTimestamp, deleteDoc } from "firebase/firestore";
+import { getFirestore, doc, setDoc, onSnapshot, getDoc, getDocs, collection, query, where, serverTimestamp, deleteDoc, enableIndexedDbPersistence } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 
 // Firebase Configuration & Initialization
@@ -17,6 +17,18 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+
+// Ativar Persistência Local (Sugestão 4)
+try {
+    enableIndexedDbPersistence(db).catch((err) => {
+        if (err.code == 'failed-precondition') {
+            console.warn("Múltiplas abas abertas, persistência desativada.");
+        } else if (err.code == 'unimplemented') {
+            console.warn("Navegador não suporta persistência.");
+        }
+    });
+} catch(e) {}
+
 const storage = getStorage(app);
 const GLOBAL_DOC_PATH = "apf_data/v2_global_state";
 
@@ -319,51 +331,81 @@ function renderAfterUpdate() {
 let saveTimeout = null;
 function saveState() {
     if (saveTimeout) clearTimeout(saveTimeout);
+    
+    // Aumento de Debounce para 2000ms (Sugestão 2)
     saveTimeout = setTimeout(async () => {
-        const docRef = doc(db, GLOBAL_DOC_PATH);
-        const saveableState = {
+        console.log("Sincronizando com o cloud...");
+        
+        // 1. Salvar o documento individual do projeto selecionado (Sugestão 1 e 3)
+        const curr = getCurrentProject();
+        if (curr && curr.id !== 'p_default') {
+            const projectDocRef = doc(db, `projects/${curr.id}`);
+            try {
+                await setDoc(projectDocRef, curr);
+            } catch (e) { console.error("Erro ao salvar projeto individual:", e); }
+        }
+
+        // 2. Salvar o Registro Global (Índice) sem os itens pesados (Sugestão 3)
+        const globalDocRef = doc(db, GLOBAL_DOC_PATH);
+        const indexState = {
             projects: state.projects.map(p => {
-                const stats = p.id !== 'p_default' ? calculateProjectStats(p) : { pendente: 0, apontamento: 0 };
+                const { items, ...metadata } = p;
                 return {
-                    ...p,
-                    stats,
-                    engAnalysisOpened: p.engAnalysisOpened || false,
-                    engAnalysisStartDate: p.engAnalysisStartDate || '',
-                    pendenciaActive: p.pendenciaActive || false,
-                    pendencias: (p.pendencias || []).map(pend => ({
-                        id: pend.id,
-                        docName: pend.docName,
-                        sector: pend.sector,
-                        specification: pend.specification || '',
-                        attachments: (pend.attachments || []).map(att => ({
-                            ...att,
-                            downloadUrl: att.downloadUrl || att.objectUrl || att.dropboxUrl || '',
-                            source: att.source || 'firebase'
-                        })),
-                        observation: pend.observation || ''
-                    })),
-                    pendenciaStartDate: p.pendenciaStartDate || '',
-                    items: p.items.map(item => {
-                        const { expanded, ...rest } = item;
-                        return {
-                            ...rest,
-                            attachments: (item.attachments || []).map(att => ({
-                                ...att,
-                                downloadUrl: att.downloadUrl || att.objectUrl || att.dropboxUrl || '',
-                                source: att.source || 'firebase'
-                            }))
-                        };
-                    })
+                    ...metadata,
+                    // Mantemos as estatísticas no índice para o sidebar
+                    stats: p.id !== 'p_default' ? calculateProjectStats(p) : { pendente: 0, apontamento: 0 }
                 };
             }),
-            auditLog: state.auditLog || []
+            auditLog: (state.auditLog || []).slice(-100) // Limitar histórico no cloud para 100 itens
         };
-        localStorage.setItem(CACHE_KEY, JSON.stringify(saveableState));
+
+        // Cache local completo
+        localStorage.setItem(CACHE_KEY, JSON.stringify(state));
+
         try {
-            await setDoc(docRef, saveableState);
-            console.log("State synced to cloud.");
-        } catch (e) { console.error("Error syncing:", e); }
-    }, 500);
+            await setDoc(globalDocRef, indexState);
+            console.log("Índice global sincronizado.");
+        } catch (e) { console.error("Erro ao sincronizar índice:", e); }
+    }, 2000);
+}
+
+async function selectProject(projectId) {
+    if (localUI.currentProjectId === projectId) return;
+
+    const project = state.projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    // Se o projeto não tem itens carregados, busca no Firestore (Sugestão 3)
+    if ((!project.items || project.items.length === 0) && projectId !== 'p_default') {
+        console.log(`Carregando detalhes do projeto ${projectId}...`);
+        const projectDocRef = doc(db, `projects/${projectId}`);
+        try {
+            const snap = await getDoc(projectDocRef);
+            if (snap.exists()) {
+                const fullData = snap.data();
+                project.items = fullData.items || [];
+                // Sincronizar outros campos que podem estar no detalhe
+                Object.assign(project, fullData);
+            }
+        } catch (e) {
+            console.error("Erro ao carregar detalhes do projeto:", e);
+            showTemporaryMessage("Erro ao carregar dados do projeto.");
+            return;
+        }
+    }
+
+    localUI.currentProjectId = projectId;
+    localUI.expandedIds.clear();
+    saveLocalUI();
+    updateGlobalDateUI();
+    renderTree();
+    renderTracking();
+    triggerPanelAnimation();
+
+    if (window.innerWidth <= 992 && sidebarApf) {
+        sidebarApf.classList.remove('mobile-active');
+        if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
+    }
 }
 
 async function checkAndRecoverData() {
@@ -1884,27 +1926,7 @@ function renderTracking() {
         card.style.setProperty('--indicator-color', statusColor);
         
         card.addEventListener('click', () => {
-            if(localUI.currentProjectId === p.id) {
-                // Mesmo que já esteja selecionado, fecha a sidebar no mobile para mostrar o conteúdo
-                if (window.innerWidth <= 992 && sidebarApf) {
-                    sidebarApf.classList.remove('mobile-active');
-                    if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
-                }
-                return;
-            }
-            localUI.currentProjectId = p.id;
-            localUI.expandedIds.clear(); // Garantir que as pastas fiquem ocultas por padrão ao trocar de projeto
-            saveLocalUI();
-            updateGlobalDateUI();
-            renderTree();
-            renderTracking();
-            triggerPanelAnimation();
-
-            // Fechar sidebar no mobile após seleção
-            if (window.innerWidth <= 992 && sidebarApf) {
-                sidebarApf.classList.remove('mobile-active');
-                if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
-            }
+            selectProject(p.id);
         });
 
         let prazoText = 'Sem data inicializada';
