@@ -2254,6 +2254,16 @@ function updateProjectProgressUI(curr) {
     console.log('Updating Dashboard for:', curr.name);
     container.style.display = 'flex';
 
+    // ATUALIZAÇÃO DA AURA DINÂMICA E HEALTH GLOW
+    const aura = document.querySelector('.project-aura');
+    let auraColor = 'var(--accent)';
+    if (curr.pendenciaActive) auraColor = 'var(--danger)';
+    else if (curr.engAnalysisOpened) auraColor = 'var(--warning)';
+
+    if (aura) {
+        aura.style.setProperty('--aura-color', auraColor);
+    }
+
     const isAPF = authenticatedSector === 'APF';
 
     // --- CÁLCULOS DE PROGRESSO ---
@@ -2417,27 +2427,30 @@ function updateProjectProgressUI(curr) {
     container.innerHTML = `
             ${progressSectionHTML}
             <div class="divider-v" style="height: 48px; background: var(--divider-color);"></div>
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.35rem; width: 300px; flex-shrink: 0;">
-                <div class="dashboard-card accent adaptive-card ${treeSearchFilter === 'validado' ? 'active' : ''}" onclick="handleDashboardFilter('validado', ${validated})" style="padding: 0.4rem 0.6rem;">
+            <div id="dashboard-cards-container" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.35rem; width: 300px; flex-shrink: 0;">
+                <div class="dashboard-card accent adaptive-card magnetic-card ${treeSearchFilter === 'validado' ? 'active' : ''}" onclick="handleDashboardFilter('validado', ${validated})" style="padding: 0.4rem 0.6rem;">
                     <span class="card-value" style="font-size: 1rem; line-height: 1;">${validated}</span>
                     <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7;">Validados</span>
                 </div>
-                <div class="dashboard-card warning adaptive-card ${treeSearchFilter === 'analise' ? 'active' : ''}" onclick="handleDashboardFilter('analise', ${inAnalysis})" style="padding: 0.4rem 0.6rem;">
+                <div class="dashboard-card warning adaptive-card magnetic-card ${treeSearchFilter === 'analise' ? 'active' : ''}" onclick="handleDashboardFilter('analise', ${inAnalysis})" style="padding: 0.4rem 0.6rem;">
                     <span class="card-value" style="font-size: 1rem; line-height: 1;">${inAnalysis}</span>
                     <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7;">Análise</span>
                 </div>
-                <div class="dashboard-card danger adaptive-card ${treeSearchFilter === 'pendente' ? 'active' : ''}" onclick="handleDashboardFilter('pendente', ${pending})" style="padding: 0.4rem 0.6rem;">
+                <div class="dashboard-card danger adaptive-card magnetic-card ${treeSearchFilter === 'pendente' ? 'active' : ''}" onclick="handleDashboardFilter('pendente', ${pending})" style="padding: 0.4rem 0.6rem;">
                     <span class="card-value" style="font-size: 1rem; line-height: 1;">${pending}</span>
                     <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7;">Pendentes</span>
                 </div>
-                <div class="dashboard-card danger adaptive-card ${treeSearchFilter === 'apontamento' ? 'active' : ''}" onclick="handleDashboardFilter('apontamento', ${withPoints})" style="padding: 0.4rem 0.6rem;">
+                <div class="dashboard-card danger adaptive-card magnetic-card ${treeSearchFilter === 'apontamento' ? 'active' : ''}" onclick="handleDashboardFilter('apontamento', ${withPoints})" style="padding: 0.4rem 0.6rem;">
                     <span class="card-value" style="font-size: 1rem; line-height: 1;">${withPoints}</span>
-                    <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7;">REVISAR</span>
+                    <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7;">Apontamento</span>
                 </div>
             </div>
             ${analysisSectionHTML}
             ${pendenciasHTML}
     `;
+    
+    // Ativar listeners magnéticos após a injeção
+    setTimeout(initMagneticCards, 10);
 }
 
 
@@ -4646,4 +4659,17 @@ function initPlexusBackground() {
 
     resize();
     animate();
+}
+
+function initMagneticCards() {
+    const cards = document.querySelectorAll('.magnetic-card');
+    cards.forEach(card => {
+        card.onmousemove = (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            card.style.setProperty('--mouse-x', `${x}px`);
+            card.style.setProperty('--mouse-y', `${y}px`);
+        };
+    });
 }
