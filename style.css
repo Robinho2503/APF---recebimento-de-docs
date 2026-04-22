@@ -2403,13 +2403,13 @@ hr {
     will-change: transform, opacity, filter;
 }
 
-/* Efeito Cascata (Stagger) para os painéis principais */
+/* Efeito Paralelo para os painéis principais */
 #unified-header-deck.animate-smooth-entry {
     animation-delay: 0.05s;
 }
 
 .checklist-main-col.animate-smooth-entry {
-    animation-delay: 0.15s;
+    animation-delay: 0.05s;
 }
 
 .analysis-panels-wrapper.animate-smooth-entry {
