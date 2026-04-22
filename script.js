@@ -1781,8 +1781,6 @@ window.handleDashboardFilter = function(filter, count) {
 
 
 function triggerPanelAnimation() {
-    const mainCol = document.querySelector('.checklist-main-col');
-    const analysisPanels = document.querySelector('.analysis-panels-wrapper');
     const headerDeck = document.getElementById('unified-header-deck');
     const mgmtArea = document.getElementById('management-render-area');
 
@@ -1791,21 +1789,20 @@ function triggerPanelAnimation() {
     // Usamos um pequeno timeout para garantir que o navegador processe as mudanças de display: block
     // antes de tentar iniciar a animação, garantindo que o efeito seja visível.
     setTimeout(() => {
-        if (mainCol) {
-            mainCol.classList.remove(animClass);
-            void mainCol.offsetWidth;
-            mainCol.classList.add(animClass);
-        }
-        if (analysisPanels) {
-            analysisPanels.classList.remove(animClass);
-            void analysisPanels.offsetWidth;
-            analysisPanels.classList.add(animClass);
-        }
         if (headerDeck) {
             headerDeck.classList.remove(animClass);
             void headerDeck.offsetWidth;
             headerDeck.classList.add(animClass);
         }
+        
+        // Animamos o layout completo do checklist (incluindo painéis laterais)
+        const checkLayout = document.querySelector('.checklist-analysis-layout');
+        if (checkLayout) {
+            checkLayout.classList.remove(animClass);
+            void checkLayout.offsetWidth;
+            checkLayout.classList.add(animClass);
+        }
+        
         if (mgmtArea) {
             mgmtArea.classList.remove(animClass);
             void mgmtArea.offsetWidth;
