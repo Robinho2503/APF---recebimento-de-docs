@@ -2381,3 +2381,38 @@ hr {
 .progress-track { background: var(--progress-track); border-radius: 2px; }
 .adaptive-card { background: var(--card-bg-subtle); border-radius: 0.75rem; border: 1px solid var(--divider-color); }
 .circular-progress-bg { background: conic-gradient(var(--accent) var(--progress), var(--progress-track) 0) !important; }
+
+/* --- SEÇÃO DE ANIMAÇÕES PREMIUM --- */
+
+/* Animação para surgimento suave vindo da esquerda */
+@keyframes smoothEntryLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-40px);
+        filter: blur(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+        filter: blur(0);
+    }
+}
+
+.animate-smooth-entry {
+    animation: smoothEntryLeft 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards !important;
+    will-change: transform, opacity, filter;
+}
+
+/* Efeito Cascata (Stagger) para os painéis principais */
+#unified-header-deck.animate-smooth-entry {
+    animation-delay: 0.05s;
+}
+
+.checklist-main-col.animate-smooth-entry {
+    animation-delay: 0.15s;
+}
+
+.analysis-panels-wrapper.animate-smooth-entry {
+    animation-delay: 0.25s;
+}
+
