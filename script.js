@@ -3111,10 +3111,14 @@ function createNode(item, level) {
 
                 const btnSaveJust = document.createElement('button');
                 btnSaveJust.className = 'icon-btn';
-                btnSaveJust.style.background = 'var(--accent)';
-                btnSaveJust.style.color = 'white';
+                btnSaveJust.style.background = 'transparent';
+                btnSaveJust.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+                btnSaveJust.style.color = 'var(--accent)';
                 btnSaveJust.innerHTML = '<i class="ph ph-check"></i>';
                 btnSaveJust.title = 'Salvar Justificativa';
+                
+                btnSaveJust.onmouseover = () => btnSaveJust.style.background = 'rgba(16, 185, 129, 0.1)';
+                btnSaveJust.onmouseout = () => btnSaveJust.style.background = 'transparent';
 
                 const updateJustifyBtnStyle = () => {
                     const btnJustify = document.getElementById(`btn-just-${item.id}`);
@@ -3212,10 +3216,14 @@ function createNode(item, level) {
                     
                     const btnSaveObs = document.createElement('button');
                     btnSaveObs.className = 'icon-btn';
-                    btnSaveObs.style.background = 'var(--danger)';
-                    btnSaveObs.style.color = 'white';
+                    btnSaveObs.style.background = 'transparent';
+                    btnSaveObs.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+                    btnSaveObs.style.color = 'var(--danger)';
                     btnSaveObs.innerHTML = '<i class="ph ph-paper-plane-right"></i>';
                     btnSaveObs.title = 'Salvar Apontamento';
+
+                    btnSaveObs.onmouseover = () => btnSaveObs.style.background = 'rgba(239, 68, 68, 0.1)';
+                    btnSaveObs.onmouseout = () => btnSaveObs.style.background = 'transparent';
                     btnSaveObs.onclick = (e) => {
                         e.stopPropagation();
                         saveState();
