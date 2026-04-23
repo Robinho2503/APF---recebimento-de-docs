@@ -1661,7 +1661,7 @@ hr {
 .login-card {
     width: 100%;
     max-width: 440px;
-    padding: 3.5rem 2.5rem;
+    padding: 2.5rem 2rem;
     background: var(--panel-bg);
     border: 1px solid var(--panel-border);
     border-radius: 2rem;
@@ -1718,7 +1718,7 @@ hr {
 .login-subtitle {
     color: var(--text-muted);
     font-size: 0.95rem;
-    margin-bottom: 2.5rem;
+    margin-bottom: 1.5rem;
     line-height: 1.6;
     opacity: 0.8;
 }

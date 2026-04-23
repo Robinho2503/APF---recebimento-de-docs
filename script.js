@@ -292,6 +292,10 @@ async function syncWithCloud() {
                 isInitialCloudLoad = false;
                 if (!state.projects.find(p => p.id === localUI.currentProjectId)) {
                     localUI.currentProjectId = null;
+                } else if (localUI.currentProjectId && localUI.currentProjectId !== 'p_default') {
+                    // Carregar automaticamente o projeto selecionado para restaurar a sessão
+                    console.log(`Restaurando sessão do projeto: ${localUI.currentProjectId}`);
+                    await selectProject(localUI.currentProjectId);
                 }
             }
 
@@ -2034,8 +2038,8 @@ function renderTracking() {
             iconStyle = 'color: var(--info);';
         }
 
-        // Contagem de apontamentos de APF
-        const projApontamentos = p.items.filter(i => i.validationStatus === 'Apontamento').length;
+        // Contagem de apontamentos de APF (Seguro contra items indefinidos)
+        const projApontamentos = (p.items || []).filter(i => i.validationStatus === 'Apontamento').length;
 
         card.innerHTML = `
             <div class="tracking-body" style="transition: padding 0.3s ease;">
@@ -2080,7 +2084,7 @@ function getNodeStats(itemId) {
     let apontamento = 0;
     
     const children = getChildItems(itemId);
-    const item = p.items.find(i => i.id === itemId);
+    const item = (p.items || []).find(i => i.id === itemId);
     
     if(item && item.parentId !== null && children.length === 0) {
         if(!item.isNotApplicable && (!item.attachments || item.attachments.length === 0)) {
@@ -2588,8 +2592,9 @@ function renderTree() {
     const btnChecklist = document.getElementById('btn-toggle-all-checklist');
     const btnMgmt = document.getElementById('btn-toggle-all-mgmt');
     
-    // Check if at least one folder is expanded
-    const foldersWithChildren = p.items.filter(item => p.items.some(child => child.parentId === item.id));
+    // Check if at least one folder is expanded (Safe check for .items)
+    const items = p.items || [];
+    const foldersWithChildren = items.filter(item => items.some(child => child.parentId === item.id));
     const anyExpanded = foldersWithChildren.some(f => localUI.expandedIds.has(f.id));
 
     const updateBtn = (btn) => {
