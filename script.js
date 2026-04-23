@@ -3256,11 +3256,6 @@ function createNode(item, level) {
                     mgmtFields.appendChild(infoArea);
                 }
             }
-
-                // ...
-                    mgmtFields.appendChild(infoArea);
-                }
-            }
             itemRight.appendChild(mgmtFields);
         }
 
