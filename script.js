@@ -263,8 +263,8 @@ async function loadState() {
         } catch(e) { console.warn("Cache error", e); }
     }
 
-    // 2. Setup Silent Cloud Load
-    await syncWithCloud();
+    // 2. Sincronizar com o Cloud em segundo plano (Não-bloqueante)
+    syncWithCloud();
 }
 
 async function syncWithCloud() {
@@ -324,9 +324,9 @@ async function syncWithCloud() {
 }
 
 function renderAfterUpdate() {
+    renderTracking();
     updateGlobalDateUI();
     renderTree();
-    renderTracking();
     updateThemeIcon();
     renderAuditLog();
     applyAuthState(); 
@@ -1912,7 +1912,11 @@ function renderTracking() {
     });
     
     if(trackableProjects.length === 0) {
-        trackingContainer.innerHTML = '<p style="color:var(--text-muted); padding: 1rem; border: 1px dashed var(--divider-color); border-radius:0.5rem;"><i class="ph ph-warning"></i> Nenhum empreendimento ativo criado ainda. Primeiramente, crie no Acesso APF.</p>';
+        if (isInitialCloudLoad) {
+            trackingContainer.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--text-muted);"><i class="ph ph-spinner ph-spin" style="font-size:1.5rem; margin-bottom:0.5rem; display:block;"></i> Sincronizando empreendimentos...</div>';
+        } else {
+            trackingContainer.innerHTML = '<p style="color:var(--text-muted); padding: 1rem; border: 1px dashed var(--divider-color); border-radius:0.5rem;"><i class="ph ph-warning"></i> Nenhum empreendimento ativo criado ainda. Primeiramente, crie no Acesso APF.</p>';
+        }
         return;
     }
 
