@@ -290,8 +290,13 @@ async function syncWithCloud() {
             
             if (isInitialCloudLoad) {
                 isInitialCloudLoad = false;
-                if (!state.projects.find(p => p.id === localUI.currentProjectId)) {
+                const found = state.projects.find(p => p.id === localUI.currentProjectId);
+                if (!found) {
                     localUI.currentProjectId = null;
+                } else if (localUI.currentProjectId && localUI.currentProjectId !== 'p_default') {
+                    // Restaurar projeto apenas se houver um ID válido salvo (útil para F5/Refresh)
+                    console.log(`Restaurando projeto ativo: ${localUI.currentProjectId}`);
+                    await selectProject(localUI.currentProjectId);
                 }
             }
 
