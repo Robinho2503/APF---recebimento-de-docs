@@ -861,14 +861,27 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
 
 .item-icon { font-size: 1.15rem; color: var(--primary); }
 
-.sync-info-area {
+.mgmt-info-stack {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
-    width: 100%;
-    margin-top: 0.4rem;
-    padding-top: 0.4rem;
-    border-top: 1px dashed var(--panel-border);
+    align-items: flex-end;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.mgmt-status-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+.mgmt-divider {
+    width: 1px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 0 0.75rem;
+    align-self: center;
 }
 
 .sync-response-badge {
@@ -883,14 +896,24 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
     color: var(--text-main);
 }
 
+.sync-info-area {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    width: 100%;
+    align-items: flex-end;
+}
+
 .sync-justification-text {
     font-size: 0.8rem;
     color: var(--text-muted);
-    background: var(--card-bg-subtle);
+    background: rgba(255, 255, 255, 0.03);
     padding: 0.6rem;
     border-radius: 0.5rem;
     border: 1px solid var(--panel-border);
     line-height: 1.4;
+    width: fit-content;
+    max-width: 300px;
 }
 
 .item-icon { font-size: 1.15rem; color: var(--primary); }

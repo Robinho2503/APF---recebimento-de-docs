@@ -3193,9 +3193,10 @@ function createNode(item, level) {
                     }
                 }
             } else {
-                mgmtFields.style.display = 'flex';
-                mgmtFields.style.alignItems = 'center';
-                mgmtFields.style.gap = '1rem';
+                mgmtFields.className = 'mgmt-info-stack';
+
+                const statusRow = document.createElement('div');
+                statusRow.className = 'mgmt-status-row';
 
                 const statusText = document.createElement('span');
                 statusText.style.fontSize = '0.75rem';
@@ -3227,10 +3228,11 @@ function createNode(item, level) {
                 naLabel.appendChild(naCheck);
                 naLabel.appendChild(document.createTextNode('Não Obrigatório'));
 
-                mgmtFields.appendChild(statusText);
+                statusRow.appendChild(statusText);
                 if (currProj && currProj.id !== 'p_default') {
-                    mgmtFields.appendChild(naLabel);
+                    statusRow.appendChild(naLabel);
                 }
+                mgmtFields.appendChild(statusRow);
 
                 // NOVO: Exibir Previsão e Justificativa para a APF (Se houver)
                 if (item.forecastDate || item.justification) {
@@ -3243,7 +3245,7 @@ function createNode(item, level) {
                         dateBadge.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
                         dateBadge.style.color = 'var(--danger)';
                         dateBadge.style.borderColor = 'rgba(239, 68, 68, 0.3)';
-                        dateBadge.innerHTML = `<i class="ph ph-calendar"></i> Previsão: ${item.forecastDate.split('-').reverse().join('/')}`;
+                        dateBadge.innerHTML = `<i class="ph ph-calendar"></i> PREVISÃO: ${item.forecastDate.split('-').reverse().join('/')}`;
                         infoArea.appendChild(dateBadge);
                     }
 
@@ -3257,6 +3259,11 @@ function createNode(item, level) {
                 }
             }
             itemRight.appendChild(mgmtFields);
+
+            // Divisória vertical
+            const divider = document.createElement('div');
+            divider.className = 'mgmt-divider';
+            itemRight.appendChild(divider);
         }
 
         // NOVO: Container de Grade 2x2 para Ações
