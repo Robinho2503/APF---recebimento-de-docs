@@ -3088,6 +3088,7 @@ function createNode(item, level) {
 
                 const btnJustify = document.createElement('button');
                 btnJustify.className = 'btn btn-outline btn-sm';
+                btnJustify.id = `btn-just-${item.id}`;
                 btnJustify.innerHTML = '<i class="ph ph-chat-text"></i> Justif.';
                 if (!canEdit) {
                     btnJustify.disabled = true;
@@ -3096,19 +3097,35 @@ function createNode(item, level) {
 
                 const justBox = document.createElement('div');
                 justBox.className = 'justification-box';
+                
+                const justContainer = document.createElement('div');
+                justContainer.style.display = 'flex';
+                justContainer.style.gap = '0.5rem';
+                justContainer.style.width = '100%';
+
                 const justInput = document.createElement('textarea');
                 justInput.className = 'input-modern';
-                justInput.style.width = '100%';
-                justInput.style.height = '60px';
-                justInput.placeholder = 'Justificativa...';
-                if (item.justification) justInput.value = item.justification;
+                justInput.style.flex = '1';
+                justInput.placeholder = 'Escreva a justificativa aqui...';
+                justInput.value = item.justification || '';
+
+                const btnSaveJust = document.createElement('button');
+                btnSaveJust.className = 'icon-btn';
+                btnSaveJust.style.background = 'var(--accent)';
+                btnSaveJust.style.color = 'white';
+                btnSaveJust.innerHTML = '<i class="ph ph-check"></i>';
+                btnSaveJust.title = 'Salvar Justificativa';
+
                 const updateJustifyBtnStyle = () => {
-                    if (item.justification && item.justification.trim() !== '') {
-                        btnJustify.style.borderColor = 'var(--danger)';
-                        btnJustify.style.color = 'var(--danger)';
-                    } else {
-                        btnJustify.style.borderColor = '';
-                        btnJustify.style.color = '';
+                    const btnJustify = document.getElementById(`btn-just-${item.id}`);
+                    if (btnJustify) {
+                        if (item.justification) {
+                            btnJustify.style.borderColor = 'var(--accent)';
+                            btnJustify.style.color = 'var(--accent)';
+                        } else {
+                            btnJustify.style.borderColor = '';
+                            btnJustify.style.color = '';
+                        }
                     }
                 };
                 updateJustifyBtnStyle();
@@ -3116,18 +3133,23 @@ function createNode(item, level) {
                 justInput.oninput = (e) => {
                     item.justification = e.target.value;
                     updateJustifyBtnStyle();
-                    saveState();
                 };
-                justInput.onchange = (e) => {
-                    const oldVal = item.justification || '';
-                    item.justification = e.target.value;
+
+                btnSaveJust.onclick = () => {
                     saveState();
-                    if (oldVal !== item.justification) {
-                        addAuditLog('Justificativa Adicionada', `Nova justificativa em <strong>${item.name}</strong>: "${item.justification}"`, 'info');
-                    }
+                    btnSaveJust.innerHTML = '<i class="ph ph-check-circle"></i>';
+                    setTimeout(() => { btnSaveJust.innerHTML = '<i class="ph ph-check"></i>'; }, 2000);
+                    addAuditLog('Justificativa Adicionada', `Nova justificativa em <strong>${item.name}</strong>: "${item.justification}"`, 'info');
                 };
-                if (!canEdit) justInput.disabled = true;
-                justBox.appendChild(justInput);
+
+                if (!canEdit) {
+                    justInput.disabled = true;
+                    btnSaveJust.style.display = 'none';
+                }
+
+                justContainer.appendChild(justInput);
+                justContainer.appendChild(btnSaveJust);
+                justBox.appendChild(justContainer);
 
                 btnJustify.onclick = () => justBox.classList.toggle('open');
 
@@ -3172,17 +3194,38 @@ function createNode(item, level) {
                 mgmtFields.appendChild(valSelect);
 
                 if (item.validationStatus === 'Apontamento') {
+                    const obsContainer = document.createElement('div');
+                    obsContainer.style.display = 'flex';
+                    obsContainer.style.gap = '0.3rem';
+                    obsContainer.style.width = '100%';
+
                     const obsInp = document.createElement('input');
                     obsInp.type = 'text';
                     obsInp.className = 'input-modern btn-sm';
+                    obsInp.style.flex = '1';
                     obsInp.placeholder = 'Qual apontamento?';
                     obsInp.value = item.observation || '';
                     obsInp.oninput = (e) => {
                         item.observation = e.target.value;
-                        saveState();
                     };
                     obsInp.onblur = () => renderTree();
-                    mgmtFields.appendChild(obsInp);
+                    
+                    const btnSaveObs = document.createElement('button');
+                    btnSaveObs.className = 'icon-btn';
+                    btnSaveObs.style.background = 'var(--danger)';
+                    btnSaveObs.style.color = 'white';
+                    btnSaveObs.innerHTML = '<i class="ph ph-paper-plane-right"></i>';
+                    btnSaveObs.title = 'Salvar Apontamento';
+                    btnSaveObs.onclick = (e) => {
+                        e.stopPropagation();
+                        saveState();
+                        btnSaveObs.innerHTML = '<i class="ph ph-check-circle"></i>';
+                        setTimeout(() => { btnSaveObs.innerHTML = '<i class="ph ph-paper-plane-right"></i>'; }, 2000);
+                    };
+
+                    obsContainer.appendChild(obsInp);
+                    obsContainer.appendChild(btnSaveObs);
+                    mgmtFields.appendChild(obsContainer);
 
                     // NOVO: Exibir Resposta do Setor para a APF (Se houver)
                     if (item.response) {
