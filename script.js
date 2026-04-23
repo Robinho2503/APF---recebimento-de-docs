@@ -188,15 +188,28 @@ function isMgmtActive() {
     return activeTabObj && activeTabObj.dataset.tab === 'management';
 }
 
+function getItemPath(p, itemId) {
+    const items = p.items || [];
+    let item = items.find(i => i.id === itemId);
+    if (!item) return "";
+    let path = [item.name];
+    let current = item;
+    while (current && current.parentId !== null) {
+        current = items.find(i => i.id === current.parentId);
+        if (current) path.unshift(current.name);
+    }
+    return path.join(" / ");
+}
+
 function getItemSector(itemId) {
     const p = getCurrentProject();
     if (!p) return null;
-    let item = p.items.find(i => i.id === itemId);
+    let item = (p.items || []).find(i => i.id === itemId);
     if (!item) return null;
     
     let current = item;
     while (current && current.parentId !== null) {
-        current = p.items.find(i => i.id === current.parentId);
+        current = (p.items || []).find(i => i.id === current.parentId);
     }
     return current ? current.name : null;
 }
@@ -381,7 +394,7 @@ async function selectProject(projectId) {
     if (!project) return;
 
     // Se o projeto não tem itens carregados, busca no Firestore (Sugestão 3)
-    if ((!project.items || project.items.length === 0) && projectId !== 'p_default') {
+    if ((!(project.items || []).length > 0) && projectId !== 'p_default') {
         console.log(`Carregando detalhes do projeto ${projectId}...`);
         const projectDocRef = doc(db, `projects/${projectId}`);
         try {
@@ -442,10 +455,11 @@ async function checkAndRecoverData() {
 function calculateProjectStats(project) {
     let pendente = 0;
     let apontamento = 0;
-    if (!project || !project.items) return { pendente: 0, apontamento: 0 };
+    const items = project.items || [];
+    if (!project || !items) return { pendente: 0, apontamento: 0 };
     
-    project.items.forEach(item => {
-        const hasChildren = project.items.some(child => child.parentId === item.id);
+    items.forEach(item => {
+        const hasChildren = items.some(child => child.parentId === item.id);
         if (item.parentId !== null && !hasChildren) {
             if(!item.isNotApplicable && (!item.attachments || item.attachments.length === 0)) {
                 pendente++;
@@ -945,10 +959,11 @@ function initEventListeners() {
                     btnExportZip.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Gerando ZIP...';
                     btnExportZip.disabled = true;
                     try {
+                        const items = curr.items || [];
                         const zip = new JSZip();
                         const rootFolder = zip.folder(curr.name);
                         async function processItem(item, parentFolder) {
-                            const children = getItems().filter(i => i.parentId === item.id);
+                            const children = items.filter(i => i.parentId === item.id);
                             const attachments = item.attachments || [];
                             const hasDocs = attachments.length > 0;
                             const isFolder = children.length > 0;
@@ -1001,7 +1016,7 @@ function initEventListeners() {
                                 await processItem(child, currentFolder);
                             }
                         }
-                        const roots = getChildItems(null);
+                        const roots = items.filter(i => i.parentId === null);
                         if (roots.length === 0) {
                             alert('Não há itens para exportar.');
                             btnExportZip.innerHTML = originalBtnContent;
@@ -1142,11 +1157,12 @@ function initEventListeners() {
     const handleToggleAll = (btn) => {
         const p = getCurrentProject();
         if(!p) return;
+        const items = p.items || [];
 
         const isExpanding = btn.querySelector('.label').textContent.includes('Mostrar');
         
-        p.items.forEach(item => {
-            const hasChildren = p.items.some(child => child.parentId === item.id);
+        items.forEach(item => {
+            const hasChildren = items.some(child => child.parentId === item.id);
             if (hasChildren) {
                 if (isExpanding) {
                     localUI.expandedIds.add(item.id);
@@ -1368,8 +1384,9 @@ function populateLoginSectors() {
     // 2. Incluir pastas raiz de todos os empreendimentos ativos
     if (state && state.projects) {
         state.projects.forEach(p => {
-            if (p.items && p.items.length > 0) {
-                p.items.filter(i => i.parentId === null).forEach(i => rootSectors.add(i.name));
+            const items = p.items || [];
+            if (items && items.length > 0) {
+                items.filter(i => i.parentId === null).forEach(i => rootSectors.add(i.name));
             }
         });
     }
@@ -2323,8 +2340,9 @@ function updateProjectProgressUI(curr) {
 
     // --- CÁLCULOS DE PROGRESSO ---
     let generalProgressPct = 0;
-    const leafItems = curr.items.filter(i => {
-        const hasChildren = curr.items.some(child => child.parentId === i.id);
+    const items = curr.items || [];
+    const leafItems = items.filter(i => {
+        const hasChildren = items.some(child => child.parentId === i.id);
         return i.parentId !== null && !hasChildren && !i.isNotApplicable;
     });
 
@@ -2357,7 +2375,7 @@ function updateProjectProgressUI(curr) {
 
     if (isAPF) {
         // Encontra todos os setores (pastas raiz)
-        const sectors = curr.items.filter(i => i.parentId === null).sort((a, b) => a.name.localeCompare(b.name));
+        const sectors = items.filter(i => i.parentId === null).sort((a, b) => a.name.localeCompare(b.name));
         
         analysisSectionHTML = `
             <!-- DIVISOR VERTICAL -->
@@ -2662,6 +2680,17 @@ function renderTree() {
     if (!mgmt) renderPendenciasChecklist(currProj);
 
     const rootItems = getChildItems(null);
+    if (rootItems.length === 0 && currProj.id !== 'p_default' && currProj.id !== 'none') {
+        const loadingHtml = `
+            <div style="text-align:center; padding:4rem 1rem; color:var(--text-muted);">
+                <i class="ph ph-spinner ph-spin" style="font-size:2rem; margin-bottom:1rem; display:block; margin-left:auto; margin-right:auto;"></i>
+                Sincronizando documentos do empreendimento...
+            </div>`;
+        if (mgmt) managementContainer.innerHTML = loadingHtml;
+        else checklistContainer.innerHTML = loadingHtml;
+        return;
+    }
+
     const isSearching = treeSearchQuery.length > 0 || treeSearchFilter !== 'all';
 
     // Logic to hide sectors when Pendências is active (Local UI)
@@ -3432,7 +3461,8 @@ function renderSectorPasswordsSettings() {
     if (!state.settings.sectorPasswords) state.settings.sectorPasswords = { "APF": "1234" };
 
     const p = getCurrentProject() || state.projects.find(proj => proj.id === 'p_default');
-    const rootSectors = ["APF", ...new Set(p.items.filter(i => i.parentId === null).map(i => i.name).sort())];
+    const items = p.items || [];
+    const rootSectors = ["APF", ...new Set(items.filter(i => i.parentId === null).map(i => i.name).sort())];
 
     listCont.innerHTML = '';
     rootSectors.forEach(s => {
@@ -3902,7 +3932,8 @@ function renderAnalysisPanels() {
         return;
     }
 
-    const roots = curr.items.filter(i => i.parentId === null).sort((a, b) => a.name.localeCompare(b.name));
+    const items = curr.items || [];
+    const roots = items.filter(i => i.parentId === null).sort((a, b) => a.name.localeCompare(b.name));
     if (roots.length === 0) {
         sectorsEl.innerHTML = '<div style="text-align:center; padding:1rem; color:var(--text-muted); font-size:0.82rem;">Nenhum setor encontrado.</div>';
         return;
@@ -3917,8 +3948,8 @@ function renderAnalysisPanels() {
     const sectorsHtml = roots.map(root => {
         let total = 0, delivered = 0, apontamentos = 0;
         const countItems = (itemId) => {
-            curr.items.filter(i => i.parentId === itemId).forEach(child => {
-                const hasChildren = curr.items.some(i => i.parentId === child.id);
+            items.filter(i => i.parentId === itemId).forEach(child => {
+                const hasChildren = items.some(i => i.parentId === child.id);
                 if (!hasChildren) {
                     if (child.isNotApplicable) return;
                     total++;
