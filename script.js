@@ -388,13 +388,16 @@ function saveState() {
 }
 
 async function selectProject(projectId) {
-    if (localUI.currentProjectId === projectId) return;
-
     const project = state.projects.find(p => p.id === projectId);
     if (!project) return;
 
-    // Se o projeto não tem itens carregados, busca no Firestore (Sugestão 3)
-    if ((!(project.items || []).length > 0) && projectId !== 'p_default') {
+    const isNewSelection = localUI.currentProjectId !== projectId;
+
+    // Se o projeto já é o atual E já possui itens, ignoramos para evitar redundância
+    if (!isNewSelection && (project.items || []).length > 0) return;
+
+    // Se o projeto não tem itens carregados, busca no Firestore
+    if (!(project.items || []).length && projectId !== 'p_default') {
         console.log(`Carregando detalhes do projeto ${projectId}...`);
         const projectDocRef = doc(db, `projects/${projectId}`);
         try {
@@ -402,22 +405,21 @@ async function selectProject(projectId) {
             if (snap.exists()) {
                 const fullData = snap.data();
                 project.items = fullData.items || [];
-                // Sincronizar outros campos que podem estar no detalhe
+                // Sincronizar metadados e outros campos do detalhe
                 Object.assign(project, fullData);
             }
         } catch (e) {
             console.error("Erro ao carregar detalhes do projeto:", e);
-            showTemporaryMessage("Erro ao carregar dados do projeto.");
             return;
         }
     }
 
     localUI.currentProjectId = projectId;
-    localUI.expandedIds.clear();
+    if (isNewSelection) {
+        localUI.expandedIds.clear();
+    }
     saveLocalUI();
-    updateGlobalDateUI();
-    renderTree();
-    renderTracking();
+    renderAfterUpdate();
     triggerPanelAnimation();
 
     if (window.innerWidth <= 992 && sidebarApf) {
