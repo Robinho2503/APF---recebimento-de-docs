@@ -6,13 +6,13 @@ import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "fire
 
 // Firebase Configuration & Initialization
 const firebaseConfig = {
-  apiKey: "AIzaSyCUOqjWShuit2xWcwNpSewrsdX2eTBP4UE",
-  authDomain: "p01---entrega-de-docs.firebaseapp.com",
-  projectId: "p01---entrega-de-docs",
-  storageBucket: "p01---entrega-de-docs.firebasestorage.app",
-  messagingSenderId: "633630915261",
-  appId: "1:633630915261:web:77f594fd31eaeefbf595d4",
-  measurementId: "G-008K7RTHVP"
+    apiKey: "AIzaSyCUOqjWShuit2xWcwNpSewrsdX2eTBP4UE",
+    authDomain: "p01---entrega-de-docs.firebaseapp.com",
+    projectId: "p01---entrega-de-docs",
+    storageBucket: "p01---entrega-de-docs.firebasestorage.app",
+    messagingSenderId: "633630915261",
+    appId: "1:633630915261:web:77f594fd31eaeefbf595d4",
+    measurementId: "G-008K7RTHVP"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -27,7 +27,7 @@ try {
             console.warn("Navegador não suporta persistência.");
         }
     });
-} catch(e) {}
+} catch (e) { }
 
 const storage = getStorage(app);
 const GLOBAL_DOC_PATH = "apf_data/v2_global_state";
@@ -107,17 +107,17 @@ function listenToActiveDevices() {
 
     console.log("Iniciando monitoramento de dispositivos ativos...");
     const presenceCol = collection(db, 'presence');
-    
+
     // Filtro: Atividade no último minuto (aproximado, o onSnapshot local filtrará o resto)
     // Nota: serverTimestamp() não funciona no where do query local de forma trivial sem o servidor, 
     // então pegamos todos e filtramos no cliente para maior precisão se necessário, 
     // mas o ideal é o query do Firestore.
-    const q = query(presenceCol); 
+    const q = query(presenceCol);
 
     presenceUnsubscribe = onSnapshot(q, (snapshot) => {
         const now = Date.now();
         const threshold = 120 * 1000; // 120 segundos (mais tolerante)
-        
+
         let count = 0;
         const processedIds = new Set();
 
@@ -131,7 +131,7 @@ function listenToActiveDevices() {
                 }
             }
         });
-        
+
         // Garantir que pelo menos o usuário atual (APF) seja contado se ele estiver ativo
         const myId = getDeviceId();
         if (!processedIds.has(myId)) {
@@ -139,7 +139,7 @@ function listenToActiveDevices() {
         }
 
         activeDevicesCount = count;
-        
+
         const indicator = document.getElementById('presence-indicator');
         if (indicator) {
             indicator.innerHTML = `
@@ -152,7 +152,7 @@ function listenToActiveDevices() {
 
         updateGlobalDateUI();
         const p = getCurrentProject();
-        if(p) updateProjectProgressUI(p);
+        if (p) updateProjectProgressUI(p);
     });
 }
 
@@ -194,7 +194,7 @@ function getItemSector(itemId) {
     if (!p) return null;
     let item = (p.items || []).find(i => i.id === itemId);
     if (!item) return null;
-    
+
     let current = item;
     while (current && current.parentId !== null) {
         current = (p.items || []).find(i => i.id === current.parentId);
@@ -211,14 +211,14 @@ function debounce(func, wait) {
 }
 
 // Função Global de Confirmação Customizada
-window.showConfirm = function({ title, message, confirmText, cancelText, type, onConfirm }) {
+window.showConfirm = function ({ title, message, confirmText, cancelText, type, onConfirm }) {
     if (!confirmModal) return;
-    
+
     confirmModalTitle.textContent = title || 'Confirmar Ação';
     confirmModalMessage.textContent = message || 'Tem certeza que deseja continuar?';
     btnConfirmYes.textContent = confirmText || 'Sim, confirmar';
     btnConfirmNo.textContent = cancelText || 'Não, cancelar';
-    
+
     // Reset display
     btnConfirmNo.style.display = 'block';
 
@@ -236,16 +236,16 @@ window.showConfirm = function({ title, message, confirmText, cancelText, type, o
         btnConfirmYes.style.background = '';
         confirmModalIconContainer.innerHTML = '<i class="ph ph-question" style="font-size: 3.5rem; color: var(--primary);"></i>';
     }
-    
+
     confirmModal.classList.remove('hidden');
-    
+
     const cleanup = () => {
         confirmModal.classList.add('hidden');
         btnConfirmYes.onclick = null;
         btnConfirmNo.onclick = null;
         btnConfirmYes.style.background = '';
     };
-    
+
     btnConfirmYes.onclick = () => { cleanup(); if (onConfirm) onConfirm(); };
     btnConfirmNo.onclick = () => { cleanup(); };
 };
@@ -261,7 +261,7 @@ async function loadState() {
             state = JSON.parse(cached);
             console.log("Loaded from local cache.");
             renderAfterUpdate();
-        } catch(e) { console.warn("Cache error", e); }
+        } catch (e) { console.warn("Cache error", e); }
     }
 
     // 2. Sincronizar com o Cloud em segundo plano (Não-bloqueante)
@@ -275,20 +275,20 @@ async function syncWithCloud() {
         if (snapshot.exists()) {
             const cloudData = snapshot.data();
             console.log("Cloud data fetched:", cloudData);
-            
+
             // Basic Migrations
             for (const p of cloudData.projects) {
                 if (!p.createdAt) p.createdAt = new Date().toISOString().split('T')[0];
                 if (p.engAnalysisOpened === undefined) p.engAnalysisOpened = false;
                 if (!p.pendencias) p.pendencias = [];
             }
-            
+
             if (!cloudData.settings) cloudData.settings = {};
             if (!cloudData.settings.sectorPasswords) cloudData.settings.sectorPasswords = { "APF": "1234" };
 
             state = cloudData;
             localStorage.setItem(CACHE_KEY, JSON.stringify(state)); // Update cache
-            
+
             if (isInitialCloudLoad) {
                 isInitialCloudLoad = false;
                 const found = state.projects.find(p => p.id === localUI.currentProjectId);
@@ -316,11 +316,11 @@ async function syncWithCloud() {
                 saveState();
             }
         }
-        
+
         // Verificação adicional de recuperação (caso o doc monolithic esteja vazio por conta da migração anterior)
         await checkAndRecoverData();
 
-    } catch(e) {
+    } catch (e) {
         console.error("Cloud sync error:", e);
     }
 }
@@ -331,17 +331,17 @@ function renderAfterUpdate() {
     renderTree();
     updateThemeIcon();
     renderAuditLog();
-    applyAuthState(); 
+    applyAuthState();
 }
 
 let saveTimeout = null;
 function saveState() {
     if (saveTimeout) clearTimeout(saveTimeout);
-    
+
     // Aumento de Debounce para 2000ms (Sugestão 2)
     saveTimeout = setTimeout(async () => {
         console.log("Sincronizando com o cloud...");
-        
+
         // 1. Salvar o documento individual do projeto selecionado (Sugestão 1 e 3)
         const curr = getCurrentProject();
         if (curr && curr.id !== 'p_default') {
@@ -447,19 +447,19 @@ function calculateProjectStats(project) {
     let apontamento = 0;
     const items = project.items || [];
     if (!project || !items) return { pendente: 0, apontamento: 0 };
-    
+
     items.forEach(item => {
         const hasChildren = items.some(child => child.parentId === item.id);
         if (item.parentId !== null && !hasChildren) {
-            if(!item.isNotApplicable && (!item.attachments || item.attachments.length === 0)) {
+            if (!item.isNotApplicable && (!item.attachments || item.attachments.length === 0)) {
                 pendente++;
             }
-            if(item.validationStatus === 'Apontamento') {
+            if (item.validationStatus === 'Apontamento') {
                 apontamento++;
             }
         }
     });
-    
+
     return { pendente, apontamento };
 }
 
@@ -468,7 +468,7 @@ function updateThemeIcon() {
         document.getElementById('btn-theme-toggle'),
         document.getElementById('btn-login-theme-toggle')
     ];
-    
+
     const isLight = document.documentElement.classList.contains('light-mode');
     const iconClass = isLight ? 'ph ph-moon' : 'ph ph-sun';
     const title = isLight ? 'Alternar para Modo Escuro' : 'Alternar para Modo Claro';
@@ -536,7 +536,7 @@ function initDOMElements() {
     btnAddRoot = document.getElementById('btn-add-root');
     apfChecklistControls = document.getElementById('apf-checklist-controls');
     btnSettings = document.getElementById('btn-settings');
-    
+
     // Containers
     checklistContainer = document.getElementById('checklist-render-area');
     sidebarApf = document.getElementById('sidebar-apf');
@@ -570,7 +570,7 @@ function initDOMElements() {
     pendenciaStartDateInp = document.getElementById('pendencia-start-date');
     modalOverlay = document.getElementById('modal-overlay');
     btnCloseModal = document.getElementById('btn-close-modal');
-    
+
     // Análise CAIXA
     engAnalysisMgmtPanel = document.getElementById('eng-analysis-mgmt-panel');
     engAnalysisStartDateInp = document.getElementById('eng-analysis-start-date');
@@ -584,7 +584,7 @@ function initDOMElements() {
     btnShowHistory = document.getElementById('btn-show-history');
     historyModal = document.getElementById('history-modal');
     btnCloseHistory = document.getElementById('btn-close-history');
-    
+
     // Audit Log
     const btnClearLogs = document.getElementById('btn-clear-logs');
     if (btnClearLogs) {
@@ -629,7 +629,7 @@ function initDOMElements() {
     confirmModalIconContainer = document.getElementById('confirm-modal-icon-container');
     btnConfirmYes = document.getElementById('btn-confirm-yes');
     btnConfirmNo = document.getElementById('btn-confirm-no');
-    
+
     // Global optimized elements
     globalFileInput = document.getElementById('global-file-input');
 }
@@ -638,7 +638,7 @@ function initDOMElements() {
 document.addEventListener('DOMContentLoaded', async () => {
     initDOMElements();
     loadLocalUI(); // Carrega IU local (pastas abertas, etc)
-    
+
     // Theme setup
     if (localStorage.getItem('apf_theme') === 'light') {
         document.documentElement.classList.add('light-mode');
@@ -646,18 +646,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateThemeIcon();
 
     initEventListeners();
-    await loadState(); 
-    
+    await loadState();
+
     // Check session after state is loaded (to populate sectors)
     applyAuthState(true);
-    
+
     initAIEngine();
     initSettings();
 
     // Iniciar sistema de presença
     updatePresence();
     setInterval(updatePresence, 60 * 1000);
-    
+
     // Limpeza ao sair (opcional, ajuda na precisão)
     window.addEventListener('beforeunload', () => {
         const deviceId = getDeviceId();
@@ -673,7 +673,7 @@ function initEventListeners() {
     if (btnThemeToggle) {
         btnThemeToggle.addEventListener('click', toggleTheme);
     }
-    
+
     if (btnLoginThemeToggle) {
         btnLoginThemeToggle.addEventListener('click', toggleTheme);
     }
@@ -691,13 +691,13 @@ function initEventListeners() {
             sidebarBackdrop.classList.remove('active');
         });
     }
-    
+
     // Authenticate events
     if (btnUnlock) {
         btnUnlock.addEventListener('click', () => {
             const sector = loginSector.value;
             const password = inputPassword.value;
-            
+
             if (!sector) {
                 alert("Por favor, selecione um setor.");
                 return;
@@ -705,20 +705,20 @@ function initEventListeners() {
 
             const storedPasswords = state.settings?.sectorPasswords || {};
             const correctPassword = storedPasswords[sector] || "1234"; // Default fallback to 1234
-            
-            if(password === correctPassword) {
+
+            if (password === correctPassword) {
                 isAuthenticated = true;
                 authenticatedSector = sector;
                 inputPassword.value = '';
                 passwordError.style.display = 'none';
-                
+
                 // Resetar seleção ao fazer login para exigir escolha manual (Conforme solicitado)
                 localUI.currentProjectId = null;
                 saveLocalUI();
 
                 // Salvar sessão temporária no sessionStorage
                 sessionStorage.setItem('apf_session_sector', sector);
-                
+
                 applyAuthState(true);
                 renderAfterUpdate();
                 populateLoginSectors(); // Update if needed
@@ -815,7 +815,7 @@ function initEventListeners() {
     }
 
     if (forgotPasswordModal) {
-        forgotPasswordModal.onclick = (e) => { if(e.target === forgotPasswordModal) forgotPasswordModal.classList.add('hidden'); };
+        forgotPasswordModal.onclick = (e) => { if (e.target === forgotPasswordModal) forgotPasswordModal.classList.add('hidden'); };
     }
 
     // Sidebar & Project Management Listeners
@@ -828,7 +828,7 @@ function initEventListeners() {
     if (projectDueDateInp) {
         projectDueDateInp.addEventListener('change', (e) => {
             const curr = getCurrentProject();
-            if(curr && curr.id !== 'p_default') {
+            if (curr && curr.id !== 'p_default') {
                 curr.dueDate = e.target.value;
                 saveState();
                 updateGlobalDateUI();
@@ -842,7 +842,7 @@ function initEventListeners() {
     }
 
     if (newProjectModal) {
-        newProjectModal.onclick = (e) => { if(e.target === newProjectModal) newProjectModal.classList.add('hidden'); };
+        newProjectModal.onclick = (e) => { if (e.target === newProjectModal) newProjectModal.classList.add('hidden'); };
     }
 
     if (btnNewProject) {
@@ -852,7 +852,7 @@ function initEventListeners() {
                 if (newProjectModalTitle) newProjectModalTitle.innerHTML = '<i class="ph ph-plus-circle"></i> Novo Empreendimento';
                 if (btnConfirmNewProjectText) btnConfirmNewProjectText.textContent = 'Criar Empreendimento';
                 if (newProjectModalInfo) newProjectModalInfo.style.display = 'block';
-                
+
                 if (newProjNameInp) newProjNameInp.value = '';
                 if (newProjUfInp) newProjUfInp.value = '';
                 if (newProjCityInp) newProjCityInp.value = '';
@@ -914,15 +914,15 @@ function initEventListeners() {
                 localUI.expandedIds.clear();
                 showTemporaryMessage(`Empreendimento "${name}" criado com sucesso!`);
             }
-            
+
             newProjectModal.classList.add('hidden');
-            
+
             saveLocalUI();
             saveState();
             updateGlobalDateUI();
             renderTree();
             renderTracking();
-            
+
             tabs.forEach(t => t.classList.remove('active'));
             tabContents.forEach(c => c.classList.remove('active'));
             document.querySelector('[data-tab="management"]').classList.add('active');
@@ -991,7 +991,7 @@ function initEventListeners() {
 
                                         const response = await fetch(url);
                                         if (!response.ok) throw new Error(`Status ${response.status}`);
-                                        
+
                                         const blob = await response.blob();
                                         currentFolder.file(att.name, blob);
                                     } catch (e) {
@@ -1045,7 +1045,7 @@ function initEventListeners() {
             const curr = getCurrentProject();
             if (curr && curr.id !== 'p_default') {
                 curr.engAnalysisOpened = !curr.engAnalysisOpened;
-                
+
                 if (curr.engAnalysisOpened) {
                     if (!curr.engAnalysisStartDate) {
                         curr.engAnalysisStartDate = new Date().toISOString().split('T')[0];
@@ -1124,7 +1124,7 @@ function initEventListeners() {
 
     if (btnOpenTemplate) {
         btnOpenTemplate.onclick = () => {
-            if(localUI.currentProjectId === 'p_default') return;
+            if (localUI.currentProjectId === 'p_default') return;
             localUI.currentProjectId = 'p_default';
             localUI.expandedIds.clear(); // Ocultar pastas por padrão ao abrir o modelo
             saveLocalUI();
@@ -1145,11 +1145,11 @@ function initEventListeners() {
 
     const handleToggleAll = (btn) => {
         const p = getCurrentProject();
-        if(!p) return;
+        if (!p) return;
         const items = p.items || [];
 
         const isExpanding = btn.querySelector('.label').textContent.includes('Mostrar');
-        
+
         items.forEach(item => {
             const hasChildren = items.some(child => child.parentId === item.id);
             if (hasChildren) {
@@ -1179,7 +1179,7 @@ function initEventListeners() {
             saveState();
             renderTree();
             renderTracking();
-            
+
             if (curr.pendenciaActive) {
                 setTimeout(() => {
                     const panel = document.getElementById('pendencias-mgmt-panel');
@@ -1257,7 +1257,7 @@ function initEventListeners() {
         btnCloseModal.addEventListener('click', () => modalOverlay.classList.add('hidden'));
     }
     if (modalOverlay) {
-        modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) modalOverlay.classList.add('hidden'); });
+        modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) modalOverlay.classList.add('hidden'); });
     }
 
     // Global Search Events
@@ -1325,12 +1325,12 @@ function showTemporaryMessage(msg, type = 'info') {
     toast.style.right = '2rem';
     toast.style.padding = '1rem 1.5rem';
     toast.style.borderRadius = '1rem';
-    
+
     // Glassmorphism Style
     toast.style.background = type === 'danger' ? 'rgba(239, 68, 68, 0.9)' : 'rgba(16, 185, 129, 0.9)';
     toast.style.backdropFilter = 'blur(10px)';
     toast.style.border = '1px solid rgba(255, 255, 255, 0.2)';
-    
+
     toast.style.color = 'white';
     toast.style.boxShadow = '0 15px 35px rgba(0,0,0,0.4)';
     toast.style.zIndex = '100000';
@@ -1342,18 +1342,18 @@ function showTemporaryMessage(msg, type = 'info') {
     toast.style.transform = 'translateY(1rem)';
     toast.style.opacity = '0';
     toast.style.transition = 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-    
+
     const iconName = type === 'danger' ? 'ph-warning-circle' : 'ph-check-circle';
     toast.innerHTML = `<i class="ph ${iconName}" style="font-size: 1.25rem;"></i> ${msg}`;
-    
+
     document.body.appendChild(toast);
-    
+
     // Animation in
     setTimeout(() => {
         toast.style.transform = 'translateY(0)';
         toast.style.opacity = '1';
     }, 10);
-    
+
     // Auto remove
     setTimeout(() => {
         toast.style.transform = 'translateY(1rem)';
@@ -1364,9 +1364,9 @@ function showTemporaryMessage(msg, type = 'info') {
 
 function populateLoginSectors() {
     if (!loginSector) return;
-    
+
     const rootSectors = new Set();
-    
+
     // 1. Sempre incluir os setores do Modelo Padrão (Garante que nunca fique vazio)
     DEFAULT_ITEMS.filter(i => i.parentId === null).forEach(i => rootSectors.add(i.name));
 
@@ -1382,23 +1382,23 @@ function populateLoginSectors() {
 
     const sortedSectors = [...rootSectors].sort();
     const currentVal = loginSector.value;
-    
+
     // Repopular
     loginSector.innerHTML = '<option value="">Selecione seu setor...</option><option value="APF">APF (Administrativo)</option>';
-    
+
     sortedSectors.forEach(s => {
         const opt = document.createElement('option');
         opt.value = s;
         opt.textContent = s;
         loginSector.appendChild(opt);
     });
-    
+
     if (currentVal) loginSector.value = currentVal;
 }
 
 
 function applyAuthState(silentRedirect = false) {
-    if(!globalLogin || !managementContent) return;
+    if (!globalLogin || !managementContent) return;
 
     const tabsNav = document.querySelector('.tabs');
     // Restore session if exists and not yet set
@@ -1440,7 +1440,7 @@ function applyAuthState(silentRedirect = false) {
             apfBtn.style.borderColor = '';
             apfBtn.style.color = '';
         }
-        
+
         // Hide APF button for non-APF sectors
         apfBtn.style.display = authenticatedSector === 'APF' ? 'inline-flex' : 'none';
     }
@@ -1449,20 +1449,20 @@ function applyAuthState(silentRedirect = false) {
         // Force Management tab
         tabs.forEach(t => t.classList.remove('active'));
         tabContents.forEach(tc => tc.classList.remove('active'));
-        
+
         const mgmtTab = document.getElementById('tab-management');
         if (mgmtTab) {
             mgmtTab.classList.add('active');
             mgmtTab.style.display = '';
         }
-        
+
         const mgmtBtn = document.querySelector('[data-tab="management"]');
         if (mgmtBtn) mgmtBtn.classList.add('active');
     } else {
         // Site Default (non-APF) is Checklist
         tabs.forEach(t => t.classList.remove('active'));
         tabContents.forEach(tc => tc.classList.remove('active'));
-        
+
         const checklistTab = document.getElementById('tab-checklist');
         if (checklistTab) {
             checklistTab.classList.add('active');
@@ -1489,14 +1489,14 @@ function applyAuthState(silentRedirect = false) {
     }
 
     if (apfSubmenu) apfSubmenu.style.display = (isMgmt && authenticatedSector === 'APF') ? 'flex' : 'none';
-    
+
     if (authNavTabs) {
         authNavTabs.style.display = (authenticatedSector === 'APF') ? 'flex' : 'none';
-        
+
         if (authenticatedSector === 'APF' && isMgmt) {
             listenToActiveDevices();
         }
-        
+
         // Sync active state of nav tabs
         const currentActiveTab = isMgmt ? 'management' : 'checklist';
         const tabBtns = authNavTabs.querySelectorAll('.tab-btn');
@@ -1506,7 +1506,7 @@ function applyAuthState(silentRedirect = false) {
             } else {
                 btn.classList.remove('active');
             }
-            
+
             // Hide Checklist tab button for APF
             if (authenticatedSector === 'APF' && btn.dataset.tab === 'checklist') {
                 btn.style.display = 'none';
@@ -1567,7 +1567,7 @@ function logout() {
     // Limpar estado visual de abas antes de sair
     if (tabs) tabs.forEach(t => t.classList.remove('active'));
     if (tabContents) tabContents.forEach(tc => tc.classList.remove('active'));
-    
+
     // Garantir que nenhum elemento administrativo fique visível se o reload demorar
     if (headerMgmtActions) headerMgmtActions.style.display = 'none';
     if (headerActionsSegment) headerActionsSegment.style.display = 'none';
@@ -1580,17 +1580,17 @@ function logout() {
     }
     if (authStatusBanner) authStatusBanner.style.display = 'none';
     if (btnLogout) btnLogout.style.display = 'none';
-    
+
     const mainLayout = document.querySelector('.main-layout');
     if (mainLayout) mainLayout.classList.add('hidden');
-    
+
     // Clear password input
     const inputPassword = document.getElementById('global-password-input');
     if (inputPassword) {
         inputPassword.value = '';
         inputPassword.focus();
     }
-    
+
     applyAuthState(true);
     window.location.reload();
 }
@@ -1609,43 +1609,43 @@ function updateGlobalDateUI() {
     const mainWrapper = document.getElementById('main-content-wrapper');
 
     // 1. Estado Inicial: Nenhum projeto selecionado
-    if(!p || p.id === 'none') {
-        if(noProjPlaceholder) noProjPlaceholder.style.display = 'flex';
-        if(mainWrapper) mainWrapper.style.display = 'none';
-        if(deck) deck.style.display = 'none';
-        if(nameEl) nameEl.textContent = 'APF Checklist';
-        if(subtitleEl) subtitleEl.textContent = 'Selecione um empreendimento no painel lateral';
+    if (!p || p.id === 'none') {
+        if (noProjPlaceholder) noProjPlaceholder.style.display = 'flex';
+        if (mainWrapper) mainWrapper.style.display = 'none';
+        if (deck) deck.style.display = 'none';
+        if (nameEl) nameEl.textContent = 'APF Checklist';
+        if (subtitleEl) subtitleEl.textContent = 'Selecione um empreendimento no painel lateral';
         return;
-    } 
+    }
 
     // Se houver projeto, mostrar o conteúdo principal
-    if(noProjPlaceholder) noProjPlaceholder.style.display = 'none';
-    if(mainWrapper) mainWrapper.style.display = 'block';
-    if(deck) deck.style.display = 'flex';
+    if (noProjPlaceholder) noProjPlaceholder.style.display = 'none';
+    if (mainWrapper) mainWrapper.style.display = 'block';
+    if (deck) deck.style.display = 'flex';
 
     // 2. Caso Especial: MODELO DE ENTREGA
-    if(p.id === 'p_default') {
-        if(dash) dash.style.display = 'none';
-        if(nameEl) nameEl.textContent = p.name;
-        if(subtitleEl) {
+    if (p.id === 'p_default') {
+        if (dash) dash.style.display = 'none';
+        if (nameEl) nameEl.textContent = p.name;
+        if (subtitleEl) {
             subtitleEl.innerHTML = '<i class="ph ph-layout" style="opacity: 0.7;"></i> Estrutura Base de Documentação';
             subtitleEl.className = 'default-subtitle';
         }
-        if(btnRenameProject) btnRenameProject.style.display = 'none';
-        if(btnDeleteProject) btnDeleteProject.style.display = 'none';
-        if(dueDateContainer) dueDateContainer.style.display = 'none';
-        if(projectGlobalCountdown) projectGlobalCountdown.style.display = 'none';
-        
+        if (btnRenameProject) btnRenameProject.style.display = 'none';
+        if (btnDeleteProject) btnDeleteProject.style.display = 'none';
+        if (dueDateContainer) dueDateContainer.style.display = 'none';
+        if (projectGlobalCountdown) projectGlobalCountdown.style.display = 'none';
+
         // Reseta filtro no modelo
         treeSearchFilter = 'all';
         return;
     }
 
     // 3. Caso Normal: Empreendimentos Reais
-    if(nameEl) nameEl.textContent = p.name;
-    
+    if (nameEl) nameEl.textContent = p.name;
+
     // Subtítulo Superior: Apenas Fase
-    if(subtitleEl) {
+    if (subtitleEl) {
         subtitleEl.innerHTML = `ENTREGA DE DOCUMENTAÇÃO`;
         subtitleEl.className = 'default-subtitle';
     }
@@ -1664,17 +1664,17 @@ function updateGlobalDateUI() {
 
     const isAPF = authenticatedSector === 'APF';
     const headerActionsSegment = document.getElementById('header-actions-segment');
-    if(headerActionsSegment) headerActionsSegment.style.display = isAPF ? 'flex' : 'none';
-    
+    if (headerActionsSegment) headerActionsSegment.style.display = isAPF ? 'flex' : 'none';
+
     // Controles acima do checklist (Novo Setor, Relatórios, etc)
     const apfChecklistControls = document.getElementById('apf-checklist-controls');
-    if(apfChecklistControls) apfChecklistControls.style.display = isAPF ? 'flex' : 'none';
+    if (apfChecklistControls) apfChecklistControls.style.display = isAPF ? 'flex' : 'none';
 
-    if(btnRenameProject) btnRenameProject.style.display = isAPF ? 'inline-flex' : 'none';
-    if(btnDeleteProject) btnDeleteProject.style.display = isAPF ? 'inline-flex' : 'none';
-    if(btnAddRoot) btnAddRoot.style.display = isAPF ? 'inline-flex' : 'none';
-    if(dueDateContainer) dueDateContainer.style.display = 'none';
-    if(projectDueDateInp) { projectDueDateInp.disabled = !isAPF; projectDueDateInp.value = p.dueDate || ''; }
+    if (btnRenameProject) btnRenameProject.style.display = isAPF ? 'inline-flex' : 'none';
+    if (btnDeleteProject) btnDeleteProject.style.display = isAPF ? 'inline-flex' : 'none';
+    if (btnAddRoot) btnAddRoot.style.display = isAPF ? 'inline-flex' : 'none';
+    if (dueDateContainer) dueDateContainer.style.display = 'none';
+    if (projectDueDateInp) { projectDueDateInp.disabled = !isAPF; projectDueDateInp.value = p.dueDate || ''; }
 
     // RENDERIZAR PAINEL UNIFICADO
     console.log('Rendering unified dashboard for:', p.name);
@@ -1688,16 +1688,16 @@ function updateGlobalDateUI() {
 
         if (p.pendenciaActive) {
             const start = p.pendenciaStartDate ? new Date(p.pendenciaStartDate) : new Date();
-            start.setHours(0,0,0,0);
-            const today = new Date(); today.setHours(0,0,0,0);
+            start.setHours(0, 0, 0, 0);
+            const today = new Date(); today.setHours(0, 0, 0, 0);
             const diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
             countdownHTML = `<i class="ph ph-clock"></i> Em resolução a ${diff >= 0 ? diff : 0} dias`;
             countdownColor = 'var(--danger)';
             showCountdown = true;
         } else if (p.engAnalysisOpened) {
             const start = p.engAnalysisStartDate ? new Date(p.engAnalysisStartDate) : new Date();
-            start.setHours(0,0,0,0);
-            const today = new Date(); today.setHours(0,0,0,0);
+            start.setHours(0, 0, 0, 0);
+            const today = new Date(); today.setHours(0, 0, 0, 0);
             const diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
             countdownHTML = `<i class="ph ph-clock"></i> Em análise a ${diff >= 0 ? diff : 0} dias`;
             countdownColor = 'var(--info)';
@@ -1705,7 +1705,7 @@ function updateGlobalDateUI() {
         } else if (p.dueDate) {
             const bizDays = calculateBusinessDays(p.dueDate);
             const diff = calculateDays(p.dueDate);
-            const isExpired = new Date(p.dueDate) < new Date().setHours(0,0,0,0);
+            const isExpired = new Date(p.dueDate) < new Date().setHours(0, 0, 0, 0);
             if (isExpired) {
                 countdownHTML = `<i class="ph ph-warning-circle"></i> Atrasado ${Math.abs(diff)} dia(s)`;
                 countdownColor = 'var(--danger)';
@@ -1726,16 +1726,16 @@ function updateGlobalDateUI() {
     }
 
     // Análise CAIXA?
-    const btnToggleEngId = 'btn-toggle-eng'; 
+    const btnToggleEngId = 'btn-toggle-eng';
     const btnToggleEngEl = document.getElementById(btnToggleEngId);
-    
-    if(p.engAnalysisOpened) {
+
+    if (p.engAnalysisOpened) {
         let daysDisplay = 0;
         if (p.engAnalysisStartDate) {
             const start = new Date(p.engAnalysisStartDate);
-            start.setHours(0,0,0,0);
+            start.setHours(0, 0, 0, 0);
             const today = new Date();
-            today.setHours(0,0,0,0);
+            today.setHours(0, 0, 0, 0);
             const diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
             daysDisplay = diff >= 0 ? diff : 0;
         }
@@ -1772,7 +1772,7 @@ function updateGlobalDateUI() {
 
 
 // Global filter handler for dashboard cards
-window.handleDashboardFilter = function(filter, count) {
+window.handleDashboardFilter = function (filter, count) {
     if (count === 0 && filter !== 'all') {
         const labels = {
             'pendente': 'Pendentes',
@@ -1793,7 +1793,7 @@ window.handleDashboardFilter = function(filter, count) {
         // Auto-expand ao aplicar filtro para mostrar os resultados encontrados
         expandRelevantNodes();
     }
-    
+
     saveLocalUI();
     updateGlobalDateUI();
     renderTree();
@@ -1804,18 +1804,18 @@ window.handleDashboardFilter = function(filter, count) {
 // function updateProjectDropdown() {
 //     const mgmt = isMgmtActive();
 //     projectSelect.innerHTML = '';
-    
+
 //     let visibleProjects = state.projects;
-    
+
 //     if (!mgmt) {
 //         visibleProjects = state.projects.filter(p => p.id !== 'p_default');
-        
+
 //         const defOpt = document.createElement('option');
 //         defOpt.value = 'none';
 //         defOpt.textContent = visibleProjects.length === 0 ? '-- Crie um Empreendimento no Acesso APF --' : '-- Selecionar Empreendimento --';
 //         projectSelect.appendChild(defOpt);
 //     }
-    
+
 //     visibleProjects.forEach(p => {
 //         const opt = document.createElement('option');
 //         opt.value = p.id;
@@ -1834,7 +1834,7 @@ window.handleDashboardFilter = function(filter, count) {
 //     }
 
 //     btnDeleteProject.style.display = state.projects.length > 1 ? 'inline-flex' : 'none';
-    
+
 //     const curr = getCurrentProject();
 //     if(curr && curr.id !== 'none' && (mgmt || curr.id !== 'p_default')) {
 //         currentProjectName.textContent = curr.name;
@@ -1866,7 +1866,7 @@ function triggerPanelAnimation() {
             void headerDeck.offsetWidth;
             headerDeck.classList.add(animClass);
         }
-        
+
         // Animamos o layout completo do checklist (incluindo painéis laterais)
         const checkLayout = document.querySelector('.checklist-analysis-layout');
         if (checkLayout) {
@@ -1874,7 +1874,7 @@ function triggerPanelAnimation() {
             void checkLayout.offsetWidth;
             checkLayout.classList.add(animClass);
         }
-        
+
         if (mgmtArea) {
             mgmtArea.classList.remove(animClass);
             void mgmtArea.offsetWidth;
@@ -1885,12 +1885,12 @@ function triggerPanelAnimation() {
 
 // Tracker Render
 function renderTracking() {
-    if(!trackingContainer) return;
+    if (!trackingContainer) return;
     trackingContainer.innerHTML = '';
 
     // ALWAYS filter out the template from the sidebar as per user request
     const trackableProjects = state.projects.filter(p => p.id !== 'p_default');
-    
+
     trackableProjects.sort((a, b) => {
         // 1. Resolução de Pendências ATIVA (Topo da lista)
         // Priorizar o que está há MAIS tempo (data mais antiga)
@@ -1910,10 +1910,10 @@ function renderTracking() {
         // 3. Prioridade por Data (Mais vencidos ou mais próximos primeiro)
         const hasDateA = !!a.dueDate;
         const hasDateB = !!b.dueDate;
-        
+
         if (hasDateA && !hasDateB) return -1;
         if (!hasDateA && hasDateB) return 1;
-        
+
         if (hasDateA && hasDateB) {
             const daysA = calculateDays(a.dueDate);
             const daysB = calculateDays(b.dueDate);
@@ -1922,8 +1922,8 @@ function renderTracking() {
 
         return 0;
     });
-    
-    if(trackableProjects.length === 0) {
+
+    if (trackableProjects.length === 0) {
         if (isInitialCloudLoad) {
             trackingContainer.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--text-muted);"><i class="ph ph-spinner ph-spin" style="font-size:1.5rem; margin-bottom:0.5rem; display:block;"></i> Sincronizando empreendimentos...</div>';
         } else {
@@ -1938,13 +1938,13 @@ function renderTracking() {
         const isEng = p.engAnalysisOpened ? 'eng-active' : '';
         const isPendencia = p.pendenciaActive ? 'pendencia-active' : '';
         card.className = `tracking-card glass-panel ${isActive} ${isEng} ${isPendencia}`;
-        
+
         // Define color for the status indicator pseudo-element
         let statusColor = 'var(--primary)';
-        if(p.pendenciaActive) statusColor = 'var(--danger)';
-        else if(p.engAnalysisOpened) statusColor = 'var(--info)';
+        if (p.pendenciaActive) statusColor = 'var(--danger)';
+        else if (p.engAnalysisOpened) statusColor = 'var(--info)';
         card.style.setProperty('--indicator-color', statusColor);
-        
+
         card.addEventListener('click', () => {
             selectProject(p.id);
         });
@@ -1955,11 +1955,11 @@ function renderTracking() {
         let dateDesc = 'Cadastre no APF';
         let fillClass = 'good';
 
-        if(p.dueDate) {
+        if (p.dueDate) {
             const diff = calculateDays(p.dueDate);
-            if(diff === 0) { prazoText = 'Entrega Hoje!'; dClass='good'; }
-            else if(diff > 0) { prazoText = `Faltam ${diff} dia(s)`; dClass='good'; }
-            else { prazoText = `Atrasado ${Math.abs(diff)} dia(s)`; dClass='late'; }
+            if (diff === 0) { prazoText = 'Entrega Hoje!'; dClass = 'good'; }
+            else if (diff > 0) { prazoText = `Faltam ${diff} dia(s)`; dClass = 'good'; }
+            else { prazoText = `Atrasado ${Math.abs(diff)} dia(s)`; dClass = 'late'; }
 
             dateDesc = formatDateToPT(p.dueDate);
             const bizDays = calculateBusinessDays(p.dueDate);
@@ -1970,19 +1970,19 @@ function renderTracking() {
                 const tStart = new Date(p.createdAt).getTime();
                 const tEnd = new Date(p.dueDate).getTime();
                 const tNow = new Date().getTime();
-                
+
                 if (tEnd > tStart) {
                     progressPct = ((tNow - tStart) / (tEnd - tStart)) * 100;
-                    if(progressPct > 100) progressPct = 100;
-                    if(progressPct < 0) progressPct = 0;
-                } else if(tNow >= tEnd) {
+                    if (progressPct > 100) progressPct = 100;
+                    if (progressPct < 0) progressPct = 0;
+                } else if (tNow >= tEnd) {
                     progressPct = 100;
                 }
             }
-            if(diff < 0) { fillClass = 'late'; }
-            else if(diff >= 0 && diff <= 5 && progressPct > 70) { fillClass = 'warning'; }
+            if (diff < 0) { fillClass = 'late'; }
+            else if (diff >= 0 && diff <= 5 && progressPct > 70) { fillClass = 'warning'; }
         }
-        
+
         const fillColors = {
             'good': 'var(--primary)',
             'late': 'var(--danger)',
@@ -1999,12 +1999,12 @@ function renderTracking() {
         let trackingLine = '';
         if (p.pendenciaActive) {
             const start = p.pendenciaStartDate ? new Date(p.pendenciaStartDate) : new Date();
-            start.setHours(0,0,0,0);
+            start.setHours(0, 0, 0, 0);
             const today = new Date();
-            today.setHours(0,0,0,0);
+            today.setHours(0, 0, 0, 0);
             const diffDays = Math.floor((today - start) / (1000 * 60 * 60 * 24));
             const displayDays = diffDays >= 0 ? diffDays : 0;
-            
+
             trackingLine = `
                 <div class="status-banner status-banner-danger">
                     <i class="ph ph-warning-diamond" style="font-size: 0.8rem;"></i> Resolução de pendências │ ${displayDays}d
@@ -2014,9 +2014,9 @@ function renderTracking() {
             let daysDisplay = 0;
             if (p.engAnalysisStartDate) {
                 const start = new Date(p.engAnalysisStartDate);
-                start.setHours(0,0,0,0);
+                start.setHours(0, 0, 0, 0);
                 const today = new Date();
-                today.setHours(0,0,0,0);
+                today.setHours(0, 0, 0, 0);
                 const diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
                 daysDisplay = diff >= 0 ? diff : 0;
             }
@@ -2095,28 +2095,28 @@ function getNodeStats(itemId) {
     // If it's a root folder (sector), and we have pre-calculated stats for the project
     // we could potentially optimize further, but for now we still do the sub-tree sweep
     // unless we store stats per folder. For now, let's keep the sweep but use it smarter.
-    
+
     let pendente = 0;
     let apontamento = 0;
-    
+
     const children = getChildItems(itemId);
     const item = (p.items || []).find(i => i.id === itemId);
-    
-    if(item && item.parentId !== null && children.length === 0) {
-        if(!item.isNotApplicable && (!item.attachments || item.attachments.length === 0)) {
+
+    if (item && item.parentId !== null && children.length === 0) {
+        if (!item.isNotApplicable && (!item.attachments || item.attachments.length === 0)) {
             pendente++;
         }
-        if(item.validationStatus === 'Apontamento') {
+        if (item.validationStatus === 'Apontamento') {
             apontamento++;
         }
     }
-    
+
     children.forEach(child => {
         const childStats = getNodeStats(child.id);
         pendente += childStats.pendente;
         apontamento += childStats.apontamento;
     });
-    
+
     return { pendente, apontamento };
 }
 
@@ -2175,7 +2175,7 @@ function renderPendenciasChecklist(curr) {
     wrapper.style.display = 'flex';
     wrapper.style.flexDirection = 'column';
     wrapper.style.gap = '1rem';
-    
+
     // Header for Pendências
     const header = document.createElement('div');
     header.style.display = 'flex';
@@ -2189,7 +2189,7 @@ function renderPendenciasChecklist(curr) {
     curr.pendencias.forEach(p => {
         const node = document.createElement('div');
         node.className = 'tree-item pendencia-item';
-        
+
         const itemLeft = document.createElement('div');
         itemLeft.className = 'item-left';
         itemLeft.innerHTML = `
@@ -2205,12 +2205,12 @@ function renderPendenciasChecklist(curr) {
         itemRight.className = 'item-right';
 
         const hasAtt = p.attachments && p.attachments.length > 0;
-        
+
         // Status Badge
         const statusBadge = document.createElement('span');
         statusBadge.className = hasAtt ? 'badge badge-entregue badge-sm' : 'badge badge-pendente badge-sm';
         statusBadge.textContent = hasAtt ? 'Entregue' : 'Pendente';
-        
+
         const statusRow = document.createElement('div');
         statusRow.className = 'item-status-row';
         statusRow.style.display = 'flex';
@@ -2219,15 +2219,15 @@ function renderPendenciasChecklist(curr) {
         statusRow.appendChild(statusBadge);
 
         // Validation badge for pendencies
-        if(hasAtt && p.validationStatus) {
+        if (hasAtt && p.validationStatus) {
             const valBadge = document.createElement('span');
-            if(p.validationStatus === 'APF check' || p.validationStatus === 'Validado') {
+            if (p.validationStatus === 'APF check' || p.validationStatus === 'Validado') {
                 valBadge.className = 'badge badge-validado badge-sm';
                 valBadge.textContent = 'Validado';
             }
-            else if(p.validationStatus === 'Apontamento') valBadge.className = 'badge badge-apontamento badge-sm';
+            else if (p.validationStatus === 'Apontamento') valBadge.className = 'badge badge-apontamento badge-sm';
             else valBadge.className = 'badge badge-analise badge-sm';
-            if(p.validationStatus !== 'APF check' && p.validationStatus !== 'Validado') valBadge.textContent = p.validationStatus;
+            if (p.validationStatus !== 'APF check' && p.validationStatus !== 'Validado') valBadge.textContent = p.validationStatus;
             statusRow.appendChild(valBadge);
         }
 
@@ -2242,7 +2242,7 @@ function renderPendenciasChecklist(curr) {
             isUploadPendencia = true;
             if (globalFileInput) globalFileInput.click();
         };
-        
+
         statusRow.appendChild(btnAttach);
         itemRight.appendChild(statusRow);
 
@@ -2274,7 +2274,7 @@ function renderPendenciasChecklist(curr) {
         const obsBox = document.createElement('div');
         obsBox.className = 'justification-box';
         obsBox.style.marginTop = '0.4rem';
-        
+
         const obsInput = document.createElement('textarea');
         obsInput.className = 'input-modern';
         obsInput.style.width = '100%';
@@ -2282,24 +2282,24 @@ function renderPendenciasChecklist(curr) {
         obsInput.style.fontSize = '0.75rem';
         obsInput.placeholder = 'Observação...';
         obsInput.value = p.observation || '';
-        obsInput.onchange = (e) => { 
+        obsInput.onchange = (e) => {
             const oldVal = p.observation || '';
-            p.observation = e.target.value; 
-            saveState(); 
+            p.observation = e.target.value;
+            saveState();
             if (oldVal !== p.observation) {
                 addAuditLog('Observação Adicionada', `Nova observação em <strong>${p.docName}</strong>: "${p.observation}"`, 'info');
             }
         };
-        
+
         obsBox.appendChild(obsInput);
-        if(p.observation && p.observation.trim() !== '') {
+        if (p.observation && p.observation.trim() !== '') {
             btnObs.style.borderColor = 'var(--accent)';
             btnObs.style.color = 'var(--accent)';
         }
         btnObs.onclick = () => obsBox.classList.toggle('open');
 
         itemRight.appendChild(btnObs);
-        
+
         itemRight.appendChild(obsBox);
 
         node.appendChild(itemLeft);
@@ -2316,12 +2316,12 @@ function updateProjectProgressUI(curr) {
         console.warn('Dashboard container not found!');
         return;
     }
-    
+
     if (!curr || curr.id === 'p_default' || curr.id === 'none') {
         container.style.display = 'none';
         return;
     }
-    
+
     console.log('Updating Dashboard for:', curr.name);
     container.style.display = 'flex';
 
@@ -2365,7 +2365,7 @@ function updateProjectProgressUI(curr) {
     if (isAPF) {
         // Encontra todos os setores (pastas raiz)
         const sectors = items.filter(i => i.parentId === null).sort((a, b) => a.name.localeCompare(b.name));
-        
+
         analysisSectionHTML = `
             <!-- DIVISOR VERTICAL -->
             <div class="divider-v" style="height: 60px; background: var(--divider-color);"></div>
@@ -2403,7 +2403,7 @@ function updateProjectProgressUI(curr) {
             const validatedSectorCount = sectorLeafItems.filter(i => (i.validationStatus === 'Validado' || i.validationStatus === 'APF check') && i.attachments?.length > 0).length;
             const sectorAnalysisPct = Math.round((validatedSectorCount / sectorLeafItems.length) * 100);
             const sectorGrade = getGrade(sectorAnalysisPct);
-            
+
             analysisSectionHTML = `
                 <div class="divider-v" style="height: 48px; background: var(--divider-color);"></div>
                 <div style="display: flex; align-items: center; gap: 1rem; min-width: 180px;">
@@ -2514,14 +2514,14 @@ function updateProjectProgressUI(curr) {
 
 
 function calculateDays(dueDate) {
-    if(!dueDate) return null;
+    if (!dueDate) return null;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     // targetDate format: YYYY-MM-DD
     const parts = dueDate.split('-');
     const target = new Date(parts[0], parts[1] - 1, parts[2]);
     target.setHours(0, 0, 0, 0);
-    
+
     const diffTime = target - today;
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
@@ -2531,12 +2531,12 @@ function calculateBusinessDays(targetDateStr) {
     today.setHours(0, 0, 0, 0);
     const target = new Date(targetDateStr);
     target.setHours(0, 0, 0, 0);
-    
+
     if (target < today) return 0;
-    
+
     let count = 0;
     let current = new Date(today);
-    
+
     while (current < target) {
         current.setDate(current.getDate() + 1);
         const day = current.getDay();
@@ -2563,7 +2563,7 @@ function expandRelevantNodes() {
                 const cIsFolder = items.some(i => i.parentId === c.id) || c.parentId === null;
                 const cValidOrAPF = c.validationStatus === 'APF check' || c.validationStatus === 'Validado';
                 const cPointed = c.validationStatus === 'Apontamento';
-                
+
                 let cMatchesFilter = true;
                 const cSector = getItemSector(c.id);
                 const userSector = (authenticatedSector || '').trim().toLowerCase();
@@ -2582,7 +2582,7 @@ function expandRelevantNodes() {
                         else if (treeSearchFilter === 'analise') cMatchesFilter = cHasAtt && !cValidOrAPF && !cPointed;
                     }
                 }
-                
+
                 return (cMatches && cMatchesFilter && sectorMatches) || anyChildMatches(c.id);
             });
         };
@@ -2595,9 +2595,9 @@ function expandRelevantNodes() {
 }
 
 function formatDateToPT(isoStr) {
-    if(!isoStr) return '';
+    if (!isoStr) return '';
     const parts = isoStr.split('-');
-    if(parts.length !== 3) return isoStr;
+    if (parts.length !== 3) return isoStr;
     return `${parts[2]}/${parts[1]}/${parts[0]}`;
 }
 
@@ -2608,7 +2608,7 @@ function renderTree() {
     // Update Toggle All Button Text
     const btnChecklist = document.getElementById('btn-toggle-all-checklist');
     const btnMgmt = document.getElementById('btn-toggle-all-mgmt');
-    
+
     // Check if at least one folder is expanded (Safe check for .items)
     const items = p.items || [];
     const foldersWithChildren = items.filter(item => items.some(child => child.parentId === item.id));
@@ -2626,15 +2626,15 @@ function renderTree() {
     updateBtn(btnChecklist);
     updateBtn(btnMgmt);
 
-    if(!checklistContainer || !managementContainer) return;
-    
+    if (!checklistContainer || !managementContainer) return;
+
     // Clear
     checklistContainer.innerHTML = '';
     managementContainer.innerHTML = '';
-    
+
     const currProj = getCurrentProject();
     const mgmt = isMgmtActive();
-    
+
     if (!currProj) return;
 
     // Sync panel references
@@ -2643,7 +2643,7 @@ function renderTree() {
 
     if (!mgmt && (currProj.id === 'none' || currProj.id === 'p_default')) {
         let msg = '<i class="ph ph-warning"></i> Selecione um Empreendimento acima para visualizar a documentação.';
-        if(state.projects.length <= 1) msg = '<i class="ph ph-warning"></i> Você precisa criar um Empreendimento novo na aba "Acesso APF" para manipular os checklists.';
+        if (state.projects.length <= 1) msg = '<i class="ph ph-warning"></i> Você precisa criar um Empreendimento novo na aba "Acesso APF" para manipular os checklists.';
         checklistContainer.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding: 3rem 1rem; border: 1px dashed var(--panel-border); border-radius: 0.5rem;">${msg}</div>`;
         return;
     }
@@ -2686,23 +2686,23 @@ function renderTree() {
     let showItems = true;
     if (currProj.pendenciaActive && !mgmt) {
         if (!localUI.showFullChecklistDuringPendencia) showItems = false;
-        
+
         const toggleDiv = document.createElement('div');
         toggleDiv.style.margin = '1.5rem 0 1rem';
         toggleDiv.style.textAlign = 'center';
-        
+
         const btnToggleFull = document.createElement('button');
         btnToggleFull.className = 'btn btn-outline btn-sm';
-        btnToggleFull.innerHTML = localUI.showFullChecklistDuringPendencia 
-            ? '<i class="ph ph-eye-slash"></i> Ocultar Documentação dos Setores' 
+        btnToggleFull.innerHTML = localUI.showFullChecklistDuringPendencia
+            ? '<i class="ph ph-eye-slash"></i> Ocultar Documentação dos Setores'
             : '<i class="ph ph-eye"></i> Exibir Documentação dos Setores';
-        
+
         btnToggleFull.onclick = () => {
             localUI.showFullChecklistDuringPendencia = !localUI.showFullChecklistDuringPendencia;
             saveLocalUI();
             renderTree();
         };
-        
+
         toggleDiv.appendChild(btnToggleFull);
         checklistContainer.appendChild(toggleDiv);
     }
@@ -2730,18 +2730,18 @@ function renderTree() {
     renderAnalysisPanels();
 
     // Novo: Ajuste dinâmico de fonte para nomes longos
-    setTimeout(adjustTreeFontSize, 0); 
+    setTimeout(adjustTreeFontSize, 0);
 }
 
 function adjustTreeFontSize() {
     const names = document.querySelectorAll('.item-name');
     names.forEach(name => {
         name.style.fontSize = ''; // Reset para re-calcular
-        
+
         let fontSize = 0.9;
         const minFontSize = 0.6; // Reduzido um pouco mais para garantir visibilidade
         const step = 0.02; // Passo menor para ajuste mais fino
-        
+
         // Verifica transbordamento e reduz fonte
         if (name.scrollWidth > name.clientWidth) {
             while (name.scrollWidth > name.clientWidth && fontSize > minFontSize) {
@@ -2757,7 +2757,7 @@ function createNode(item, level) {
     const isRootFolder = item.parentId === null;
     const isMgmt = isMgmtActive();
     const currProj = getCurrentProject();
-    
+
     // Per-sector permission logic
     const nodeSector = getItemSector(item.id);
     const canEdit = authenticatedSector === 'APF' || authenticatedSector === nodeSector;
@@ -2767,7 +2767,7 @@ function createNode(item, level) {
         const matchesQuery = item.name.toLowerCase().includes(treeSearchQuery);
         const hasAtt = item.attachments && item.attachments.length > 0;
         const isFolder = getChildItems(item.id).length > 0 || item.parentId === null;
-        
+
         let matchesFilter = true;
         const isAPF = authenticatedSector === 'APF';
         const userSector = (authenticatedSector || '').trim().toLowerCase();
@@ -2797,7 +2797,7 @@ function createNode(item, level) {
                 const cMatches = c.name.toLowerCase().includes(treeSearchQuery);
                 const cHasAtt = c.attachments && c.attachments.length > 0;
                 const cIsFolder = getItems().some(i => i.parentId === c.id) || c.parentId === null;
-                
+
                 let cMatchesFilter = true;
                 const cSector = getItemSector(c.id);
                 const itemSectorNormalized = (cSector || '').trim().toLowerCase();
@@ -2819,7 +2819,7 @@ function createNode(item, level) {
                         else if (treeSearchFilter === 'analise') cMatchesFilter = cHasAtt && !cValidOrAPF && !cPointed;
                     }
                 }
-                
+
                 return (cMatches && cMatchesFilter && cSectorMatches) || anyChildMatches(c.id);
             });
         };
@@ -2844,21 +2844,21 @@ function createNode(item, level) {
     itemLeft.className = 'item-left';
 
     const chevron = document.createElement('i');
-    chevron.className = `ph ph-caret-down ${hasChildren ? '' : 'ph-caret-right'}`; 
+    chevron.className = `ph ph-caret-down ${hasChildren ? '' : 'ph-caret-right'}`;
     chevron.style.opacity = hasChildren ? '1' : '0';
 
     const icon = document.createElement('i');
-    if(isRootFolder) {
+    if (isRootFolder) {
         let iconClass = 'ph-folder-notch-open';
         const n = item.name.toLowerCase();
-        if(n.includes('legaliza')) iconClass = 'ph-scales';
-        else if(n.includes('arquit') || n.includes('urbani')) iconClass = 'ph-compass-tool';
-        else if(n.includes('engenh')) iconClass = 'ph-wrench';
-        else if(n.includes('sustent')) iconClass = 'ph-leaf';
+        if (n.includes('legaliza')) iconClass = 'ph-scales';
+        else if (n.includes('arquit') || n.includes('urbani')) iconClass = 'ph-compass-tool';
+        else if (n.includes('engenh')) iconClass = 'ph-wrench';
+        else if (n.includes('sustent')) iconClass = 'ph-leaf';
         icon.className = `ph ${iconClass} item-icon`;
     }
     else icon.className = (item.attachments && item.attachments.length > 0) ? 'ph ph-file-text item-icon' : 'ph ph-folder item-icon';
-    if(item.protected && isMgmt && !isRootFolder) icon.className = 'ph ph-folder-lock item-icon';
+    if (item.protected && isMgmt && !isRootFolder) icon.className = 'ph ph-folder-lock item-icon';
 
     // APLICAR COR DE STATUS AO ÍCONE (Para documentos/pastas finais)
     if (!isRootFolder && !hasChildren) {
@@ -2888,7 +2888,7 @@ function createNode(item, level) {
         let totalDocs = 0;
         let validatedDocs = 0;
         const pItems = getItems();
-        
+
         const countValidations = (parentId) => {
             const children = pItems.filter(i => i.parentId === parentId);
             children.forEach(child => {
@@ -2910,7 +2910,7 @@ function createNode(item, level) {
                 }
             });
         };
-        
+
         countValidations(item.id);
         // O setor só fica verde se houver documentos e todos estiverem validados
         if (totalDocs > 0 && totalDocs === validatedDocs) {
@@ -2920,8 +2920,8 @@ function createNode(item, level) {
 
     const nameSpan = document.createElement('span');
     nameSpan.className = 'item-name text-truncate';
-    if(isRootFolder) nameSpan.classList.add('root-name'); 
-    
+    if (isRootFolder) nameSpan.classList.add('root-name');
+
     if (isRootFolder && allValidated) {
         nameSpan.style.color = 'var(--accent)';
         icon.style.color = 'var(--accent)';
@@ -2930,9 +2930,9 @@ function createNode(item, level) {
     nameSpan.title = 'Clique para Expandir ou Ocultar';
     nameSpan.appendChild(chevron);
     nameSpan.appendChild(icon);
-    
+
     nameSpan.onclick = () => {
-        if(hasChildren) {
+        if (hasChildren) {
             if (localUI.expandedIds.has(item.id)) {
                 localUI.expandedIds.delete(item.id);
             } else {
@@ -2950,9 +2950,9 @@ function createNode(item, level) {
 
 
     // Espaçador sutil para manter o alinhamento sem os indicadores
-    if(isRootFolder && localUI.currentProjectId !== 'p_default') {
+    if (isRootFolder && localUI.currentProjectId !== 'p_default') {
         const spacer = document.createElement('div');
-        spacer.style.width = '20px'; 
+        spacer.style.width = '20px';
         spacer.style.flexShrink = '0';
         itemLeft.prepend(spacer);
     }
@@ -2962,7 +2962,7 @@ function createNode(item, level) {
     itemRight.className = 'item-right';
 
     // RESTAURADO: LOCK ICON FOR ROOT FOLDERS - Right Aligned
-    if(isRootFolder && localUI.currentProjectId !== 'p_default') {
+    if (isRootFolder && localUI.currentProjectId !== 'p_default') {
         const isLocked = authenticatedSector && authenticatedSector !== 'APF' && authenticatedSector.trim() !== item.name.trim();
         if (isLocked) {
             const lockIcon = document.createElement('i');
@@ -2976,8 +2976,8 @@ function createNode(item, level) {
         }
     }
 
-    if(!isMgmt) {
-        if(!isRootFolder && !hasChildren) {
+    if (!isMgmt) {
+        if (!isRootFolder && !hasChildren) {
             const hasAtt = item.attachments && item.attachments.length > 0;
             const statusRow = document.createElement('div');
             statusRow.className = 'item-status-row';
@@ -2999,7 +2999,7 @@ function createNode(item, level) {
                 isUploadPendencia = false;
                 if (globalFileInput) globalFileInput.click();
             };
-            
+
             if (item.isNotApplicable) {
                 btnAttach.disabled = true;
                 btnAttach.style.opacity = '0.5';
@@ -3016,8 +3016,8 @@ function createNode(item, level) {
                 statusRow.appendChild(btnAttach);
             }
             itemRight.appendChild(statusRow);
-            
-            if(hasAtt) {
+
+            if (hasAtt) {
                 const inlineAttachments = document.createElement('div');
                 inlineAttachments.className = 'inline-attachments-row';
                 item.attachments.forEach(att => {
@@ -3033,7 +3033,7 @@ function createNode(item, level) {
                     btnView.className = 'icon-btn';
                     btnView.innerHTML = '<i class="ph ph-eye"></i>';
                     btnView.onclick = () => window.openPreview(att);
-                    
+
                     const btnDel = document.createElement('button');
                     btnDel.className = 'icon-btn delete';
                     btnDel.innerHTML = '<i class="ph ph-x"></i>';
@@ -3071,15 +3071,15 @@ function createNode(item, level) {
                 forecastInput.style.maxWidth = '115px';
                 forecastInput.style.padding = '0.2rem 0.4rem';
                 forecastInput.style.fontSize = '0.75rem';
-                if(item.forecastDate) {
+                if (item.forecastDate) {
                     forecastInput.value = item.forecastDate;
                     forecastInput.classList.add('has-value');
                 }
-                forecastInput.onchange = (e) => { 
-                    item.forecastDate = e.target.value; 
-                    if(e.target.value) e.target.classList.add('has-value');
+                forecastInput.onchange = (e) => {
+                    item.forecastDate = e.target.value;
+                    if (e.target.value) e.target.classList.add('has-value');
                     else e.target.classList.remove('has-value');
-                    saveState(); 
+                    saveState();
                 };
                 if (!canEdit) forecastInput.disabled = true;
 
@@ -3093,7 +3093,7 @@ function createNode(item, level) {
                     btnJustify.disabled = true;
                     btnJustify.style.opacity = '0.5';
                 }
-                
+
                 const justBox = document.createElement('div');
                 justBox.className = 'justification-box';
                 const justInput = document.createElement('textarea');
@@ -3101,9 +3101,9 @@ function createNode(item, level) {
                 justInput.style.width = '100%';
                 justInput.style.height = '60px';
                 justInput.placeholder = 'Justificativa...';
-                if(item.justification) justInput.value = item.justification;
+                if (item.justification) justInput.value = item.justification;
                 const updateJustifyBtnStyle = () => {
-                    if(item.justification && item.justification.trim() !== '') {
+                    if (item.justification && item.justification.trim() !== '') {
                         btnJustify.style.borderColor = 'var(--danger)';
                         btnJustify.style.color = 'var(--danger)';
                     } else {
@@ -3113,15 +3113,15 @@ function createNode(item, level) {
                 };
                 updateJustifyBtnStyle();
 
-                justInput.oninput = (e) => { 
-                    item.justification = e.target.value; 
-                    updateJustifyBtnStyle(); 
+                justInput.oninput = (e) => {
+                    item.justification = e.target.value;
+                    updateJustifyBtnStyle();
                     if (typeof debouncedSave === 'function') debouncedSave();
                 };
-                justInput.onchange = (e) => { 
+                justInput.onchange = (e) => {
                     const oldVal = item.justification || '';
-                    item.justification = e.target.value; 
-                    saveState(); 
+                    item.justification = e.target.value;
+                    saveState();
                     if (oldVal !== item.justification) {
                         addAuditLog('Justificativa Adicionada', `Nova justificativa em <strong>${item.name}</strong>: "${item.justification}"`, 'info');
                     }
@@ -3136,18 +3136,18 @@ function createNode(item, level) {
                 pendingBar.appendChild(btnAttach);
 
                 itemRight.appendChild(pendingBar);
-                itemRight.appendChild(justBox); 
+                itemRight.appendChild(justBox);
             }
-            
+
             itemDiv.addEventListener('dragover', (e) => { e.preventDefault(); itemDiv.classList.add('drag-over'); });
             itemDiv.addEventListener('dragleave', (e) => { itemDiv.classList.remove('drag-over'); });
             itemDiv.addEventListener('drop', (e) => {
                 e.preventDefault(); itemDiv.classList.remove('drag-over');
-                if(!item.isNotApplicable && e.dataTransfer.files && e.dataTransfer.files.length > 0) window.handleFileUpload(item.id, e.dataTransfer.files);
+                if (!item.isNotApplicable && e.dataTransfer.files && e.dataTransfer.files.length > 0) window.handleFileUpload(item.id, e.dataTransfer.files);
             });
         }
     } else {
-        if(!isRootFolder) {
+        if (!isRootFolder) {
             const mgmtFields = document.createElement('div');
             mgmtFields.className = 'management-fields';
             const isAPF = authenticatedSector === 'APF';
@@ -3159,30 +3159,38 @@ function createNode(item, level) {
                     const o = document.createElement('option');
                     o.value = opt === 'Validado' ? 'APF check' : opt;
                     o.textContent = opt;
-                    if(item.validationStatus === o.value || (opt === 'Validado' && item.validationStatus === 'Validado')) o.selected = true;
+                    if (item.validationStatus === o.value || (opt === 'Validado' && item.validationStatus === 'Validado')) o.selected = true;
                     valSelect.appendChild(o);
                 });
-                valSelect.onchange = (e) => { 
+                valSelect.onchange = (e) => {
                     const oldStatus = item.validationStatus;
-                    item.validationStatus = e.target.value; 
-                    saveState(); 
-                    renderTree(); 
+                    item.validationStatus = e.target.value;
+                    saveState();
+                    renderTree();
                     addAuditLog('Status de Validação', `Status de <strong>${item.name}</strong> alterado de "${oldStatus || 'Pendente'}" para "${item.validationStatus}"`, 'warning');
                 };
                 mgmtFields.appendChild(valSelect);
 
-                if(item.validationStatus === 'Apontamento') {
+                if (item.validationStatus === 'Apontamento') {
                     const obsInp = document.createElement('input');
                     obsInp.type = 'text';
                     obsInp.className = 'input-modern btn-sm';
                     obsInp.placeholder = 'Qual apontamento?';
                     obsInp.value = item.observation || '';
-                    obsInp.oninput = (e) => { 
-                        item.observation = e.target.value; 
-                        debouncedSave(); 
-                    }; 
+                    obsInp.oninput = (e) => {
+                        item.observation = e.target.value;
+                        debouncedSave();
+                    };
                     obsInp.onblur = () => renderTree();
                     mgmtFields.appendChild(obsInp);
+
+                    // NOVO: Exibir Resposta do Setor para a APF (Se houver)
+                    if (item.response) {
+                        const respBadge = document.createElement('div');
+                        respBadge.className = 'sync-response-badge';
+                        respBadge.innerHTML = `<strong>Resposta do Setor:</strong> ${item.response}`;
+                        mgmtFields.appendChild(respBadge);
+                    }
                 }
             } else {
                 mgmtFields.style.display = 'flex';
@@ -3222,6 +3230,30 @@ function createNode(item, level) {
                 mgmtFields.appendChild(statusText);
                 if (currProj && currProj.id !== 'p_default') {
                     mgmtFields.appendChild(naLabel);
+                }
+
+                // NOVO: Exibir Previsão e Justificativa para a APF (Se houver)
+                if (item.forecastDate || item.justification) {
+                    const infoArea = document.createElement('div');
+                    infoArea.className = 'sync-info-area';
+
+                    if (item.forecastDate) {
+                        const dateBadge = document.createElement('div');
+                        dateBadge.className = 'badge badge-sm';
+                        dateBadge.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                        dateBadge.style.color = 'var(--danger)';
+                        dateBadge.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+                        dateBadge.innerHTML = `<i class="ph ph-calendar"></i> Previsão: ${item.forecastDate.split('-').reverse().join('/')}`;
+                        infoArea.appendChild(dateBadge);
+                    }
+
+                    if (item.justification) {
+                        const justText = document.createElement('div');
+                        justText.className = 'sync-justification-text';
+                        justText.innerHTML = `<i class="ph ph-chat-text" style="color:var(--danger)"></i> <strong>Justificativa:</strong> ${item.justification}`;
+                        infoArea.appendChild(justText);
+                    }
+                    mgmtFields.appendChild(infoArea);
                 }
             }
 
@@ -3269,11 +3301,11 @@ function createNode(item, level) {
         btnDel.onclick = () => handleDeleteFolder(item.id);
         actionsDiv.appendChild(btnDel);
 
-        if(!isRootFolder && item.attachments && item.attachments.length > 0) {
+        if (!isRootFolder && item.attachments && item.attachments.length > 0) {
             const inlineAttachments = document.createElement('div');
             inlineAttachments.className = 'inline-attachments-row';
             inlineAttachments.style.justifyContent = 'flex-end';
-            
+
             item.attachments.forEach(att => {
                 const attBadge = document.createElement('div');
                 attBadge.className = 'inline-attachment';
@@ -3286,7 +3318,7 @@ function createNode(item, level) {
                 btnView.className = 'icon-btn';
                 btnView.innerHTML = '<i class="ph ph-eye"></i>';
                 btnView.onclick = () => window.openPreview(att);
-                
+
                 const btnAi = document.createElement('button');
                 btnAi.className = 'icon-btn';
                 btnAi.innerHTML = '<i class="ph ph-magic-wand text-primary"></i>';
@@ -3296,7 +3328,7 @@ function createNode(item, level) {
                 btnDelFile.className = 'icon-btn delete';
                 btnDelFile.innerHTML = '<i class="ph ph-x"></i>';
                 btnDelFile.onclick = () => window.handleDeleteFile(item.id, att.id);
-                
+
                 attBadge.appendChild(nameTxt);
                 attBadge.appendChild(btnAi);
                 attBadge.appendChild(btnView);
@@ -3312,7 +3344,7 @@ function createNode(item, level) {
     itemDiv.appendChild(itemRight);
     nodeWrapper.appendChild(itemDiv);
 
-    if(!isMgmt && !isRootFolder && !hasChildren && item.validationStatus === 'Apontamento' && item.observation && item.attachments?.length > 0) {
+    if (!isMgmt && !isRootFolder && !hasChildren && item.validationStatus === 'Apontamento' && item.observation && item.attachments?.length > 0) {
         const obsBox = document.createElement('div');
         obsBox.className = 'observation-box';
         obsBox.innerHTML = `<strong><i class="ph ph-warning-circle"></i> Apontamento de APF:</strong> ${item.observation}`;
@@ -3323,18 +3355,26 @@ function createNode(item, level) {
         respInput.className = 'response-input';
         respInput.placeholder = 'Escreva aqui a sua resposta...';
         respInput.value = item.response || '';
-        respInput.onchange = (e) => { item.response = e.target.value; saveState(); };
+        respInput.onchange = (e) => { 
+            item.response = e.target.value; 
+            saveState(); 
+            addAuditLog('Resposta ao Apontamento', `Setor respondeu ao apontamento em <strong>${item.name}</strong>`, 'info');
+        };
+        if (!canEdit) {
+            respInput.disabled = true;
+            respInput.placeholder = 'Apenas o setor responsável pode responder.';
+        }
         respArea.appendChild(respInput);
         obsBox.appendChild(respArea);
         nodeWrapper.appendChild(obsBox);
     }
 
-    if(nodeChildren.length > 0) {
+    if (nodeChildren.length > 0) {
         const childCont = document.createElement('div');
         childCont.className = 'children-container';
         nodeChildren.forEach(c => {
             const childNode = createNode(c, level + 1);
-            if(childNode) childCont.appendChild(childNode);
+            if (childNode) childCont.appendChild(childNode);
         });
         nodeWrapper.appendChild(childCont);
     }
@@ -3359,7 +3399,7 @@ function handleAddFolder(parentId) {
 
     const parentItem = parentId ? getItems().find(i => i.id === parentId) : null;
     const name = prompt('Nome da nova pasta/item:');
-    if(name && name.trim()){
+    if (name && name.trim()) {
         const item = {
             id: generateId(),
             name: name.trim(),
@@ -3380,7 +3420,7 @@ function handleAddFolder(parentId) {
         }
 
         getItems().push(item);
-        if(parentItem) parentItem.expanded = true;
+        if (parentItem) parentItem.expanded = true;
         saveState();
         renderTree();
     }
@@ -3407,10 +3447,10 @@ function handleDeleteFolder(id) {
             do {
                 foundNew = false;
                 getItems().forEach(i => {
-                    if(ids.has(i.parentId) && !ids.has(i.id)) { ids.add(i.id); foundNew = true; }
+                    if (ids.has(i.parentId) && !ids.has(i.id)) { ids.add(i.id); foundNew = true; }
                 });
-            } while(foundNew);
-            
+            } while (foundNew);
+
             const proj = getCurrentProject();
             proj.items = proj.items.filter(i => !ids.has(i.id));
             saveState();
@@ -3431,9 +3471,9 @@ function handleRenameFolder(id) {
     }
 
     const item = getItems().find(i => i.id === id);
-    if(!item) return;
+    if (!item) return;
     const newName = prompt('Novo nome para a pasta/item:', item.name);
-    if(newName && newName.trim() && newName.trim() !== item.name) {
+    if (newName && newName.trim() && newName.trim() !== item.name) {
         item.name = newName.trim();
         saveState();
         renderTree();
@@ -3459,7 +3499,7 @@ function renderSectorPasswordsSettings() {
         row.style.display = 'flex';
         row.style.alignItems = 'center';
         row.style.gap = '0.5rem';
-        
+
         const label = document.createElement('span');
         label.style.fontSize = '0.75rem';
         label.style.color = 'var(--text-main)';
@@ -3479,12 +3519,12 @@ function renderSectorPasswordsSettings() {
         input.onchange = (e) => {
             const val = e.target.value;
             state.settings.sectorPasswords[s] = val;
-            
+
             // Se for APF, sincroniza com a senha da aba de gestão no localStorage
             if (s === 'APF') {
                 localStorage.setItem('apf_access_password', val);
             }
-            
+
             saveState();
             addAuditLog('Senha Alterada', `Senha do setor <strong>${s}</strong> foi alterada.`, 'warning');
             showTemporaryMessage(`Senha de ${s} atualizada com sucesso!`, "success");
@@ -3495,7 +3535,7 @@ function renderSectorPasswordsSettings() {
         btnEdit.style.padding = '0.25rem';
         btnEdit.title = 'Editar senha';
         btnEdit.innerHTML = '<i class="ph ph-pencil-simple"></i>';
-        
+
         btnEdit.onclick = () => {
             const isLocked = input.readOnly;
             input.readOnly = !isLocked;
@@ -3533,15 +3573,15 @@ function renderPendenciasMgmt() {
     if (sectorSel) {
         // Keep "Selecione" and "Outra"
         const defaultOptions = ['<option value="">Selecione o setor...</option>', '<option value="other">Outra...</option>'];
-        
+
         // Find existing sectors (root folders)
         const items = getItems();
         const rootFolders = items.filter(i => i.parentId === null).map(i => i.name).sort();
         const uniqueSectors = [...new Set(rootFolders)];
-        
+
         const optionsHtml = uniqueSectors.map(s => `<option value="${s}">${s}</option>`);
         sectorSel.innerHTML = [defaultOptions[0], ...optionsHtml, defaultOptions[1]].join('');
-        
+
         // Restore selection if it still exists
         if (savedSector) sectorSel.value = savedSector;
     }
@@ -3558,7 +3598,7 @@ function renderPendenciasMgmt() {
         const row = document.createElement('div');
         row.className = 'pendencia-mgmt-row';
         if (editingPendenciaId === p.id) row.style.borderColor = 'var(--warning)';
-        
+
         row.innerHTML = `
             <div style="display: flex; flex-direction: column; flex: 1;">
                 <strong style="font-size: 0.85rem; color: white;">${p.docName}</strong>
@@ -3590,14 +3630,14 @@ function renderPendenciasMgmt() {
                 </div>
             </div>
         `;
-        
+
         row.querySelector('.edit').onclick = () => {
             editingPendenciaId = p.id;
             document.getElementById('new-pendencia-name').value = p.docName;
-            
+
             const sectorSel = document.getElementById('new-pendencia-sector');
             const sectorOtherInp = document.getElementById('new-pendencia-sector-other');
-            
+
             // Check if sector exists in dropdown
             let internalSector = false;
             for (let opt of sectorSel.options) {
@@ -3607,7 +3647,7 @@ function renderPendenciasMgmt() {
                     break;
                 }
             }
-            
+
             if (!internalSector) {
                 sectorSel.value = 'other';
                 sectorOtherInp.value = p.sector;
@@ -3615,13 +3655,13 @@ function renderPendenciasMgmt() {
             } else {
                 sectorOtherInp.classList.add('hidden');
             }
-            
+
             document.getElementById('new-pendencia-spec').value = p.specification || '';
-            
+
             btnAddPendencia.innerHTML = '<i class="ph ph-check"></i> Salvar Alterações';
             btnAddPendencia.classList.remove('btn-danger');
             btnAddPendencia.classList.add('btn-warning');
-            
+
             renderPendenciasMgmt(); // Re-render list to show active edit state
             document.getElementById('pendencias-mgmt-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
         };
@@ -3634,13 +3674,13 @@ function renderPendenciasMgmt() {
                 confirmText: 'Remover',
                 onConfirm: () => {
                     if (editingPendenciaId === p.id) {
-                         editingPendenciaId = null;
-                         btnAddPendencia.innerHTML = '<i class="ph ph-plus"></i> Adicionar';
-                         btnAddPendencia.classList.remove('btn-warning');
-                         btnAddPendencia.classList.add('btn-danger');
-                         document.getElementById('new-pendencia-name').value = '';
-                         document.getElementById('new-pendencia-sector').value = '';
-                         document.getElementById('new-pendencia-spec').value = '';
+                        editingPendenciaId = null;
+                        btnAddPendencia.innerHTML = '<i class="ph ph-plus"></i> Adicionar';
+                        btnAddPendencia.classList.remove('btn-warning');
+                        btnAddPendencia.classList.add('btn-danger');
+                        document.getElementById('new-pendencia-name').value = '';
+                        document.getElementById('new-pendencia-sector').value = '';
+                        document.getElementById('new-pendencia-spec').value = '';
                     }
                     curr.pendencias = curr.pendencias.filter(item => item.id !== p.id);
                     saveState();
@@ -3665,15 +3705,15 @@ function renderPendenciasMgmt() {
             };
         }
         if (obsInp) {
-            obsInp.oninput = (e) => { 
+            obsInp.oninput = (e) => {
                 const oldVal = p.observation || '';
-                p.observation = e.target.value; 
+                p.observation = e.target.value;
                 debouncedSave();
             };
             obsInp.onblur = () => {
                 renderTree();
                 if (p.observation) {
-                     addAuditLog('Apontamento de Pendência', `Novo apontamento em <strong>${p.docName}</strong>: "${p.observation}"`, 'warning');
+                    addAuditLog('Apontamento de Pendência', `Novo apontamento em <strong>${p.docName}</strong>: "${p.observation}"`, 'warning');
                 }
             };
         }
@@ -3690,9 +3730,9 @@ function sanitizePathSegment(segment) {
 function getItemPath(itemId, sanitize = false) {
     let path = [];
     let currentId = itemId;
-    while(currentId) {
+    while (currentId) {
         const item = getItems().find(i => i.id === currentId);
-        if(!item) break;
+        if (!item) break;
         const name = sanitize ? sanitizePathSegment(item.name) : item.name;
         path.unshift(name);
         currentId = item.parentId;
@@ -3700,7 +3740,7 @@ function getItemPath(itemId, sanitize = false) {
     return path.join('/');
 }
 
-window.handleFileUpload = async function(itemId, files, isPendencia = false) {
+window.handleFileUpload = async function (itemId, files, isPendencia = false) {
     const currProject = getCurrentProject();
     if (!currProject || !files || files.length === 0) return;
 
@@ -3710,7 +3750,7 @@ window.handleFileUpload = async function(itemId, files, isPendencia = false) {
     } else {
         targetItem = getItems().find(i => i.id === itemId);
     }
-    
+
     // Permission Check
     if (authenticatedSector !== 'APF') {
         const itemSector = isPendencia ? targetItem?.sector : getItemSector(itemId);
@@ -3719,11 +3759,11 @@ window.handleFileUpload = async function(itemId, files, isPendencia = false) {
             return;
         }
     }
-    
-    if(targetItem && currProject) {
+
+    if (targetItem && currProject) {
         const sanitizedProjName = sanitizePathSegment(currProject.name);
         const folderPath = isPendencia ? 'PENDENCIAS' : getItemPath(itemId, true);
-        
+
         // Função auxiliar interna para atualizar o toast
         const updateToast = (state, title, subtitle) => {
             if (!uploadToast) return;
@@ -3748,29 +3788,29 @@ window.handleFileUpload = async function(itemId, files, isPendencia = false) {
         };
 
         updateToast('loading', 'Realizando upload...', 'Por favor, aguarde a conclusão.');
-        
+
         let success = true;
         try {
-            if(!targetItem.attachments) targetItem.attachments = [];
-            
+            if (!targetItem.attachments) targetItem.attachments = [];
+
             for (const file of Array.from(files)) {
                 const id = generateId();
                 const sanitizedFileName = sanitizePathSegment(file.name);
-                
+
                 // Aplicar compressão se for imagem
                 const fileToUpload = await compressImage(file);
-                
+
                 // Nova estrutura de caminho unificada no Firebase Storage
                 const fbStoragePath = `APF_Projetos/${currProject.id}/${folderPath}/${id}-${sanitizedFileName}`;
-                
+
                 try {
                     // 1. Upload para Firebase Storage
                     const storageRef = ref(storage, fbStoragePath);
                     await uploadBytes(storageRef, fileToUpload);
-                    
+
                     // 2. Obter URL de Download pública
                     const downloadUrl = await getDownloadURL(storageRef);
-                    
+
                     targetItem.attachments.push({
                         id: id,
                         name: file.name,
@@ -3790,7 +3830,7 @@ window.handleFileUpload = async function(itemId, files, isPendencia = false) {
             }
             saveState();
             renderTree();
-            
+
             // Log Action
             const fileNames = Array.from(files).map(f => f.name).join(', ');
             addAuditLog('Documento Anexado', `Anexado(s) ${files.length} arquivo(s) em <strong>${targetItem.docName || targetItem.name}</strong>: ${fileNames}`, 'success');
@@ -3819,7 +3859,7 @@ window.handleFileUpload = async function(itemId, files, isPendencia = false) {
     }
 }
 
-window.handleDeleteFile = async function(itemId, fileId, isPendencia = false) {
+window.handleDeleteFile = async function (itemId, fileId, isPendencia = false) {
     // Permission Check
     if (authenticatedSector !== 'APF') {
         const itemSector = isPendencia ? getCurrentProject()?.pendencias.find(p => p.id === itemId)?.sector : getItemSector(itemId);
@@ -3839,7 +3879,7 @@ window.handleDeleteFile = async function(itemId, fileId, isPendencia = false) {
         targetItem = getItems().find(i => i.id === itemId);
     }
 
-    if(targetItem && targetItem.attachments){
+    if (targetItem && targetItem.attachments) {
         const att = targetItem.attachments.find(a => a.id === fileId);
         if (!att) return;
 
@@ -3872,7 +3912,7 @@ window.handleDeleteFile = async function(itemId, fileId, isPendencia = false) {
 }
 
 // Global modal helpers
-window.openPreview = function(fileObj) {
+window.openPreview = function (fileObj) {
     const url = fileObj.downloadUrl || fileObj.objectUrl;
     if (url) {
         window.open(url, '_blank');
@@ -3967,8 +4007,8 @@ function renderAnalysisPanels() {
 
         let pendStatus = '';
         if (showApontamentos) {
-            pendStatus = apontamentos > 0 
-                ? `<br><br><span style="color:var(--danger)"><i class="ph ph-warning-circle"></i> Há <strong>${apontamentos}</strong> documento(s) com apontamentos precisando de correção ou ressubmissão neste setor.</span>` 
+            pendStatus = apontamentos > 0
+                ? `<br><br><span style="color:var(--danger)"><i class="ph ph-warning-circle"></i> Há <strong>${apontamentos}</strong> documento(s) com apontamentos precisando de correção ou ressubmissão neste setor.</span>`
                 : `<br><br><span style="color:var(--accent)"><i class="ph ph-check-circle"></i> Não há apontamentos bloqueando este setor no momento.</span>`;
         }
 
@@ -4011,13 +4051,13 @@ function initSettings() {
     const btnCloseSettings = document.getElementById('btn-close-settings');
     const btnSaveSettings = document.getElementById('btn-save-settings');
     const btnResetModel = document.getElementById('btn-reset-model');
-    
+
     if (!btnSettings) return;
 
     btnSettings.onclick = () => {
         if (geminiModelInp) geminiModelInp.value = localStorage.getItem('apf_gemini_model') || 'gemini-2.5-flash';
         if (geminiKeyInp) geminiKeyInp.value = localStorage.getItem('apf_gemini_key') || '';
-        
+
         renderSectorPasswordsSettings();
         if (settingsModal) settingsModal.classList.remove('hidden');
     }
@@ -4033,11 +4073,11 @@ function initSettings() {
         btnCloseHistory.onclick = () => historyModal.classList.add('hidden');
     }
     if (historyModal) {
-        historyModal.onclick = (e) => { if(e.target === historyModal) historyModal.classList.add('hidden'); };
+        historyModal.onclick = (e) => { if (e.target === historyModal) historyModal.classList.add('hidden'); };
     }
 
     btnCloseSettings.addEventListener('click', () => settingsModal.classList.add('hidden'));
-    settingsModal.addEventListener('click', (e) => { if(e.target === settingsModal) settingsModal.classList.add('hidden'); });
+    settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) settingsModal.classList.add('hidden'); });
 
     btnResetModel.addEventListener('click', () => {
         geminiModelInp.value = 'gemini-2.5-flash';
@@ -4066,12 +4106,12 @@ function initSettings() {
     });
 }
 
-window.analyzeDocumentAI = async function(att) {
+window.analyzeDocumentAI = async function (att) {
     const { objectUrl: url, type: mimeType, name } = att;
     document.getElementById('preview-title').textContent = `Leitura Robótica (IA): ${name}`;
     document.getElementById('preview-download-btn').style.display = 'none';
     const body = document.getElementById('preview-body');
-    
+
     body.innerHTML = `
         <div style="text-align:center; padding:4rem; color:var(--primary);">
             <i class="ph ph-magic-wand ph-spin" style="font-size: 3rem; display:inline-block; animation-duration: 2s;"></i>
@@ -4082,7 +4122,7 @@ window.analyzeDocumentAI = async function(att) {
 
     try {
         let fileDataBase64 = '';
-        
+
 
         if (!fileDataBase64) {
             // URL direta (Firebase ou Dropbox validado)
@@ -4098,13 +4138,13 @@ window.analyzeDocumentAI = async function(att) {
 
         const apiKey = localStorage.getItem('apf_gemini_key');
         const modelName = localStorage.getItem('apf_gemini_model') || 'gemini-1.5-flash';
-        if(!apiKey) {
+        if (!apiKey) {
             throw new Error("API Key não configurada. Por favor, acesse as Configurações (ícone ⚙️).");
         }
         // Fix: Using configured model name
         const aiUrl = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${apiKey}`;
-        
-        if(!['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'].includes(mimeType)) {
+
+        if (!['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'].includes(mimeType)) {
             body.innerHTML = `<div style="padding: 2rem; color: var(--danger)"><i class="ph ph-warning" style="font-size: 2rem"></i><br>A extração visual Multimodal do Gemini 1.5 suporta especificamente leitura de imagens PDF nativas, JPG e PNG. O arquivo entregue apresenta extensão que o motor não compreende.</div>`;
             return;
         }
@@ -4124,19 +4164,19 @@ window.analyzeDocumentAI = async function(att) {
             body: JSON.stringify(payload)
         });
 
-        if(!aiRes.ok) {
+        if (!aiRes.ok) {
             const isAuthErr = aiRes.status === 401 || aiRes.status === 403;
             if (isAuthErr) localStorage.removeItem('apf_gemini_key');
             throw new Error('Falha na autenticação ou processamento do Google (verifique o modelo e a chave).');
         }
         const data = await aiRes.json();
         const textOut = data.candidates[0].content.parts[0].text;
-        
+
         const formattedHtml = textOut.replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--accent);">$1</strong>').replace(/\n/g, '<br>');
 
         body.innerHTML = `<div style="text-align:left; color:white; font-size:0.95rem; line-height:1.6; padding: 1rem; width: 100%; white-space: break-spaces;">${formattedHtml}</div>`;
-        
-    } catch(e) {
+
+    } catch (e) {
         console.error(e);
         body.innerHTML = `<div style="padding:2rem; text-align:center; color:var(--danger)">
             <i class="ph ph-warning-circle" style="font-size: 2.5rem; margin-bottom: 1rem; display: block;"></i>
@@ -4146,14 +4186,14 @@ window.analyzeDocumentAI = async function(att) {
     }
 }
 
-window.autoAnalyzeDocumentAI = async function(att, itemId, originalFile = null, isPendencia = false) {
+window.autoAnalyzeDocumentAI = async function (att, itemId, originalFile = null, isPendencia = false) {
     const { objectUrl: url, type: mimeType, name, dropboxPath } = att;
     const currProject = getCurrentProject();
     if (!currProject) return;
 
     try {
         let fileDataBase64 = '';
-        
+
         // Caminho feliz: Temos acesso ao File original do upload (MUITO MAIS RÁPIDO E EVITA CORS)
         if (originalFile) {
             fileDataBase64 = await new Promise((resolve) => {
@@ -4203,7 +4243,7 @@ window.autoAnalyzeDocumentAI = async function(att, itemId, originalFile = null, 
         if (aiRes.ok) {
             const data = await aiRes.json();
             const textOut = data.candidates[0].content.parts[0].text;
-            
+
             // Localizamos o item e o anexo novamente para garantir que estamos no estado atualizado
             const currentProj = getCurrentProject();
             if (!currentProj) return;
@@ -4253,7 +4293,7 @@ function addAuditLog(action, details, type = 'info') {
 function renderAuditLog() {
     const container = document.getElementById('audit-log-container');
     if (!container) return;
-    
+
     if (!state.auditLog || state.auditLog.length === 0) {
         container.innerHTML = '<p style="text-align: center; color: var(--text-muted); font-size: 0.55rem; font-weight: 700; padding: 2rem;">Nenhuma ação registrada ainda.</p>';
         return;
@@ -4263,7 +4303,7 @@ function renderAuditLog() {
         const date = new Date(log.timestamp);
         const day = date.toLocaleDateString('pt-BR');
         const time = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        
+
         let typeClass = '';
         let iconAction = 'ph-info';
         if (log.type === 'danger') { typeClass = 'danger'; iconAction = 'ph-warning-circle'; }
@@ -4294,7 +4334,7 @@ function renderAuditLog() {
     }).join('');
 }
 
-window.generateProjectReportAI = async function() {
+window.generateProjectReportAI = async function () {
     const curr = getCurrentProject();
     if (!curr || curr.id === 'none') {
         alert('Selecione um empreendimento primeiro.');
@@ -4311,7 +4351,7 @@ window.generateProjectReportAI = async function() {
     document.getElementById('preview-title').innerHTML = `<i class="ph ph-sparkle" style="color:var(--accent);"></i> Relatório do Empreendimento (IA): ${curr.name}`;
     document.getElementById('preview-download-btn').style.display = 'none';
     const body = document.getElementById('preview-body');
-    
+
     body.innerHTML = `
         <div style="text-align:center; padding:4rem; color:var(--primary);">
             <i class="ph ph-sparkle ph-spin" style="font-size: 3rem; display:inline-block; animation-duration: 2s;"></i>
@@ -4332,10 +4372,10 @@ window.generateProjectReportAI = async function() {
         const validated = requiredItems.filter(i => i.validationStatus === 'Validado').length;
         const apontamento = requiredItems.filter(i => i.validationStatus === 'Apontamento').length;
         const pendent = requiredItems.filter(i => !i.attachments || i.attachments.length === 0).length;
-        
+
         let dueMsg = "Sem prazo geral definido";
         if (curr.dueDate) {
-            const today = new Date().setHours(0,0,0,0);
+            const today = new Date().setHours(0, 0, 0, 0);
             const due = new Date(curr.dueDate + 'T00:00:00').getTime();
             const diffDays = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
             if (diffDays < 0) {
@@ -4355,7 +4395,7 @@ Documentos completamente Pendentes (Faltosos): ${pendent}
 Status do Prazo: ${dueMsg}`;
 
         const aiUrl = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${apiKey}`;
-        
+
         const payload = {
             contents: [{
                 parts: [
@@ -4373,12 +4413,12 @@ Status do Prazo: ${dueMsg}`;
         if (!aiRes.ok) throw new Error('Falha na comunicação com o Gemini. Verifique a chave ou o modelo nas configurações.');
         const data = await aiRes.json();
         const textOut = data.candidates[0].content.parts[0].text;
-        
+
         const formattedHtml = textOut.replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--accent);">$1</strong>').replace(/\n/g, '<br>');
 
         body.innerHTML = `<div style="text-align:left; color:white; font-size:0.95rem; line-height:1.6; padding: 1rem; width: 100%; white-space: break-spaces;">${formattedHtml}</div>`;
 
-    } catch(e) {
+    } catch (e) {
         console.error(e);
         body.innerHTML = `<div style="padding:2rem; text-align:center; color:var(--danger)">
             <i class="ph ph-warning-circle" style="font-size: 2.5rem; margin-bottom: 1rem; display: block;"></i>
@@ -4443,7 +4483,7 @@ function generateProjectReport(mode = 'only_points') {
         } else {
             sector = getItemSector(item.id) || item.sector || 'Geral';
         }
-        
+
         if (!grouped[sector]) grouped[sector] = [];
         grouped[sector].push(item);
     });
@@ -4451,7 +4491,7 @@ function generateProjectReport(mode = 'only_points') {
     // Gerar HTML do relatório (Mantendo layout atual)
     const dateStr = new Date().toLocaleDateString('pt-BR');
     const timeStr = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    
+
     let reportHtml = `
         <!DOCTYPE html>
         <html>
@@ -4488,7 +4528,7 @@ function generateProjectReport(mode = 'only_points') {
     Object.keys(grouped).sort((a, b) => a.localeCompare(b)).forEach(sector => {
         reportHtml += `<div class="sector-block">
             <div class="sector-title">${sector}</div>`;
-        
+
         grouped[sector].forEach(item => {
             reportHtml += `
                 <div class="item-row">
@@ -4533,29 +4573,29 @@ async function processPasswordChange() {
     const currentInp = document.getElementById('change-pass-current');
     const newInp = document.getElementById('change-pass-new');
     const confirmInp = document.getElementById('change-pass-confirm');
-    
+
     const currentPass = currentInp.value.trim();
     const newPass = newInp.value.trim();
     const confirmPass = confirmInp.value.trim();
-    
+
     if (!currentPass || !newPass || !confirmPass) {
         showTemporaryMessage("Por favor, preencha todos os campos.", "danger");
         return;
     }
-    
+
     if (newPass.length < 4) {
         showTemporaryMessage("A nova senha deve ter pelo menos 4 caracteres.", "danger");
         return;
     }
-    
+
     if (newPass !== confirmPass) {
         showTemporaryMessage("A nova senha e a confirmação não coincidem.", "danger");
         return;
     }
-    
+
     const storedPasswords = state.settings?.sectorPasswords || {};
     const correctCurrent = storedPasswords[authenticatedSector] || "1234";
-    
+
     if (currentPass !== correctCurrent) {
         showTemporaryMessage("A senha atual digitada está incorreta.", "danger");
         currentInp.style.borderColor = 'var(--danger)';
@@ -4563,17 +4603,17 @@ async function processPasswordChange() {
         currentInp.focus();
         return;
     }
-    
+
     try {
         if (!state.settings) state.settings = {};
         if (!state.settings.sectorPasswords) state.settings.sectorPasswords = {};
-        
+
         state.settings.sectorPasswords[authenticatedSector] = newPass;
         saveState();
-        
+
         addAuditLog('Senha Alterada', `O setor <strong>${authenticatedSector}</strong> alterou sua própria senha de acesso.`, 'warning');
         closeChangePasswordModal();
-        
+
         // Mensagem de Confirmação Robusta
         setTimeout(() => {
             showConfirm({
@@ -4633,7 +4673,7 @@ function initPlexusBackground() {
             this.size = Math.random() * 2 + 1;
             this.speedX = (Math.random() - 0.5) * 0.8;
             this.speedY = (Math.random() - 0.5) * 0.8;
-            
+
             // Atribui uma cor aleatória do conjunto
             const colorIndex = Math.floor(Math.random() * particleColors.length);
             this.color = particleColors[colorIndex];
@@ -4683,7 +4723,7 @@ function initPlexusBackground() {
     function connect() {
         const isLight = document.documentElement.classList.contains('light-mode');
         const maxDistance = 150;
-        
+
         for (let a = 0; a < particles.length; a++) {
             for (let b = a; b < particles.length; b++) {
                 let dx = particles[a].x - particles[b].x;
@@ -4692,8 +4732,8 @@ function initPlexusBackground() {
 
                 if (distance < maxDistance) {
                     let opacity = 1 - (distance / maxDistance);
-                    ctx.strokeStyle = isLight 
-                        ? `rgba(15, 23, 42, ${opacity * 0.15})` 
+                    ctx.strokeStyle = isLight
+                        ? `rgba(15, 23, 42, ${opacity * 0.15})`
                         : `rgba(255, 255, 255, ${opacity * 0.15})`;
                     ctx.lineWidth = 1;
                     ctx.beginPath();

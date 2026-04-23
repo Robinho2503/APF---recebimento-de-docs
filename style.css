@@ -843,7 +843,42 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
 .management-fields {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    width: 100%;
+    justify-content: flex-end;
+}
+
+.sync-info-area {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    width: 100%;
+    margin-top: 0.4rem;
+    padding-top: 0.4rem;
+    border-top: 1px dashed var(--panel-border);
+}
+
+.sync-response-badge {
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 0.6rem 0.85rem;
+    background: rgba(16, 185, 129, 0.08);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 0.5rem 0.5rem 0;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: var(--text-main);
+}
+
+.sync-justification-text {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    background: var(--card-bg-subtle);
+    padding: 0.6rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--panel-border);
+    line-height: 1.4;
 }
 
 .item-icon { font-size: 1.15rem; color: var(--primary); }
