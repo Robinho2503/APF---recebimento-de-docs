@@ -3257,54 +3257,67 @@ function createNode(item, level) {
                 }
             }
 
-            // NOVO: Renderizar Botão de Anexo na ADM para APF
-            if (isAPF && !hasChildren && currProj.id !== 'p_default') {
-                const btnAttach = document.createElement('button');
-                btnAttach.className = 'icon-btn attach-icon-btn';
-                btnAttach.title = 'Anexar documento';
-                btnAttach.innerHTML = '<i class="ph ph-paperclip"></i>';
-                btnAttach.onclick = (e) => {
-                    e.stopPropagation();
-                    activeUploadItemId = item.id;
-                    isUploadPendencia = false;
-                    if (globalFileInput) globalFileInput.click();
-                };
-                if (item.isNotApplicable) {
-                    btnAttach.disabled = true;
-                    btnAttach.style.opacity = '0.5';
+                // ...
+                    mgmtFields.appendChild(infoArea);
                 }
-                mgmtFields.appendChild(btnAttach);
             }
             itemRight.appendChild(mgmtFields);
         }
 
-        const actionsDiv = document.createElement('div');
-        actionsDiv.style.display = 'flex';
-        actionsDiv.style.gap = '0.4rem';
-        actionsDiv.style.alignItems = 'center';
+        // NOVO: Container de Grade 2x2 para Ações
+        const gridActions = document.createElement('div');
+        gridActions.className = 'mgmt-grid-actions';
 
         const btnAddSub = document.createElement('button');
         btnAddSub.className = 'btn btn-outline btn-sm';
+        btnAddSub.title = 'Criar subpasta ou item';
         btnAddSub.innerHTML = '<i class="ph ph-folder-plus"></i>';
         btnAddSub.onclick = () => handleAddFolder(item.id);
-        actionsDiv.appendChild(btnAddSub);
+        gridActions.appendChild(btnAddSub);
+
+        const btnAttach = document.createElement('button');
+        btnAttach.className = 'icon-btn attach-icon-btn';
+        btnAttach.title = 'Anexar documento';
+        btnAttach.innerHTML = '<i class="ph ph-paperclip"></i>';
+        btnAttach.onclick = (e) => {
+            e.stopPropagation();
+            activeUploadItemId = item.id;
+            isUploadPendencia = false;
+            if (globalFileInput) globalFileInput.click();
+        };
+
+        const isAPF = authenticatedSector === 'APF';
+        if (isAPF && !hasChildren && currProj.id !== 'p_default') {
+            if (item.isNotApplicable) {
+                btnAttach.disabled = true;
+                btnAttach.style.opacity = '0.5';
+            }
+            gridActions.appendChild(btnAttach);
+        } else {
+            // Placeholder para manter a grade se for pasta ou modelo
+            const spacer = document.createElement('div');
+            gridActions.appendChild(spacer);
+        }
 
         const btnRename = document.createElement('button');
         btnRename.className = 'icon-btn';
+        btnRename.title = 'Renomear item';
         btnRename.innerHTML = '<i class="ph ph-pencil-simple"></i>';
         btnRename.onclick = () => handleRenameFolder(item.id);
-        actionsDiv.appendChild(btnRename);
+        gridActions.appendChild(btnRename);
 
         const btnDel = document.createElement('button');
         btnDel.className = 'icon-btn delete';
+        btnDel.title = 'Excluir item';
         btnDel.innerHTML = '<i class="ph ph-trash"></i>';
         btnDel.onclick = () => handleDeleteFolder(item.id);
-        actionsDiv.appendChild(btnDel);
+        gridActions.appendChild(btnDel);
 
         if (!isRootFolder && item.attachments && item.attachments.length > 0) {
             const inlineAttachments = document.createElement('div');
             inlineAttachments.className = 'inline-attachments-row';
             inlineAttachments.style.justifyContent = 'flex-end';
+            inlineAttachments.style.marginRight = '0.5rem';
 
             item.attachments.forEach(att => {
                 const attBadge = document.createElement('div');
@@ -3337,7 +3350,8 @@ function createNode(item, level) {
             });
             itemRight.appendChild(inlineAttachments);
         }
-        itemRight.appendChild(actionsDiv);
+
+        itemRight.appendChild(gridActions);
     }
 
     itemDiv.appendChild(itemLeft);
