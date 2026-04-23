@@ -188,18 +188,7 @@ function isMgmtActive() {
     return activeTabObj && activeTabObj.dataset.tab === 'management';
 }
 
-function getItemPath(p, itemId) {
-    const items = p.items || [];
-    let item = items.find(i => i.id === itemId);
-    if (!item) return "";
-    let path = [item.name];
-    let current = item;
-    while (current && current.parentId !== null) {
-        current = items.find(i => i.id === current.parentId);
-        if (current) path.unshift(current.name);
-    }
-    return path.join(" / ");
-}
+
 
 function getItemSector(itemId) {
     const p = getCurrentProject();
