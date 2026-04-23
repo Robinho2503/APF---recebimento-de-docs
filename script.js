@@ -3116,7 +3116,7 @@ function createNode(item, level) {
                 justInput.oninput = (e) => {
                     item.justification = e.target.value;
                     updateJustifyBtnStyle();
-                    if (typeof debouncedSave === 'function') debouncedSave();
+                    saveState();
                 };
                 justInput.onchange = (e) => {
                     const oldVal = item.justification || '';
@@ -3179,7 +3179,7 @@ function createNode(item, level) {
                     obsInp.value = item.observation || '';
                     obsInp.oninput = (e) => {
                         item.observation = e.target.value;
-                        debouncedSave();
+                        saveState();
                     };
                     obsInp.onblur = () => renderTree();
                     mgmtFields.appendChild(obsInp);
@@ -3724,7 +3724,7 @@ function renderPendenciasMgmt() {
             obsInp.oninput = (e) => {
                 const oldVal = p.observation || '';
                 p.observation = e.target.value;
-                debouncedSave();
+                saveState();
             };
             obsInp.onblur = () => {
                 renderTree();
