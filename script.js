@@ -160,10 +160,9 @@ function loadLocalUI() {
     try {
         const saved = localStorage.getItem('apf_local_ui_v1');
         if (saved) {
-            const parsed = JSON.parse(saved);
-            localUI.expandedIds = new Set(); // Forçar colapso por padrão ao carregar
-            localUI.showFullChecklistDuringPendencia = parsed.showFullChecklistDuringPendencia || false;
-            localUI.currentProjectId = parsed.currentProjectId || null;
+            localUI = JSON.parse(saved);
+            // Ensure expandedIds is a Set
+            localUI.expandedIds = new Set(localUI.expandedIds || []);
         }
     } catch (e) { console.warn("Erro ao carregar IU local", e); }
 }
@@ -721,8 +720,7 @@ function initEventListeners() {
                 sessionStorage.setItem('apf_session_sector', sector);
                 
                 applyAuthState(true);
-                renderTree();
-                renderTracking(); // Refresh sidebar cards
+                renderAfterUpdate();
                 populateLoginSectors(); // Update if needed
             } else {
                 passwordError.style.display = 'block';
