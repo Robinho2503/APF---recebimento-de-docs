@@ -292,10 +292,6 @@ async function syncWithCloud() {
                 isInitialCloudLoad = false;
                 if (!state.projects.find(p => p.id === localUI.currentProjectId)) {
                     localUI.currentProjectId = null;
-                } else if (localUI.currentProjectId && localUI.currentProjectId !== 'p_default') {
-                    // Carregar automaticamente o projeto selecionado para restaurar a sessão
-                    console.log(`Restaurando sessão do projeto: ${localUI.currentProjectId}`);
-                    await selectProject(localUI.currentProjectId);
                 }
             }
 
@@ -707,11 +703,16 @@ function initEventListeners() {
                 inputPassword.value = '';
                 passwordError.style.display = 'none';
                 
+                // Resetar seleção ao fazer login para exigir escolha manual (Conforme solicitado)
+                localUI.currentProjectId = null;
+                saveLocalUI();
+
                 // Salvar sessão temporária no sessionStorage
                 sessionStorage.setItem('apf_session_sector', sector);
                 
                 applyAuthState(true);
                 renderTree();
+                renderTracking(); // Refresh sidebar cards
                 populateLoginSectors(); // Update if needed
             } else {
                 passwordError.style.display = 'block';
