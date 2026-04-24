@@ -58,10 +58,30 @@
     <div class="main-layout">
         <!-- Mobile Header Toggle (Visible only on small screens) -->
         <header class="mobile-top-bar">
-            <button id="btn-toggle-sidebar" class="mobile-menu-btn" title="Ocultar/Exibir Menu">
-                <i class="ph ph-list"></i>
-            </button>
-            <span class="top-bar-title">ENTREGAS PREVISTAS</span>
+            <div class="top-bar-left">
+                <button id="btn-toggle-sidebar" class="mobile-menu-btn" title="Ocultar/Exibir Menu">
+                    <i class="ph ph-list"></i>
+                </button>
+                <span class="top-bar-title">ENTREGAS PREVISTAS</span>
+            </div>
+            
+            <div class="top-bar-right">
+                <div id="top-auth-info" class="top-auth-info" style="display: none;"></div>
+                <div id="auth-nav-tabs" class="auth-nav-tabs">
+                    <button class="tab-btn" data-tab="management">Administração</button>
+                </div>
+                <button id="btn-theme-toggle" class="icon-btn" title="Alternar Modo Escuro/Claro">
+                    <i class="ph ph-sun"></i>
+                </button>
+                <div id="apf-submenu" class="apf-submenu" style="display:none;">
+                    <button id="btn-settings" class="icon-btn" title="Configurações">
+                        <i class="ph ph-gear"></i>
+                    </button>
+                    <button id="btn-show-history" class="icon-btn" title="Histórico de Ações">
+                        <i class="ph ph-clock-counter-clockwise"></i>
+                    </button>
+                </div>
+            </div>
         </header>
 
         <!-- Sidebar Backdrop (Visible only on mobile when sidebar is open) -->
@@ -108,30 +128,6 @@
                     <div style="flex-grow: 1;"></div>
                 <div style="display: flex; gap: 0.5rem; align-items: center; position: relative;">
                     <div id="presence-indicator" class="presence-indicator"></div>
-                    <div class="apf-nav-group">
-                        <div id="top-auth-info" class="top-auth-info" style="display: none;"></div>
-                        <div id="auth-nav-tabs" class="auth-nav-tabs">
-
-                            <button class="tab-btn" data-tab="management">
-                                Administração
-                            </button>
-                        </div>
-                        <button id="btn-theme-toggle" class="icon-btn" title="Alternar Modo Escuro/Claro" style="margin-right: 0.25rem;">
-                            <i class="ph ph-sun"></i>
-                        </button>
-                        <div id="apf-submenu" class="apf-submenu" style="display:none;">
-                            <button id="btn-settings" class="icon-btn" title="Configurações">
-                                <i class="ph ph-gear"></i>
-                            </button>
-                            <button id="btn-show-history" class="icon-btn" title="Histórico de Ações">
-                                <i class="ph ph-clock-counter-clockwise"></i>
-                            </button>
-                            <!-- Dropbox connection hidden as we migrated to Firebase Storage -->
-                            <button id="btn-connect-dropbox" class="icon-btn" title="Conectar Dropbox" style="display: none;">
-                                <i class="ph ph-dropbox-logo"></i>
-                            </button>
-                        </div>
-                    </div>
                 </div>
             </div>
             
