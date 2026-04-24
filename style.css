@@ -687,6 +687,10 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
     padding: 0.75rem 1rem; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 0.5rem; transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94); position: relative; z-index: 2;
 }
+
+.tree-item.menu-open {
+    z-index: 100 !important;
+}
 .light-mode .tree-item {
     border: 1px solid rgba(0, 0, 0, 0.15);
     background: rgba(255, 255, 255, 0.6);
@@ -910,7 +914,7 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
     position: absolute;
     top: 100%;
     right: 0;
-    z-index: 1000;
+    z-index: 9999;
     background: var(--panel-bg);
     border: 1px solid var(--panel-border);
     border-radius: 0.5rem;

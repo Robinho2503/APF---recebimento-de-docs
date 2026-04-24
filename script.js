@@ -3409,15 +3409,23 @@ function createNode(item, level) {
 
         btnEditToggle.onclick = (e) => {
             e.stopPropagation();
-            // Fechar outros menus abertos
-            document.querySelectorAll('.edit-actions-dropdown').forEach(d => {
-                if (d !== dropdown) d.classList.add('hidden');
-            });
-            dropdown.classList.toggle('hidden');
+            const isOpen = !dropdown.classList.contains('hidden');
+            
+            // Fechar outros menus abertos e remover classes de destaque
+            document.querySelectorAll('.edit-actions-dropdown').forEach(d => d.classList.add('hidden'));
+            document.querySelectorAll('.tree-item').forEach(ti => ti.classList.remove('menu-open'));
+
+            if (!isOpen) {
+                dropdown.classList.remove('hidden');
+                itemDiv.classList.add('menu-open');
+            }
         };
 
         // Fechar ao clicar fora
-        window.addEventListener('click', () => dropdown.classList.add('hidden'), { once: true });
+        window.addEventListener('click', () => {
+            dropdown.classList.add('hidden');
+            itemDiv.classList.remove('menu-open');
+        }, { once: true });
 
         editMenuWrapper.appendChild(btnEditToggle);
         editMenuWrapper.appendChild(dropdown);
