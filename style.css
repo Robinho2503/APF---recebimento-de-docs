@@ -103,20 +103,18 @@ body {
     height: 100vh;
     position: fixed;
     left: 0;
-    top: 50px; /* Abaixo da mobile-top-bar */
+    top: 50px;
     height: calc(100vh - 50px);
     border-radius: 0;
-    border-right: 1px solid var(--panel-border);
+    border-right: none;
     display: flex;
     flex-direction: column;
     padding: 0;
     z-index: 10;
-    
-    /* Efeito de navegação sem fundo sólido */
-    background: var(--sidebar-glass) !important;
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
-    box-shadow: 15px 0 45px rgba(0, 0, 0, 0.25);
+    background: transparent !important;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease, width 0.4s ease;
 }
 
@@ -1942,6 +1940,17 @@ hr {
     align-items: center;
     padding: 0 1rem;
     gap: 1rem;
+}
+
+.top-bar-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-main);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    opacity: 0.9;
+    user-select: none;
+    margin-left: 0.5rem;
 }
 
 .mobile-menu-btn {
