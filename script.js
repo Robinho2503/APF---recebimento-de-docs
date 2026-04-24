@@ -3350,54 +3350,78 @@ function createNode(item, level) {
             itemRight.appendChild(divider);
         }
 
-        // NOVO: Container de Grade 2x2 para Ações
+        // NOVO: Sistema de Menu de Edição (Refatoração solicitada pelo usuário)
         const gridActions = document.createElement('div');
-        gridActions.className = 'mgmt-grid-actions';
-
-        const btnAddSub = document.createElement('button');
-        btnAddSub.className = 'btn btn-outline btn-sm';
-        btnAddSub.title = 'Criar subpasta ou item';
-        btnAddSub.innerHTML = '<i class="ph ph-folder-plus"></i>';
-        btnAddSub.onclick = () => handleAddFolder(item.id);
-        gridActions.appendChild(btnAddSub);
-
-        const btnAttach = document.createElement('button');
-        btnAttach.className = 'icon-btn attach-icon-btn';
-        btnAttach.title = 'Anexar documento';
-        btnAttach.innerHTML = '<i class="ph ph-paperclip"></i>';
-        btnAttach.onclick = (e) => {
-            e.stopPropagation();
-            activeUploadItemId = item.id;
-            isUploadPendencia = false;
-            if (globalFileInput) globalFileInput.click();
-        };
+        gridActions.className = 'node-mgmt-actions';
 
         const isAPF = authenticatedSector === 'APF';
+        
+        // 1. Botão de Anexo (Mantido visível se for documento)
         if (isAPF && !hasChildren && currProj.id !== 'p_default') {
+            const btnAttach = document.createElement('button');
+            btnAttach.className = 'icon-btn attach-icon-btn';
+            btnAttach.title = 'Anexar documento';
+            btnAttach.innerHTML = '<i class="ph ph-paperclip"></i>';
+            btnAttach.onclick = (e) => {
+                e.stopPropagation();
+                activeUploadItemId = item.id;
+                isUploadPendencia = false;
+                if (globalFileInput) globalFileInput.click();
+            };
             if (item.isNotApplicable) {
                 btnAttach.disabled = true;
                 btnAttach.style.opacity = '0.5';
             }
             gridActions.appendChild(btnAttach);
-        } else {
-            // Placeholder para manter a grade se for pasta ou modelo
-            const spacer = document.createElement('div');
-            gridActions.appendChild(spacer);
         }
 
+        // 2. Menu de Edição (Dropdown)
+        const editMenuWrapper = document.createElement('div');
+        editMenuWrapper.className = 'edit-menu-wrapper';
+
+        const btnEditToggle = document.createElement('button');
+        btnEditToggle.className = 'icon-btn edit-toggle-btn';
+        btnEditToggle.innerHTML = '<i class="ph ph-note-pencil"></i>';
+        btnEditToggle.title = 'Opções de Edição';
+        
+        const dropdown = document.createElement('div');
+        dropdown.className = 'edit-actions-dropdown hidden';
+
+        // Botões Internos do Menu
+        const btnAddSub = document.createElement('button');
+        btnAddSub.className = 'dropdown-item';
+        btnAddSub.innerHTML = '<i class="ph ph-folder-plus"></i> Criar subpasta';
+        btnAddSub.onclick = (e) => { e.stopPropagation(); dropdown.classList.add('hidden'); handleAddFolder(item.id); };
+
         const btnRename = document.createElement('button');
-        btnRename.className = 'icon-btn';
-        btnRename.title = 'Renomear item';
-        btnRename.innerHTML = '<i class="ph ph-pencil-simple"></i>';
-        btnRename.onclick = () => handleRenameFolder(item.id);
-        gridActions.appendChild(btnRename);
+        btnRename.className = 'dropdown-item';
+        btnRename.innerHTML = '<i class="ph ph-pencil-simple"></i> Renomear item';
+        btnRename.onclick = (e) => { e.stopPropagation(); dropdown.classList.add('hidden'); handleRenameFolder(item.id); };
 
         const btnDel = document.createElement('button');
-        btnDel.className = 'icon-btn delete';
-        btnDel.title = 'Excluir item';
-        btnDel.innerHTML = '<i class="ph ph-trash"></i>';
-        btnDel.onclick = () => handleDeleteFolder(item.id);
-        gridActions.appendChild(btnDel);
+        btnDel.className = 'dropdown-item delete';
+        btnDel.innerHTML = '<i class="ph ph-trash"></i> Excluir item';
+        btnDel.onclick = (e) => { e.stopPropagation(); dropdown.classList.add('hidden'); handleDeleteFolder(item.id); };
+
+        dropdown.appendChild(btnAddSub);
+        dropdown.appendChild(btnRename);
+        dropdown.appendChild(btnDel);
+
+        btnEditToggle.onclick = (e) => {
+            e.stopPropagation();
+            // Fechar outros menus abertos
+            document.querySelectorAll('.edit-actions-dropdown').forEach(d => {
+                if (d !== dropdown) d.classList.add('hidden');
+            });
+            dropdown.classList.toggle('hidden');
+        };
+
+        // Fechar ao clicar fora
+        window.addEventListener('click', () => dropdown.classList.add('hidden'), { once: true });
+
+        editMenuWrapper.appendChild(btnEditToggle);
+        editMenuWrapper.appendChild(dropdown);
+        gridActions.appendChild(editMenuWrapper);
 
         if (!isRootFolder && item.attachments && item.attachments.length > 0) {
             const inlineAttachments = document.createElement('div');
