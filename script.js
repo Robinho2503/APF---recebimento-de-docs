@@ -58,7 +58,8 @@ let isInitialCloudLoad = true;
 let localUI = {
     expandedIds: new Set(),
     showFullChecklistDuringPendencia: false,
-    currentProjectId: null
+    currentProjectId: null,
+    sidebarCollapsed: false
 };
 let treeSearchQuery = '';
 let treeSearchFilter = 'all'; // all, pendente, apontamento
@@ -171,7 +172,8 @@ function saveLocalUI() {
     const toSave = {
         expandedIds: Array.from(localUI.expandedIds),
         showFullChecklistDuringPendencia: localUI.showFullChecklistDuringPendencia,
-        currentProjectId: localUI.currentProjectId
+        currentProjectId: localUI.currentProjectId,
+        sidebarCollapsed: localUI.sidebarCollapsed
     };
     localStorage.setItem('apf_local_ui_v1', JSON.stringify(toSave));
 }
@@ -332,6 +334,7 @@ function renderAfterUpdate() {
     updateThemeIcon();
     renderAuditLog();
     applyAuthState();
+    applySidebarState();
 }
 
 let saveTimeout = null;
@@ -410,9 +413,10 @@ async function selectProject(projectId) {
     renderAfterUpdate();
     triggerPanelAnimation();
 
-    if (window.innerWidth <= 992 && sidebarApf) {
-        sidebarApf.classList.remove('mobile-active');
-        if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
+    if (window.innerWidth <= 992) {
+        localUI.sidebarCollapsed = true;
+        saveLocalUI();
+        applySidebarState();
     }
 }
 
@@ -500,7 +504,7 @@ let btnShowHistory, historyModal, btnCloseHistory;
 let projectDueDateInp, projectGlobalCountdown, headerLocationInfo;
 let globalLogin, loginSector;
 let btnLogout, topAuthInfo, authNavTabs, btnLoginThemeToggle;
-let btnMobileMenu, sidebarBackdrop;
+let sidebarBackdrop;
 let btnForgotPassword, forgotPasswordModal, btnCloseForgot;
 let newProjectModal, btnCloseNewProject, btnConfirmNewProject, newProjNameInp, newProjUfInp, newProjCityInp, newProjDueDateInp;
 let newProjectModalTitle, btnConfirmNewProjectText, newProjectModalInfo;
@@ -518,7 +522,7 @@ function initDOMElements() {
     headerMgmtActions = document.getElementById('header-mgmt-actions');
     btnLoginThemeToggle = document.getElementById('btn-login-theme-toggle');
     btnLogout = document.getElementById('btn-logout');
-    btnMobileMenu = document.getElementById('btn-mobile-menu');
+    btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
     sidebarBackdrop = document.getElementById('sidebar-backdrop');
     btnForgotPassword = document.getElementById('btn-forgot-password');
     forgotPasswordModal = document.getElementById('forgot-password-modal');
@@ -678,11 +682,8 @@ function initEventListeners() {
         btnLoginThemeToggle.addEventListener('click', toggleTheme);
     }
 
-    if (btnMobileMenu) {
-        btnMobileMenu.addEventListener('click', () => {
-            sidebarApf.classList.toggle('mobile-active');
-            sidebarBackdrop.classList.toggle('active');
-        });
+    if (btnToggleSidebar) {
+        btnToggleSidebar.addEventListener('click', toggleSidebar);
     }
 
     if (sidebarBackdrop) {
@@ -1317,6 +1318,36 @@ function initEventListeners() {
     }
 }
 
+function toggleSidebar() {
+    localUI.sidebarCollapsed = !localUI.sidebarCollapsed;
+    saveLocalUI();
+    applySidebarState();
+}
+
+function applySidebarState() {
+    if (!sidebarApf) return;
+    const appContainer = document.querySelector('.app-container');
+
+    if (localUI.sidebarCollapsed) {
+        sidebarApf.classList.add('collapsed');
+        if (appContainer) appContainer.classList.add('expanded');
+    } else {
+        sidebarApf.classList.remove('collapsed');
+        if (appContainer) appContainer.classList.remove('expanded');
+    }
+
+    // Em mobile, também controlamos a classe mobile-active se necessário, 
+    // mas a lógica de colapso desktop é prioritária agora.
+    if (window.innerWidth <= 992) {
+        if (!localUI.sidebarCollapsed) {
+            sidebarApf.classList.add('mobile-active');
+            if (sidebarBackdrop) sidebarBackdrop.classList.add('active');
+        } else {
+            sidebarApf.classList.remove('mobile-active');
+            if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
+        }
+    }
+}
 
 function showTemporaryMessage(msg, type = 'info') {
     const toast = document.createElement('div');

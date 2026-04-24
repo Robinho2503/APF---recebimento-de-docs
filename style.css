@@ -83,7 +83,19 @@ body {
     transition: opacity 0.3s ease;
 }
 
-.app-container { max-width: 1400px; padding: 2rem; margin-left: 320px; overflow-x: hidden; }
+.app-container { 
+    max-width: 1400px; 
+    padding: 2rem; 
+    padding-top: 5rem; /* Espaço para a barra superior */
+    margin-left: 320px; 
+    overflow-x: hidden; 
+    transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.4s ease, padding 0.4s ease;
+}
+
+.app-container.expanded {
+    margin-left: 0;
+    max-width: 100%;
+}
 
 /* Sidebar */
 .sidebar {
@@ -91,7 +103,8 @@ body {
     height: 100vh;
     position: fixed;
     left: 0;
-    top: 0;
+    top: 50px; /* Abaixo da mobile-top-bar */
+    height: calc(100vh - 50px);
     border-radius: 0;
     border-right: 1px solid var(--panel-border);
     display: flex;
@@ -104,6 +117,13 @@ body {
     backdrop-filter: blur(25px);
     -webkit-backdrop-filter: blur(25px);
     box-shadow: 15px 0 45px rgba(0, 0, 0, 0.15);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease, width 0.4s ease;
+}
+
+.sidebar.collapsed {
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
 }
 
 /* Sidebar Collapsed Styles Removed (Sidebar is now fixed/permanent) */
@@ -1880,7 +1900,7 @@ hr {
 
 /* Header Mobile */
 .mobile-top-bar {
-    display: none;
+    display: flex;
     position: fixed;
     top: 0;
     left: 0;
@@ -1943,7 +1963,7 @@ hr {
 
     .app-container {
         margin-left: 0 !important;
-        padding-top: 4rem !important; /* EspaÃƒÂ§o para a top bar (50px + margem) */
+        padding-top: 5rem !important;
         padding-left: 0.5rem !important;
         padding-right: 0.5rem !important;
     }
