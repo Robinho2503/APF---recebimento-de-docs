@@ -1331,9 +1331,11 @@ function applySidebarState() {
     if (localUI.sidebarCollapsed) {
         sidebarApf.classList.add('collapsed');
         if (appContainer) appContainer.classList.add('expanded');
+        if (btnToggleSidebar) btnToggleSidebar.classList.remove('active');
     } else {
         sidebarApf.classList.remove('collapsed');
         if (appContainer) appContainer.classList.remove('expanded');
+        if (btnToggleSidebar) btnToggleSidebar.classList.add('active');
     }
 
     // Em mobile, também controlamos a classe mobile-active se necessário, 

@@ -1906,10 +1906,10 @@ hr {
     left: 0;
     width: 100%;
     height: 50px;
-    background: var(--panel-bg);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border-bottom: 1px solid var(--panel-border);
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-bottom: none;
     z-index: 1000;
     align-items: center;
     padding: 0 1rem;
@@ -1928,6 +1928,21 @@ hr {
     justify-content: center;
     font-size: 1.5rem;
     cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1001;
+}
+
+.mobile-menu-btn i {
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mobile-menu-btn.active i {
+    transform: rotate(180deg);
+}
+
+.mobile-menu-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
 }
 
 .mobile-logo-text {
