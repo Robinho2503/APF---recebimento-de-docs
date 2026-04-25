@@ -2046,12 +2046,14 @@ hr {
 }
 
 .mobile-menu-btn i {
-    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: none;
 }
 
 .mobile-menu-btn.active i {
-    transform: rotate(180deg);
+    transform: none !important;
 }
+
+
 
 .mobile-menu-btn:hover {
     background: rgba(255, 255, 255, 0.1);
