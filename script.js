@@ -3041,7 +3041,7 @@ function createNode(item, level) {
 
     // RESTAURADO: LOCK ICON FOR ROOT FOLDERS - Right Aligned
     if (isRootFolder && localUI.currentProjectId !== 'p_default') {
-        const isLocked = authenticatedSector && authenticatedSector !== 'APF' && authenticatedSector.trim() !== item.name.trim();
+        const isLocked = authenticatedSector && authenticatedSector !== 'APF' && authenticatedSector !== 'Olé' && authenticatedSector.trim() !== item.name.trim();
         if (isLocked) {
             const lockIcon = document.createElement('i');
             lockIcon.className = 'ph ph-lock-simple';
