@@ -379,6 +379,7 @@ function saveState() {
                     stats: p.id !== 'p_default' ? calculateProjectStats(p) : { pendente: 0, apontamento: 0 }
                 };
             }),
+            settings: state.settings || {},
             auditLog: (state.auditLog || []).slice(-100) // Limitar histórico no cloud para 100 itens
         };
 
