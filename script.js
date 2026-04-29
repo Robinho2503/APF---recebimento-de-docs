@@ -529,7 +529,7 @@ let globalLogin, loginSector;
 let btnLogout, topAuthInfo, authNavTabs, btnLoginThemeToggle;
 let sidebarBackdrop;
 let btnForgotPassword, forgotPasswordModal, btnCloseForgot;
-let newProjectModal, btnCloseNewProject, btnConfirmNewProject, newProjNameInp, newProjUfInp, newProjCityInp, newProjDueDateInp;
+let newProjectModal, btnCloseNewProject, btnConfirmNewProject, newProjNameInp, newProjUfInp, newProjCityInp, newProjDueDateInp, newProjIsOleInp;
 let newProjectModalTitle, btnConfirmNewProjectText, newProjectModalInfo;
 let editingProjectId = null;
 let uploadToast, uploadToastText, uploadToastSub, uploadToastIcon;
@@ -639,6 +639,7 @@ function initDOMElements() {
     newProjUfInp = document.getElementById('new-proj-uf');
     newProjCityInp = document.getElementById('new-proj-city');
     newProjDueDateInp = document.getElementById('new-proj-due-date');
+    newProjIsOleInp = document.getElementById('new-proj-is-ole');
     newProjectModalTitle = document.getElementById('new-project-modal-title');
     btnConfirmNewProjectText = document.getElementById('btn-confirm-new-project-text');
     newProjectModalInfo = document.getElementById('new-project-modal-info');
@@ -881,6 +882,7 @@ function initEventListeners() {
                 if (newProjUfInp) newProjUfInp.value = '';
                 if (newProjCityInp) newProjCityInp.value = '';
                 if (newProjDueDateInp) newProjDueDateInp.value = '';
+                if (newProjIsOleInp) newProjIsOleInp.checked = false;
                 newProjectModal.classList.remove('hidden');
                 if (newProjNameInp) newProjNameInp.focus();
             }
@@ -893,6 +895,7 @@ function initEventListeners() {
             const uf = newProjUfInp.value;
             const city = newProjCityInp.value.trim();
             const dueDate = newProjDueDateInp.value;
+            const isOle = newProjIsOleInp ? newProjIsOleInp.checked : false;
 
             if (!name) {
                 alert('O nome do empreendimento é obrigatório.');
@@ -907,6 +910,7 @@ function initEventListeners() {
                     proj.uf = uf;
                     proj.cidade = city;
                     proj.dueDate = dueDate;
+                    proj.isOle = isOle;
                     showTemporaryMessage(`Empreendimento "${name}" atualizado com sucesso!`);
                 }
             } else {
@@ -930,6 +934,7 @@ function initEventListeners() {
                     createdAt: new Date().toISOString().split('T')[0],
                     pendenciaActive: false,
                     pendencias: [],
+                    isOle: isOle,
                     items: duplicatedItems
                 };
 
@@ -1133,6 +1138,7 @@ function initEventListeners() {
                 editingProjectId = curr.id;
                 if (newProjectModalTitle) newProjectModalTitle.innerHTML = '<i class="ph ph-pencil-simple"></i> Editar Empreendimento';
                 if (btnConfirmNewProjectText) btnConfirmNewProjectText.textContent = 'Salvar Alterações';
+                if (newProjIsOleInp) newProjIsOleInp.checked = !!proj.isOle;
                 if (newProjectModalInfo) newProjectModalInfo.style.display = 'none';
 
                 if (newProjNameInp) newProjNameInp.value = curr.name || '';
@@ -1433,7 +1439,7 @@ function populateLoginSectors() {
     const currentVal = loginSector.value;
 
     // Repopular
-    loginSector.innerHTML = '<option value="">Selecione seu setor...</option><option value="APF">APF (Administrativo)</option>';
+    loginSector.innerHTML = '<option value="">Selecione seu setor...</option><option value="APF">APF (Administrativo)</option><option value="Olé">Olé (Acesso Total Olé)</option>';
 
     sortedSectors.forEach(s => {
         const opt = document.createElement('option');
@@ -1938,7 +1944,21 @@ function renderTracking() {
     trackingContainer.innerHTML = '';
 
     // ALWAYS filter out the template from the sidebar as per user request
-    const trackableProjects = state.projects.filter(p => p.id !== 'p_default');
+    let trackableProjects = state.projects.filter(p => p.id !== 'p_default');
+
+    // FILTRAGEM OLÉ:
+    const isAPF = authenticatedSector === 'APF';
+    const isOleUser = authenticatedSector === 'Olé';
+
+    if (isAPF) {
+        // APF vê tudo
+    } else if (isOleUser) {
+        // Login Olé vê apenas empreendimentos Olé
+        trackableProjects = trackableProjects.filter(p => p.isOle === true);
+    } else {
+        // Outros setores vêem apenas empreendimentos NÃO Olé
+        trackableProjects = trackableProjects.filter(p => p.isOle !== true);
+    }
 
     trackableProjects.sort((a, b) => {
         // 1. Resolução de Pendências ATIVA (Topo da lista)
@@ -2809,7 +2829,16 @@ function createNode(item, level) {
 
     // Per-sector permission logic
     const nodeSector = getItemSector(item.id);
-    const canEdit = authenticatedSector === 'APF' || authenticatedSector === nodeSector;
+    const isAPF = authenticatedSector === 'APF';
+    const isOleUser = authenticatedSector === 'Olé';
+    const isOleProject = !!currProj.isOle;
+
+    let canEdit = isAPF || authenticatedSector === nodeSector;
+
+    // Login Olé tem acesso irrestrito em projetos Olé
+    if (isOleUser && isOleProject) {
+        canEdit = true;
+    }
 
     // SEARCH & FILTER LOGIC
     if (treeSearchQuery || treeSearchFilter !== 'all') {
@@ -2821,7 +2850,7 @@ function createNode(item, level) {
         const isAPF = authenticatedSector === 'APF';
         const userSector = (authenticatedSector || '').trim().toLowerCase();
         const itemSectorNormalized = (nodeSector || '').trim().toLowerCase();
-        const sectorMatches = isAPF || itemSectorNormalized === userSector;
+        const sectorMatches = isAPF || itemSectorNormalized === userSector || (isOleUser && isOleProject);
 
         if (treeSearchFilter !== 'all') {
             if (isFolder) {
@@ -2851,7 +2880,7 @@ function createNode(item, level) {
                 const cSector = getItemSector(c.id);
                 const itemSectorNormalized = (cSector || '').trim().toLowerCase();
                 const userSector = (authenticatedSector || '').trim().toLowerCase();
-                const cSectorMatches = isAPF || itemSectorNormalized === userSector;
+                const cSectorMatches = isAPF || itemSectorNormalized === userSector || (isOleUser && isOleProject);
 
                 if (treeSearchFilter !== 'all') {
                     if (cIsFolder) {
