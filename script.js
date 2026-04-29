@@ -288,6 +288,20 @@ async function syncWithCloud() {
             if (!cloudData.settings) cloudData.settings = {};
             if (!cloudData.settings.sectorPasswords) cloudData.settings.sectorPasswords = { "APF": "1234" };
 
+            // Garantir existência do Modelo de Entrega no índice global
+            if (!cloudData.projects.find(p => p.id === 'p_default')) {
+                cloudData.projects.unshift({
+                    id: 'p_default',
+                    name: 'Modelo de Entrega',
+                    items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)),
+                    dueDate: '',
+                    createdAt: new Date().toISOString().split('T')[0],
+                    engAnalysisOpened: false,
+                    pendencias: [],
+                    pendenciaStartDate: ''
+                });
+            }
+
             state = cloudData;
             localStorage.setItem(CACHE_KEY, JSON.stringify(state)); // Update cache
 
@@ -296,8 +310,8 @@ async function syncWithCloud() {
                 const found = state.projects.find(p => p.id === localUI.currentProjectId);
                 if (!found) {
                     localUI.currentProjectId = null;
-                } else if (localUI.currentProjectId && localUI.currentProjectId !== 'p_default') {
-                    // Restaurar projeto apenas se houver um ID válido salvo (útil para F5/Refresh)
+                } else if (localUI.currentProjectId) {
+                    // Restaurar projeto ativo (incluindo Modelo de Entrega)
                     console.log(`Restaurando projeto ativo: ${localUI.currentProjectId}`);
                     await selectProject(localUI.currentProjectId);
                 }
@@ -347,7 +361,7 @@ function saveState() {
 
         // 1. Salvar o documento individual do projeto selecionado (Sugestão 1 e 3)
         const curr = getCurrentProject();
-        if (curr && curr.id !== 'p_default') {
+        if (curr && curr.id !== 'none') {
             const projectDocRef = doc(db, `projects/${curr.id}`);
             try {
                 await setDoc(projectDocRef, curr);
@@ -388,7 +402,7 @@ async function selectProject(projectId) {
     if (!isNewSelection && (project.items || []).length > 0) return;
 
     // Se o projeto não tem itens carregados, busca no Firestore
-    if (!(project.items || []).length && projectId !== 'p_default') {
+    if (!(project.items || []).length && projectId !== 'none') {
         console.log(`Carregando detalhes do projeto ${projectId}...`);
         const projectDocRef = doc(db, `projects/${projectId}`);
         try {
@@ -398,10 +412,18 @@ async function selectProject(projectId) {
                 project.items = fullData.items || [];
                 // Sincronizar metadados e outros campos do detalhe
                 Object.assign(project, fullData);
+            } else if (projectId === 'p_default') {
+                // Fallback para o Modelo Padrão caso não exista no cloud
+                console.log("Modelo no Cloud não encontrado, usando padrão local.");
+                project.items = JSON.parse(JSON.stringify(DEFAULT_ITEMS));
             }
         } catch (e) {
             console.error("Erro ao carregar detalhes do projeto:", e);
-            return;
+            if (projectId === 'p_default') {
+                project.items = JSON.parse(JSON.stringify(DEFAULT_ITEMS));
+            } else {
+                return;
+            }
         }
     }
 
@@ -1125,14 +1147,7 @@ function initEventListeners() {
 
     if (btnOpenTemplate) {
         btnOpenTemplate.onclick = () => {
-            if (localUI.currentProjectId === 'p_default') return;
-            localUI.currentProjectId = 'p_default';
-            localUI.expandedIds.clear(); // Ocultar pastas por padrão ao abrir o modelo
-            saveLocalUI();
-            updateGlobalDateUI();
-            renderTree();
-            renderTracking();
-            triggerPanelAnimation();
+            selectProject('p_default');
         };
     }
 
