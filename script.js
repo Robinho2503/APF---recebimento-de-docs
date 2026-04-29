@@ -3929,9 +3929,14 @@ window.handleFileUpload = async function (itemId, files, isPendencia = false) {
     }
 
     // Permission Check
+    const isOleUser = authenticatedSector === 'Olé';
+    const isOleProject = !!currProject.isOle;
+
     if (authenticatedSector !== 'APF') {
         const itemSector = isPendencia ? targetItem?.sector : getItemSector(itemId);
-        if (itemSector !== authenticatedSector) {
+        const hasOleUnrestrictedAccess = isOleUser && isOleProject;
+
+        if (itemSector !== authenticatedSector && !hasOleUnrestrictedAccess) {
             showTemporaryMessage(`Acesso negado. Você só pode enviar documentos para o setor "${authenticatedSector}".`);
             return;
         }
@@ -4038,15 +4043,20 @@ window.handleFileUpload = async function (itemId, files, isPendencia = false) {
 
 window.handleDeleteFile = async function (itemId, fileId, isPendencia = false) {
     // Permission Check
+    const currProject = getCurrentProject();
+    const isOleUser = authenticatedSector === 'Olé';
+    const isOleProject = !!currProject?.isOle;
+
     if (authenticatedSector !== 'APF') {
-        const itemSector = isPendencia ? getCurrentProject()?.pendencias.find(p => p.id === itemId)?.sector : getItemSector(itemId);
-        if (itemSector !== authenticatedSector) {
+        const itemSector = isPendencia ? currProject?.pendencias.find(p => p.id === itemId)?.sector : getItemSector(itemId);
+        const hasOleUnrestrictedAccess = isOleUser && isOleProject;
+
+        if (itemSector !== authenticatedSector && !hasOleUnrestrictedAccess) {
             showTemporaryMessage("Acesso negado. Você não tem permissão para excluir documentos de outros setores.");
             return;
         }
     }
 
-    const currProject = getCurrentProject();
     if (!currProject) return;
 
     let targetItem;
