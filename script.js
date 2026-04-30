@@ -2255,7 +2255,13 @@ function renderPendenciasChecklist(curr) {
     header.innerHTML = '<i class="ph ph-warning-diamond" style="font-size: 1.5rem;"></i> <strong style="font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.05em;">PENDÊNCIAS CAIXA</strong>';
     wrapper.appendChild(header);
 
+    const isAPF = authenticatedSector === 'APF';
+
     curr.pendencias.forEach(p => {
+        const canEditPend = isAPF || authenticatedSector === p.sector;
+        const pNodeWrapper = document.createElement('div');
+        pNodeWrapper.className = 'tree-node pendencia-node';
+
         const node = document.createElement('div');
         node.className = 'tree-item pendencia-item';
 
@@ -2315,24 +2321,6 @@ function renderPendenciasChecklist(curr) {
         statusRow.appendChild(btnAttach);
         itemRight.appendChild(statusRow);
 
-        if (hasAtt) {
-            const attRow = document.createElement('div');
-            attRow.className = 'inline-attachments-row';
-            p.attachments.forEach(att => {
-                const badge = document.createElement('div');
-                badge.className = 'inline-attachment';
-                badge.innerHTML = `
-                    <span class="text-truncate" style="max-width: 150px;" title="${att.name}">${att.name}</span>
-                    <button class="icon-btn preview" title="Visualizar"><i class="ph ph-eye"></i></button>
-                    <button class="icon-btn delete" title="Remover"><i class="ph ph-x"></i></button>
-                `;
-                badge.querySelector('.preview').onclick = () => window.openPreview(att);
-                badge.querySelector('.delete').onclick = () => window.handleDeleteFile(p.id, att.id, true);
-                attRow.appendChild(badge);
-            });
-            itemRight.appendChild(attRow);
-        }
-
         // Observation Field (Compact and toggleable)
         const btnObs = document.createElement('button');
         btnObs.className = 'btn btn-outline btn-sm';
@@ -2368,12 +2356,24 @@ function renderPendenciasChecklist(curr) {
         btnObs.onclick = () => obsBox.classList.toggle('open');
 
         itemRight.appendChild(btnObs);
-
         itemRight.appendChild(obsBox);
 
         node.appendChild(itemLeft);
         node.appendChild(itemRight);
-        wrapper.appendChild(node);
+        pNodeWrapper.appendChild(node);
+
+        // NOVO: Listagem de Anexos Vertical
+        if (hasAtt) {
+            const attContainer = document.createElement('div');
+            attContainer.className = 'node-attachments-container';
+            p.attachments.forEach(att => {
+                const badge = createAttachmentBadge(att, p.id, canEditPend, false, true);
+                attContainer.appendChild(badge);
+            });
+            pNodeWrapper.appendChild(attContainer);
+        }
+
+        wrapper.appendChild(pNodeWrapper);
     });
 
     checklistContainer.appendChild(wrapper);
@@ -2821,6 +2821,58 @@ function adjustTreeFontSize() {
     });
 }
 
+function createAttachmentBadge(att, itemId, canEdit, isMgmt = false, isPendencia = false) {
+    const attBadge = document.createElement('div');
+    attBadge.className = 'inline-attachment';
+    
+    const nameTxt = document.createElement('span');
+    nameTxt.className = 'text-truncate';
+    nameTxt.style.maxWidth = isMgmt ? '250px' : '350px';
+    nameTxt.title = att.name;
+    nameTxt.textContent = att.name;
+
+    const btnView = document.createElement('button');
+    btnView.className = 'icon-btn';
+    btnView.innerHTML = '<i class="ph ph-eye"></i>';
+    btnView.onclick = (e) => { e.stopPropagation(); window.openPreview(att); };
+
+    attBadge.appendChild(nameTxt);
+
+    if (isMgmt) {
+        const btnAi = document.createElement('button');
+        btnAi.className = 'icon-btn';
+        btnAi.innerHTML = '<i class="ph ph-magic-wand text-primary"></i>';
+        btnAi.onclick = (e) => { e.stopPropagation(); window.analyzeDocumentAI(att); };
+        attBadge.appendChild(btnAi);
+    }
+
+    if (att.aiCheckResult) {
+        const aiStatusIcon = document.createElement('i');
+        const resLower = (att.aiCheckResult || "").toLowerCase();
+        const isSuccess = resLower.includes('sim') && !resLower.includes('não');
+        aiStatusIcon.className = isSuccess ? 'ph ph-shield-check text-accent' : 'ph ph-shield-warning text-warning';
+        aiStatusIcon.title = `[IA Check autom.]: ${att.aiCheckResult}`;
+        attBadge.appendChild(aiStatusIcon);
+    }
+
+    attBadge.appendChild(btnView);
+
+    const btnDel = document.createElement('button');
+    btnDel.className = 'icon-btn delete';
+    btnDel.innerHTML = '<i class="ph ph-x"></i>';
+    btnDel.onclick = (e) => { e.stopPropagation(); window.handleDeleteFile(itemId, att.id, isPendencia); };
+    
+    if (!canEdit) {
+        btnDel.disabled = true;
+        btnDel.style.opacity = '0.3';
+        btnDel.style.cursor = 'not-allowed';
+    }
+    attBadge.appendChild(btnDel);
+
+    return attBadge;
+}
+
+
 function createNode(item, level) {
     const children = getChildItems(item.id);
     const isRootFolder = item.parentId === null;
@@ -3091,51 +3143,10 @@ function createNode(item, level) {
             }
 
             if (hasAtt) {
+                // Anexos agora são renderizados abaixo via node-attachments-container
                 statusRow.appendChild(btnAttach);
             }
             itemRight.appendChild(statusRow);
-
-            if (hasAtt) {
-                const inlineAttachments = document.createElement('div');
-                inlineAttachments.className = 'inline-attachments-row';
-                item.attachments.forEach(att => {
-                    const attBadge = document.createElement('div');
-                    attBadge.className = 'inline-attachment';
-                    const nameTxt = document.createElement('span');
-                    nameTxt.className = 'text-truncate';
-                    nameTxt.style.maxWidth = '150px';
-                    nameTxt.title = att.name;
-                    nameTxt.textContent = att.name;
-
-                    const btnView = document.createElement('button');
-                    btnView.className = 'icon-btn';
-                    btnView.innerHTML = '<i class="ph ph-eye"></i>';
-                    btnView.onclick = () => window.openPreview(att);
-
-                    const btnDel = document.createElement('button');
-                    btnDel.className = 'icon-btn delete';
-                    btnDel.innerHTML = '<i class="ph ph-x"></i>';
-                    btnDel.onclick = () => window.handleDeleteFile(item.id, att.id);
-                    if (!canEdit) {
-                        btnDel.disabled = true;
-                        btnDel.style.opacity = '0.3';
-                        btnDel.style.cursor = 'not-allowed';
-                    }
-
-                    attBadge.appendChild(nameTxt);
-                    if (att.aiCheckResult) {
-                        const aiStatusIcon = document.createElement('i');
-                        const isSuccess = att.aiCheckResult.toLowerCase().includes('sim') && !att.aiCheckResult.toLowerCase().includes('não');
-                        aiStatusIcon.className = isSuccess ? 'ph ph-shield-check text-accent' : 'ph ph-shield-warning text-warning';
-                        aiStatusIcon.title = `[IA Check autom.]: ${att.aiCheckResult}`;
-                        attBadge.appendChild(aiStatusIcon);
-                    }
-                    attBadge.appendChild(btnView);
-                    attBadge.appendChild(btnDel);
-                    inlineAttachments.appendChild(attBadge);
-                });
-                itemRight.appendChild(inlineAttachments);
-            } else if (!item.isNotApplicable) {
                 const pendingBar = document.createElement('div');
                 pendingBar.className = 'pending-action-bar';
                 const forecastGroup = document.createElement('div');
@@ -3476,50 +3487,23 @@ function createNode(item, level) {
         editMenuWrapper.appendChild(dropdown);
         gridActions.appendChild(editMenuWrapper);
 
-        if (!isRootFolder && item.attachments && item.attachments.length > 0) {
-            const inlineAttachments = document.createElement('div');
-            inlineAttachments.className = 'inline-attachments-row';
-            inlineAttachments.style.justifyContent = 'flex-end';
-            inlineAttachments.style.marginRight = '0.5rem';
-
-            item.attachments.forEach(att => {
-                const attBadge = document.createElement('div');
-                attBadge.className = 'inline-attachment';
-                const nameTxt = document.createElement('span');
-                nameTxt.className = 'text-truncate';
-                nameTxt.style.maxWidth = '150px';
-                nameTxt.textContent = att.name;
-
-                const btnView = document.createElement('button');
-                btnView.className = 'icon-btn';
-                btnView.innerHTML = '<i class="ph ph-eye"></i>';
-                btnView.onclick = () => window.openPreview(att);
-
-                const btnAi = document.createElement('button');
-                btnAi.className = 'icon-btn';
-                btnAi.innerHTML = '<i class="ph ph-magic-wand text-primary"></i>';
-                btnAi.onclick = () => window.analyzeDocumentAI(att);
-
-                const btnDelFile = document.createElement('button');
-                btnDelFile.className = 'icon-btn delete';
-                btnDelFile.innerHTML = '<i class="ph ph-x"></i>';
-                btnDelFile.onclick = () => window.handleDeleteFile(item.id, att.id);
-
-                attBadge.appendChild(nameTxt);
-                attBadge.appendChild(btnAi);
-                attBadge.appendChild(btnView);
-                attBadge.appendChild(btnDelFile);
-                inlineAttachments.appendChild(attBadge);
-            });
-            itemRight.appendChild(inlineAttachments);
-        }
-
         itemRight.appendChild(gridActions);
     }
 
     itemDiv.appendChild(itemLeft);
     itemDiv.appendChild(itemRight);
     nodeWrapper.appendChild(itemDiv);
+
+    // NOVO: Listagem de Anexos Vertical abaixo do nome (Organização solicitada)
+    if (item.attachments && item.attachments.length > 0) {
+        const attContainer = document.createElement('div');
+        attContainer.className = 'node-attachments-container';
+        item.attachments.forEach(att => {
+            const badge = createAttachmentBadge(att, item.id, canEdit, isMgmt, false);
+            attContainer.appendChild(badge);
+        });
+        nodeWrapper.appendChild(attContainer);
+    }
 
     if (!isMgmt && !isRootFolder && !hasChildren && item.validationStatus === 'Apontamento' && item.observation && item.attachments?.length > 0) {
         const obsBox = document.createElement('div');

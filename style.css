@@ -722,10 +722,16 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
 
 /* Inline attachments row below status row */
 .inline-attachments-row {
+    display: none; /* Hide old row as we move to vertical list */
+}
+
+.node-attachments-container {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    justify-content: flex-end;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-top: 0.25rem;
+    margin-bottom: 0.75rem;
+    padding-left: 2.75rem; /* Indentation to align under the name */
 }
 
 /* Icon-only attach button */
@@ -740,17 +746,26 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
 }
 
 .inline-attachment {
-    display: flex; align-items: center; gap: 0.25rem;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 0.25rem 0.5rem;
-    border-radius: 1rem;
+    display: flex; align-items: center; gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0.4rem 0.75rem;
+    border-radius: 0.6rem;
     font-size: 0.75rem;
+    width: fit-content;
+    transition: all 0.2s ease;
 }
+
+.inline-attachment:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
 .inline-attachment .icon-btn {
-    width: 1.25rem; height: 1.25rem; font-size: 0.8rem;
+    width: 1.5rem; height: 1.5rem; font-size: 0.9rem;
     min-width: unset; padding: 0; background: transparent; border: none; cursor: pointer; color: var(--text-main); display: inline-flex; align-items: center; justify-content: center;
 }
-.inline-attachment .icon-btn:hover { color: var(--primary); }
+.inline-attachment .icon-btn:hover { color: var(--primary); transform: scale(1.1); }
 .inline-attachment .icon-btn.delete:hover { color: var(--danger); }
 
 /* Estilos para o RelatÃƒÂ³rio de ImpressÃƒÂ£o */
