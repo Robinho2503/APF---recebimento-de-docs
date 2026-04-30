@@ -3145,8 +3145,7 @@ function createNode(item, level) {
             if (hasAtt) {
                 // Anexos agora são renderizados abaixo via node-attachments-container
                 statusRow.appendChild(btnAttach);
-            }
-            itemRight.appendChild(statusRow);
+            } else if (!item.isNotApplicable) {
                 const pendingBar = document.createElement('div');
                 pendingBar.className = 'pending-action-bar';
                 const forecastGroup = document.createElement('div');
@@ -3253,6 +3252,7 @@ function createNode(item, level) {
                 itemRight.appendChild(pendingBar);
                 itemRight.appendChild(justBox);
             }
+            itemRight.appendChild(statusRow);
 
             itemDiv.addEventListener('dragover', (e) => { e.preventDefault(); itemDiv.classList.add('drag-over'); });
             itemDiv.addEventListener('dragleave', (e) => { itemDiv.classList.remove('drag-over'); });
