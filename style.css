@@ -726,12 +726,14 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
 }
 
 .node-attachments-container {
+    width: 100%; /* Garante que pule para a linha de baixo dentro do tree-item */
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
-    margin-top: 0.25rem;
-    margin-bottom: 0.75rem;
-    padding-left: 2.75rem; /* Indentation to align under the name */
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    padding-left: 2.5rem; /* Indentação para alinhar sob o nome */
+    border-top: 1px solid rgba(255, 255, 255, 0.05); /* Divisor sutil dentro do quadro */
 }
 
 /* Icon-only attach button */

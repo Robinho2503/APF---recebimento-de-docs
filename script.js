@@ -2358,11 +2358,7 @@ function renderPendenciasChecklist(curr) {
         itemRight.appendChild(btnObs);
         itemRight.appendChild(obsBox);
 
-        node.appendChild(itemLeft);
-        node.appendChild(itemRight);
-        pNodeWrapper.appendChild(node);
-
-        // NOVO: Listagem de Anexos Vertical
+        // NOVO: Listagem de Anexos Vertical (Agora dentro do quadro do item)
         if (hasAtt) {
             const attContainer = document.createElement('div');
             attContainer.className = 'node-attachments-container';
@@ -2370,9 +2366,10 @@ function renderPendenciasChecklist(curr) {
                 const badge = createAttachmentBadge(att, p.id, canEditPend, false, true);
                 attContainer.appendChild(badge);
             });
-            pNodeWrapper.appendChild(attContainer);
+            node.appendChild(attContainer);
         }
 
+        pNodeWrapper.appendChild(node);
         wrapper.appendChild(pNodeWrapper);
     });
 
@@ -3492,9 +3489,8 @@ function createNode(item, level) {
 
     itemDiv.appendChild(itemLeft);
     itemDiv.appendChild(itemRight);
-    nodeWrapper.appendChild(itemDiv);
 
-    // NOVO: Listagem de Anexos Vertical abaixo do nome (Organização solicitada)
+    // NOVO: Listagem de Anexos Vertical (Agora dentro do quadro do item/pasta)
     if (item.attachments && item.attachments.length > 0) {
         const attContainer = document.createElement('div');
         attContainer.className = 'node-attachments-container';
@@ -3502,8 +3498,10 @@ function createNode(item, level) {
             const badge = createAttachmentBadge(att, item.id, canEdit, isMgmt, false);
             attContainer.appendChild(badge);
         });
-        nodeWrapper.appendChild(attContainer);
+        itemDiv.appendChild(attContainer);
     }
+
+    nodeWrapper.appendChild(itemDiv);
 
     if (!isMgmt && !isRootFolder && !hasChildren && item.validationStatus === 'Apontamento' && item.observation && item.attachments?.length > 0) {
         const obsBox = document.createElement('div');
