@@ -2443,8 +2443,8 @@ function updateProjectProgressUI(curr) {
             const sectorLeafs = leafItems.filter(i => getItemSector(i.id) === s.name);
             let sPct = 0;
             if (sectorLeafs.length > 0) {
-                const sValidated = sectorLeafs.filter(i => (i.validationStatus === 'Validado' || i.validationStatus === 'APF check') && i.attachments?.length > 0).length;
-                sPct = Math.round((sValidated / sectorLeafs.length) * 100);
+                const sDelivered = sectorLeafs.filter(i => i.attachments && i.attachments.length > 0 && i.validationStatus !== 'Apontamento').length;
+                sPct = Math.round((sDelivered / sectorLeafs.length) * 100);
             }
             const grade = getGrade(sPct);
 
@@ -4152,8 +4152,11 @@ function renderAnalysisPanels() {
                     if (child.isNotApplicable) return;
                     total++;
                     if (child.attachments && child.attachments.length > 0) {
-                        delivered++;
-                        if (child.validationStatus === 'Apontamento') apontamentos++;
+                        if (child.validationStatus !== 'Apontamento') {
+                            delivered++;
+                        } else {
+                            apontamentos++;
+                        }
                     }
                 }
                 countItems(child.id);
