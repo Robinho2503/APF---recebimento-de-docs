@@ -2928,9 +2928,7 @@ function createNode(item, level) {
         const sectorMatches = isAPF || itemSectorNormalized === userSector || (isOleUser && isOleProject);
 
         if (treeSearchFilter !== 'all') {
-            if (isFolder) {
-                matchesFilter = false;
-            } else if (!sectorMatches) {
+            if (!sectorMatches) {
                 matchesFilter = false;
             } else {
                 const itemValidOrAPF = item.validationStatus === 'Validado' || item.validationStatus === 'APF check';
@@ -2940,27 +2938,28 @@ function createNode(item, level) {
                 else if (treeSearchFilter === 'apontamento') matchesFilter = hasAtt && itemPointed;
                 else if (treeSearchFilter === 'validado') matchesFilter = (hasAtt && itemValidOrAPF) || item.isNotApplicable;
                 else if (treeSearchFilter === 'analise') matchesFilter = hasAtt && !itemValidOrAPF && !itemPointed;
+                
+                // Se for pasta e não tiver anexo próprio, ela não "casa" com filtros de status diretamente
+                if (isFolder && !hasAtt && treeSearchFilter !== 'all') matchesFilter = false;
             }
         }
 
         // An item should be shown if it matches OR if any of its children match
         const anyChildMatches = (nodeId) => {
-            const nodeChildren = getItems().filter(i => i.parentId === nodeId);
+            const items = getItems();
+            const nodeChildren = items.filter(i => i.parentId === nodeId);
             return nodeChildren.some(c => {
                 const cMatches = c.name.toLowerCase().includes(treeSearchQuery);
                 const cHasAtt = c.attachments && c.attachments.length > 0;
-                const cIsFolder = getItems().some(i => i.parentId === c.id) || c.parentId === null;
+                const cIsFolder = items.some(i => i.parentId === c.id) || c.parentId === null;
 
                 let cMatchesFilter = true;
                 const cSector = getItemSector(c.id);
-                const itemSectorNormalized = (cSector || '').trim().toLowerCase();
-                const userSector = (authenticatedSector || '').trim().toLowerCase();
-                const cSectorMatches = isAPF || itemSectorNormalized === userSector || (isOleUser && isOleProject);
+                const cSectorNormalized = (cSector || '').trim().toLowerCase();
+                const cSectorMatches = isAPF || cSectorNormalized === userSector || (isOleUser && isOleProject);
 
                 if (treeSearchFilter !== 'all') {
-                    if (cIsFolder) {
-                        cMatchesFilter = false;
-                    } else if (!cSectorMatches) {
+                    if (!cSectorMatches) {
                         cMatchesFilter = false;
                     } else {
                         const cValidOrAPF = c.validationStatus === 'Validado' || c.validationStatus === 'APF check';
@@ -2970,6 +2969,8 @@ function createNode(item, level) {
                         else if (treeSearchFilter === 'apontamento') cMatchesFilter = cHasAtt && cPointed;
                         else if (treeSearchFilter === 'validado') cMatchesFilter = (cHasAtt && cValidOrAPF) || c.isNotApplicable;
                         else if (treeSearchFilter === 'analise') cMatchesFilter = cHasAtt && !cValidOrAPF && !cPointed;
+                        
+                        if (cIsFolder && !cHasAtt) cMatchesFilter = false;
                     }
                 }
 
@@ -3033,7 +3034,7 @@ function createNode(item, level) {
             const status = (item.validationStatus || '').trim().toLowerCase();
             if (status === 'validado' || status === 'apf check') iconColor = 'var(--accent)';
             else if (status === 'apontamento') iconColor = 'var(--danger)';
-            else iconColor = 'var(--warning)'; // Em análise / Aguardando validação
+            else iconColor = 'var(--warning)'; // Aguardando validação APF
         } else {
             iconColor = 'var(--danger)'; // Pendente de entrega
         }
@@ -3045,7 +3046,7 @@ function createNode(item, level) {
                 if (stats.total === stats.validated) iconColor = 'var(--accent)';
                 else iconColor = 'var(--text-main)';
             } else {
-                // Subpastas: Vermelho se houver erro ou falta de entrega, Amarelo se estiver aguardando
+                // Subpastas: Vermelho se houver erro OU falta de entrega, Amarelo se estiver aguardando validação
                 if (stats.apontamento > 0 || stats.pendente > 0) iconColor = 'var(--danger)';
                 else if (stats.total === stats.validated) iconColor = 'var(--accent)';
                 else iconColor = 'var(--warning)'; // Aguardando validação APF
