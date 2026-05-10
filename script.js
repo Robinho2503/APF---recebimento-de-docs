@@ -3002,8 +3002,16 @@ function createNode(item, level) {
         else if (n.includes('sustent')) iconClass = 'ph-leaf';
         icon.className = `ph ${iconClass} item-icon`;
     }
-    else icon.className = (item.attachments && item.attachments.length > 0) ? 'ph ph-file-text item-icon' : 'ph ph-folder item-icon';
-    if (item.protected && isMgmt && !isRootFolder) icon.className = 'ph ph-folder-lock item-icon';
+    else {
+        if (hasChildren) {
+            icon.className = 'ph ph-folder item-icon';
+        } else {
+            icon.className = (item.attachments && item.attachments.length > 0) ? 'ph ph-file-text item-icon' : 'ph ph-file item-icon';
+        }
+    }
+    if (item.protected && isMgmt && !isRootFolder) {
+        icon.className = hasChildren ? 'ph ph-folder-lock item-icon' : 'ph ph-file-lock item-icon';
+    }
 
     // APLICAR COR DE STATUS AO ÍCONE (Para documentos/pastas finais)
     if (!isRootFolder && !hasChildren) {
