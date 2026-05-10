@@ -3033,16 +3033,23 @@ function createNode(item, level) {
             const status = (item.validationStatus || '').trim().toLowerCase();
             if (status === 'validado' || status === 'apf check') iconColor = 'var(--accent)';
             else if (status === 'apontamento') iconColor = 'var(--danger)';
-            else iconColor = 'var(--warning)'; // Em análise
+            else iconColor = 'var(--warning)'; // Em análise / Aguardando validação
         } else {
-            iconColor = 'var(--danger)'; // Pendente
+            iconColor = 'var(--danger)'; // Pendente de entrega
         }
     } else {
         // Pasta ou Subpasta
         if (stats.total > 0) {
-            if (stats.apontamento > 0) iconColor = 'var(--danger)';
-            else if (stats.total === stats.validated) iconColor = 'var(--accent)';
-            else iconColor = 'var(--warning)'; // Pendente ou Em análise
+            if (isRootFolder) {
+                // Pasta de Setor: Apenas verde se tudo estiver validado, caso contrário mantém cor padrão
+                if (stats.total === stats.validated) iconColor = 'var(--accent)';
+                else iconColor = 'var(--text-main)';
+            } else {
+                // Subpastas: Vermelho se houver erro ou falta de entrega, Amarelo se estiver aguardando
+                if (stats.apontamento > 0 || stats.pendente > 0) iconColor = 'var(--danger)';
+                else if (stats.total === stats.validated) iconColor = 'var(--accent)';
+                else iconColor = 'var(--warning)'; // Aguardando validação APF
+            }
         }
     }
     icon.style.color = iconColor;
