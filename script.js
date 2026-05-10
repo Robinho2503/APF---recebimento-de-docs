@@ -1156,7 +1156,7 @@ function initEventListeners() {
                 editingProjectId = curr.id;
                 if (newProjectModalTitle) newProjectModalTitle.innerHTML = '<i class="ph ph-pencil-simple"></i> Editar Empreendimento';
                 if (btnConfirmNewProjectText) btnConfirmNewProjectText.textContent = 'Salvar Alterações';
-                if (newProjIsOleInp) newProjIsOleInp.checked = !!proj.isOle;
+                if (newProjIsOleInp) newProjIsOleInp.checked = !!curr.isOle;
                 if (newProjectModalInfo) newProjectModalInfo.style.display = 'none';
 
                 if (newProjNameInp) newProjNameInp.value = curr.name || '';
