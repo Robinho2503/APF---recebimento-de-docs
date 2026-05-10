@@ -497,6 +497,11 @@ async function handleExportProjectZip(triggerBtn) {
         return;
     }
 
+    if (typeof JSZip === 'undefined') {
+        alert('Erro: Biblioteca de compressão (JSZip) não carregada. Verifique sua conexão.');
+        return;
+    }
+
     showConfirm({
         title: 'Baixar Documentação',
         message: `Você deseja baixar toda a documentação anexa do empreendimento ${curr.name}? O sistema irá processar os arquivos em um ZIP.`,
@@ -505,10 +510,15 @@ async function handleExportProjectZip(triggerBtn) {
             const originalBtnContent = triggerBtn.innerHTML;
             triggerBtn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Gerando ZIP...';
             triggerBtn.disabled = true;
+
             try {
                 const items = curr.items || [];
                 const zip = new JSZip();
-                const rootFolder = zip.folder(curr.name);
+                
+                // Sanitização de nome de pasta
+                const safeProjectName = curr.name.replace(/[\/\\?%*:|"<>]/g, '-');
+                const rootFolder = zip.folder(safeProjectName);
+
                 async function processItem(item, parentFolder) {
                     const children = items.filter(i => i.parentId === item.id);
                     const attachments = item.attachments || [];
@@ -517,10 +527,12 @@ async function handleExportProjectZip(triggerBtn) {
 
                     if (!isFolder && !hasDocs) return;
 
-                    const currentFolder = parentFolder.folder(item.name);
+                    const safeName = item.name.replace(/[\/\\?%*:|"<>]/g, '-');
+                    const currentFolder = parentFolder.folder(safeName);
 
                     if (hasDocs) {
-                        for (const att of attachments) {
+                        // Download paralelo de anexos do item atual
+                        await Promise.all(attachments.map(async (att) => {
                             try {
                                 let url = null;
                                 if (att.storagePath) {
@@ -528,50 +540,61 @@ async function handleExportProjectZip(triggerBtn) {
                                         const storageRef = ref(storage, att.storagePath);
                                         url = await getDownloadURL(storageRef);
                                     } catch (urlErr) {
-                                        console.warn(`Não foi possível gerar URL fresca para ${att.name}, tentando fallback...`, urlErr);
+                                        console.warn(`Erro Storage para ${att.name}:`, urlErr);
                                     }
                                 }
-                                if (!url) {
-                                    url = att.downloadUrl || att.objectUrl || att.dropboxUrl;
+                                if (!url) url = att.downloadUrl || att.objectUrl || att.dropboxUrl;
+                                
+                                if (url) {
+                                    const response = await fetch(url);
+                                    if (response.ok) {
+                                        const blob = await response.blob();
+                                        const safeFileName = att.name.replace(/[\/\\?%*:|"<>]/g, '-');
+                                        currentFolder.file(safeFileName, blob);
+                                    } else {
+                                        console.warn(`Erro HTTP ${response.status} ao baixar ${att.name}`);
+                                    }
                                 }
-                                if (!url) {
-                                    console.warn(`URL não encontrada para: ${att.name}`);
-                                    continue;
-                                }
-                                const response = await fetch(url);
-                                if (!response.ok) throw new Error(`Status ${response.status}`);
-                                const blob = await response.blob();
-                                currentFolder.file(att.name, blob);
                             } catch (e) {
-                                console.error(`Erro ao baixar "${att.name}" em "${item.name}":`, e);
+                                console.error(`Erro ao processar anexo "${att.name}":`, e);
                             }
-                        }
+                        }));
                     }
 
-                    for (const child of children) {
-                        await processItem(child, currentFolder);
-                    }
+                    // Processar filhos (recursão pode ser paralela também para maior velocidade)
+                    await Promise.all(children.map(child => processItem(child, currentFolder)));
                 }
+
                 const roots = items.filter(i => i.parentId === null);
                 if (roots.length === 0) {
-                    alert('Não há itens para exportar.');
+                    alert('Estrutura de pastas não encontrada para exportação.');
                     triggerBtn.innerHTML = originalBtnContent;
                     triggerBtn.disabled = false;
                     return;
                 }
-                for (const root of roots) { await processItem(root, rootFolder); }
+
+                // Processar pastas raiz em paralelo
+                await Promise.all(roots.map(root => processItem(root, rootFolder)));
+
+                console.log("Gerando arquivo ZIP final...");
                 const content = await zip.generateAsync({ type: 'blob' });
+                
                 const zipUrl = URL.createObjectURL(content);
-                const link = document.createElement('a');
+                const link = document.body.appendChild(document.createElement('a'));
                 link.href = zipUrl;
-                link.download = `${curr.name}_Export.zip`;
-                document.body.appendChild(link);
+                link.download = `${safeProjectName}_Documentacao.zip`;
                 link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(zipUrl);
+                
+                // Pequeno delay antes de remover e revogar para garantir o início do download em alguns navegadores
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(zipUrl);
+                }, 1000);
+
+                showTemporaryMessage("Download iniciado com sucesso!");
             } catch (error) {
-                console.error('Erro na exportação ZIP:', error);
-                alert('Ocorreu um erro ao gerar o arquivo ZIP.');
+                console.error('Erro crítico na exportação ZIP:', error);
+                alert('Ocorreu um erro ao gerar o arquivo ZIP. Verifique o console para detalhes.');
             } finally {
                 triggerBtn.innerHTML = originalBtnContent;
                 triggerBtn.disabled = false;
