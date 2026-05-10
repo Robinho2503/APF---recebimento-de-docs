@@ -2177,24 +2177,30 @@ function getChildItems(parentId) {
 
 function getNodeStats(itemId) {
     const p = getCurrentProject();
-    if (!p) return { pendente: 0, apontamento: 0 };
-
-    // If it's a root folder (sector), and we have pre-calculated stats for the project
-    // we could potentially optimize further, but for now we still do the sub-tree sweep
-    // unless we store stats per folder. For now, let's keep the sweep but use it smarter.
+    if (!p) return { pendente: 0, apontamento: 0, total: 0, validated: 0 };
 
     let pendente = 0;
     let apontamento = 0;
+    let total = 0;
+    let validated = 0;
 
     const children = getChildItems(itemId);
     const item = (p.items || []).find(i => i.id === itemId);
 
     if (item && item.parentId !== null && children.length === 0) {
-        if (!item.isNotApplicable && (!item.attachments || item.attachments.length === 0)) {
-            pendente++;
-        }
-        if (item.validationStatus === 'Apontamento') {
-            apontamento++;
+        if (!item.isNotApplicable) {
+            total++;
+            const hasAtt = item.attachments && item.attachments.length > 0;
+            if (!hasAtt) {
+                pendente++;
+            } else {
+                const status = (item.validationStatus || '').trim().toLowerCase();
+                if (status === 'validado' || status === 'apf check') {
+                    validated++;
+                } else if (status === 'apontamento') {
+                    apontamento++;
+                }
+            }
         }
     }
 
@@ -2202,9 +2208,11 @@ function getNodeStats(itemId) {
         const childStats = getNodeStats(child.id);
         pendente += childStats.pendente;
         apontamento += childStats.apontamento;
+        total += childStats.total;
+        validated += childStats.validated;
     });
 
-    return { pendente, apontamento };
+    return { pendente, apontamento, total, validated };
 }
 
 async function compressImage(file) {
@@ -3013,71 +3021,39 @@ function createNode(item, level) {
         icon.className = hasChildren ? 'ph ph-folder-lock item-icon' : 'ph ph-file-lock item-icon';
     }
 
-    // APLICAR COR DE STATUS AO ÍCONE (Para documentos/pastas finais)
-    if (!isRootFolder && !hasChildren) {
-        let iconColor = 'var(--text-main)';
-        const hasAtt = item.attachments && item.attachments.length > 0;
+    // APLICAR COR DE STATUS AO ÍCONE E TEXTO
+    const stats = getNodeStats(item.id);
+    let iconColor = 'var(--text-main)';
 
+    if (!hasChildren) {
+        // Documento Folha
         if (item.isNotApplicable) {
             iconColor = 'var(--text-muted)';
-        } else if (hasAtt) {
-            if (item.validationStatus === 'Validado' || item.validationStatus === 'APF check') {
-                iconColor = 'var(--accent)';
-            } else if (item.validationStatus === 'Apontamento') {
-                iconColor = 'var(--danger)';
-            } else {
-                // Em Análise ou Sem Status definido ainda com anexo
-                iconColor = 'var(--warning)';
-            }
+        } else if (item.attachments && item.attachments.length > 0) {
+            const status = (item.validationStatus || '').trim().toLowerCase();
+            if (status === 'validado' || status === 'apf check') iconColor = 'var(--accent)';
+            else if (status === 'apontamento') iconColor = 'var(--danger)';
+            else iconColor = 'var(--warning)'; // Em análise
         } else {
-            // Pendente (Sem anexo e não é N/A) -> Vermelho conforme solicitado
-            iconColor = 'var(--danger)';
+            iconColor = 'var(--danger)'; // Pendente
         }
-        icon.style.color = iconColor;
-    }
-
-    let allValidated = false;
-    if (isRootFolder && hasChildren) {
-        let totalDocs = 0;
-        let validatedDocs = 0;
-        const pItems = getItems();
-
-        const countValidations = (parentId) => {
-            const children = pItems.filter(i => i.parentId === parentId);
-            children.forEach(child => {
-                const subChildren = pItems.filter(i => i.parentId === child.id);
-                if (subChildren.length === 0) {
-                    // É um documento folha (não é pasta)
-                    if (!child.isNotApplicable) {
-                        totalDocs++;
-                        const hasAtt = child.attachments && child.attachments.length > 0;
-                        const status = (child.validationStatus || '').trim().toLowerCase();
-                        // Aceita 'validado' ou 'apf check' de forma resiliente
-                        if (hasAtt && (status === 'validado' || status === 'apf check')) {
-                            validatedDocs++;
-                        }
-                    }
-                } else {
-                    // É uma pasta, continua descendo
-                    countValidations(child.id);
-                }
-            });
-        };
-
-        countValidations(item.id);
-        // O setor só fica verde se houver documentos e todos estiverem validados
-        if (totalDocs > 0 && totalDocs === validatedDocs) {
-            allValidated = true;
+    } else {
+        // Pasta ou Subpasta
+        if (stats.total > 0) {
+            if (stats.apontamento > 0) iconColor = 'var(--danger)';
+            else if (stats.total === stats.validated) iconColor = 'var(--accent)';
+            else iconColor = 'var(--warning)'; // Pendente ou Em análise
         }
     }
+    icon.style.color = iconColor;
 
     const nameSpan = document.createElement('span');
     nameSpan.className = 'item-name text-truncate';
-    if (isRootFolder) nameSpan.classList.add('root-name');
-
-    if (isRootFolder && allValidated) {
-        nameSpan.style.color = 'var(--accent)';
-        icon.style.color = 'var(--accent)';
+    if (isRootFolder) {
+        nameSpan.classList.add('root-name');
+        if (stats.total > 0 && stats.total === stats.validated) {
+            nameSpan.style.color = 'var(--accent)';
+        }
     }
 
     nameSpan.title = 'Clique para Expandir ou Ocultar';
