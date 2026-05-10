@@ -2854,25 +2854,26 @@ function createAttachmentBadge(att, itemId, canEdit, isMgmt = false, isPendencia
     nameTxt.title = att.name;
     nameTxt.textContent = att.name;
 
-    const btnView = document.createElement('button');
-    btnView.className = 'icon-btn';
+    const url = att.downloadUrl || att.objectUrl;
+    const btnView = document.createElement('a');
+    btnView.href = url || '#';
+    btnView.target = url ? '_blank' : '_self';
+    btnView.className = 'icon-btn view-link';
     btnView.innerHTML = '<i class="ph ph-eye"></i>';
+    btnView.style.cursor = url ? 'pointer' : 'not-allowed';
     btnView.onclick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const url = att.downloadUrl || att.objectUrl;
-        if (url) {
-            const win = window.open(url, '_blank');
-            if (win) win.focus();
-        } else {
-            console.warn("URL de anexo não encontrada para:", att.name);
+        if (!url) {
+            e.preventDefault();
+            alert("URL do arquivo não disponível.");
         }
+        e.stopPropagation();
     };
 
     attBadge.appendChild(nameTxt);
 
     if (isMgmt) {
         const btnAi = document.createElement('button');
+        btnAi.type = 'button';
         btnAi.className = 'icon-btn';
         btnAi.innerHTML = '<i class="ph ph-magic-wand text-primary"></i>';
         btnAi.onclick = (e) => { e.stopPropagation(); window.analyzeDocumentAI(att); };

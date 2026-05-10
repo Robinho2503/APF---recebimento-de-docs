@@ -561,15 +561,16 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
 .btn-outline { background: transparent; border: 1px solid var(--panel-border); color: var(--text-main); }
 .btn-outline:hover { background: var(--btn-outline-bg); border-color: var(--primary); }
 .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
-.icon-btn {
+.icon-btn, .view-link {
     background: var(--icon-btn-bg); border: none; color: var(--text-main);
     width: 2rem; height: 2rem; border-radius: 0.5rem; display: inline-flex;
     align-items: center; justify-content: center; cursor: pointer; 
     transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     backdrop-filter: blur(5px);
+    text-decoration: none;
 }
-.icon-btn:hover { background: var(--btn-outline-bg); color: var(--primary); transform: translateY(-1px) scale(1.05); }
-.icon-btn:active { transform: scale(0.92); }
+.icon-btn:hover, .view-link:hover { background: var(--btn-outline-bg); color: var(--primary); transform: translateY(-1px) scale(1.05); }
+.icon-btn:active, .view-link:active { transform: scale(0.92); }
 .icon-btn.delete:hover { color: var(--danger); }
 
 /* Badges */
