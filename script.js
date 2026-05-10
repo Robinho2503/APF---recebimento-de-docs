@@ -3056,6 +3056,10 @@ function createNode(item, level) {
 
     const nameSpan = document.createElement('span');
     nameSpan.className = 'item-name text-truncate';
+    if (item.isNotApplicable) {
+        nameSpan.style.textDecoration = 'line-through';
+        nameSpan.style.opacity = '0.7';
+    }
     if (isRootFolder) {
         nameSpan.classList.add('root-name');
         if (stats.total > 0 && stats.total === stats.validated) {
