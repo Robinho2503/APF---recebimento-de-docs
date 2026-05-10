@@ -2871,14 +2871,7 @@ function createAttachmentBadge(att, itemId, canEdit, isMgmt = false, isPendencia
 
     attBadge.appendChild(nameTxt);
 
-    if (isMgmt) {
-        const btnAi = document.createElement('button');
-        btnAi.type = 'button';
-        btnAi.className = 'icon-btn';
-        btnAi.innerHTML = '<i class="ph ph-magic-wand text-primary"></i>';
-        btnAi.onclick = (e) => { e.stopPropagation(); window.analyzeDocumentAI(att); };
-        attBadge.appendChild(btnAi);
-    }
+
 
     if (att.aiCheckResult) {
         const aiStatusIcon = document.createElement('i');
