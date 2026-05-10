@@ -3471,14 +3471,16 @@ function createNode(item, level) {
             if (!isOpen) {
                 dropdown.classList.remove('hidden');
                 itemDiv.classList.add('menu-open');
+                
+                // Fechar ao clicar fora (Apenas uma vez ao abrir)
+                const closeHandler = () => {
+                    dropdown.classList.add('hidden');
+                    itemDiv.classList.remove('menu-open');
+                    window.removeEventListener('click', closeHandler);
+                };
+                setTimeout(() => window.addEventListener('click', closeHandler), 10);
             }
         };
-
-        // Fechar ao clicar fora
-        window.addEventListener('click', () => {
-            dropdown.classList.add('hidden');
-            itemDiv.classList.remove('menu-open');
-        }, { once: true });
 
         editMenuWrapper.appendChild(btnEditToggle);
         editMenuWrapper.appendChild(dropdown);
