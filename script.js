@@ -2857,7 +2857,17 @@ function createAttachmentBadge(att, itemId, canEdit, isMgmt = false, isPendencia
     const btnView = document.createElement('button');
     btnView.className = 'icon-btn';
     btnView.innerHTML = '<i class="ph ph-eye"></i>';
-    btnView.onclick = (e) => { e.stopPropagation(); window.openPreview(att); };
+    btnView.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const url = att.downloadUrl || att.objectUrl;
+        if (url) {
+            const win = window.open(url, '_blank');
+            if (win) win.focus();
+        } else {
+            console.warn("URL de anexo não encontrada para:", att.name);
+        }
+    };
 
     attBadge.appendChild(nameTxt);
 
