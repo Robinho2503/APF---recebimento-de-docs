@@ -2917,69 +2917,55 @@ function createNode(item, level) {
 
     // SEARCH & FILTER LOGIC
     if (treeSearchQuery || treeSearchFilter !== 'all') {
-        const matchesQuery = item.name.toLowerCase().includes(treeSearchQuery);
-        const hasAtt = item.attachments && item.attachments.length > 0;
-        const isFolder = getChildItems(item.id).length > 0 || item.parentId === null;
-
-        let matchesFilter = true;
-        const isAPF = authenticatedSector === 'APF';
         const userSector = (authenticatedSector || '').trim().toLowerCase();
-        const itemSectorNormalized = (nodeSector || '').trim().toLowerCase();
-        const sectorMatches = isAPF || itemSectorNormalized === userSector || (isOleUser && isOleProject);
 
-        if (treeSearchFilter !== 'all') {
-            if (!sectorMatches) {
-                matchesFilter = false;
-            } else {
-                const itemValidOrAPF = item.validationStatus === 'Validado' || item.validationStatus === 'APF check';
-                const itemPointed = item.validationStatus === 'Apontamento';
+        const checkItemMatch = (targetItem) => {
+            const hasAtt = targetItem.attachments && targetItem.attachments.length > 0;
+            const itemValidOrAPF = targetItem.validationStatus === 'Validado' || targetItem.validationStatus === 'APF check';
+            const itemPointed = targetItem.validationStatus === 'Apontamento';
+            
+            const targetSector = getItemSector(targetItem.id);
+            const targetSectorNormalized = (targetSector || '').trim().toLowerCase();
+            const sectorMatches = isAPF || targetSectorNormalized === userSector || (isOleUser && isOleProject);
 
-                if (treeSearchFilter === 'pendente') matchesFilter = !hasAtt && !item.isNotApplicable;
-                else if (treeSearchFilter === 'apontamento') matchesFilter = hasAtt && itemPointed;
-                else if (treeSearchFilter === 'validado') matchesFilter = (hasAtt && itemValidOrAPF) || item.isNotApplicable;
-                else if (treeSearchFilter === 'analise') matchesFilter = hasAtt && !itemValidOrAPF && !itemPointed;
-                
-                // Se for pasta e não tiver anexo próprio, ela não "casa" com filtros de status diretamente
-                if (isFolder && !hasAtt && treeSearchFilter !== 'all') matchesFilter = false;
-            }
+            if (!sectorMatches) return false;
+
+            if (treeSearchFilter === 'pendente') return !hasAtt && !targetItem.isNotApplicable;
+            if (treeSearchFilter === 'apontamento') return hasAtt && itemPointed;
+            if (treeSearchFilter === 'validado') return (hasAtt && itemValidOrAPF) || targetItem.isNotApplicable;
+            if (treeSearchFilter === 'analise') return hasAtt && !itemValidOrAPF && !itemPointed;
+            return true;
+        };
+
+        const matchesQuery = item.name.toLowerCase().includes(treeSearchQuery);
+        let matchesFilter = checkItemMatch(item);
+        
+        // Pastas vazias não "casam" com filtros de status a menos que o filtro seja 'all'
+        const isFolder = getItems().some(i => i.parentId === item.id) || item.parentId === null;
+        if (treeSearchFilter !== 'all' && isFolder && !(item.attachments?.length > 0)) {
+            matchesFilter = false;
         }
 
         // An item should be shown if it matches OR if any of its children match
         const anyChildMatches = (nodeId) => {
-            const items = getItems();
-            const nodeChildren = items.filter(i => i.parentId === nodeId);
-            return nodeChildren.some(c => {
-                const cMatches = c.name.toLowerCase().includes(treeSearchQuery);
-                const cHasAtt = c.attachments && c.attachments.length > 0;
-                const cIsFolder = items.some(i => i.parentId === c.id) || c.parentId === null;
-
-                let cMatchesFilter = true;
-                const cSector = getItemSector(c.id);
-                const cSectorNormalized = (cSector || '').trim().toLowerCase();
-                const cSectorMatches = isAPF || cSectorNormalized === userSector || (isOleUser && isOleProject);
-
+            const children = getItems().filter(i => i.parentId === nodeId);
+            return children.some(c => {
+                const cMatchesQuery = c.name.toLowerCase().includes(treeSearchQuery);
+                const cMatchesFilter = checkItemMatch(c);
+                const cIsFolder = getItems().some(i => i.parentId === c.id);
+                
+                let cFinalMatch = cMatchesQuery;
                 if (treeSearchFilter !== 'all') {
-                    if (!cSectorMatches) {
-                        cMatchesFilter = false;
-                    } else {
-                        const cValidOrAPF = c.validationStatus === 'Validado' || c.validationStatus === 'APF check';
-                        const cPointed = c.validationStatus === 'Apontamento';
-
-                        if (treeSearchFilter === 'pendente') cMatchesFilter = !cHasAtt && !c.isNotApplicable;
-                        else if (treeSearchFilter === 'apontamento') cMatchesFilter = cHasAtt && cPointed;
-                        else if (treeSearchFilter === 'validado') cMatchesFilter = (cHasAtt && cValidOrAPF) || c.isNotApplicable;
-                        else if (treeSearchFilter === 'analise') cMatchesFilter = cHasAtt && !cValidOrAPF && !cPointed;
-                        
-                        if (cIsFolder && !cHasAtt) cMatchesFilter = false;
-                    }
+                    cFinalMatch = cMatchesFilter && (cMatchesQuery || true); // O filtro de status é soberano se ativo
+                    if (cIsFolder && !(c.attachments?.length > 0)) cFinalMatch = false;
                 }
 
-                return (cMatches && cMatchesFilter && cSectorMatches) || anyChildMatches(c.id);
+                return cFinalMatch || anyChildMatches(c.id);
             });
         };
 
-        if (!(matchesQuery && matchesFilter) && !anyChildMatches(item.id)) {
-            return null; // Skip this node
+        if (!(matchesQuery && (treeSearchFilter === 'all' || matchesFilter)) && !anyChildMatches(item.id)) {
+            return null;
         }
     }
 
