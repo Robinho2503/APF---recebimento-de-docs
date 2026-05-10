@@ -490,6 +490,96 @@ function calculateProjectStats(project) {
     return { pendente, apontamento };
 }
 
+async function handleExportProjectZip(triggerBtn) {
+    const curr = getCurrentProject();
+    if (!curr || curr.id === 'none') {
+        alert('Selecione um empreendimento primeiro.');
+        return;
+    }
+
+    showConfirm({
+        title: 'Baixar Documentação',
+        message: `Você deseja baixar toda a documentação anexa do empreendimento ${curr.name}? O sistema irá processar os arquivos em um ZIP.`,
+        confirmText: 'Baixar ZIP',
+        onConfirm: async () => {
+            const originalBtnContent = triggerBtn.innerHTML;
+            triggerBtn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Gerando ZIP...';
+            triggerBtn.disabled = true;
+            try {
+                const items = curr.items || [];
+                const zip = new JSZip();
+                const rootFolder = zip.folder(curr.name);
+                async function processItem(item, parentFolder) {
+                    const children = items.filter(i => i.parentId === item.id);
+                    const attachments = item.attachments || [];
+                    const hasDocs = attachments.length > 0;
+                    const isFolder = children.length > 0;
+
+                    if (!isFolder && !hasDocs) return;
+
+                    const currentFolder = parentFolder.folder(item.name);
+
+                    if (hasDocs) {
+                        for (const att of attachments) {
+                            try {
+                                let url = null;
+                                if (att.storagePath) {
+                                    try {
+                                        const storageRef = ref(storage, att.storagePath);
+                                        url = await getDownloadURL(storageRef);
+                                    } catch (urlErr) {
+                                        console.warn(`Não foi possível gerar URL fresca para ${att.name}, tentando fallback...`, urlErr);
+                                    }
+                                }
+                                if (!url) {
+                                    url = att.downloadUrl || att.objectUrl || att.dropboxUrl;
+                                }
+                                if (!url) {
+                                    console.warn(`URL não encontrada para: ${att.name}`);
+                                    continue;
+                                }
+                                const response = await fetch(url);
+                                if (!response.ok) throw new Error(`Status ${response.status}`);
+                                const blob = await response.blob();
+                                currentFolder.file(att.name, blob);
+                            } catch (e) {
+                                console.error(`Erro ao baixar "${att.name}" em "${item.name}":`, e);
+                            }
+                        }
+                    }
+
+                    for (const child of children) {
+                        await processItem(child, currentFolder);
+                    }
+                }
+                const roots = items.filter(i => i.parentId === null);
+                if (roots.length === 0) {
+                    alert('Não há itens para exportar.');
+                    triggerBtn.innerHTML = originalBtnContent;
+                    triggerBtn.disabled = false;
+                    return;
+                }
+                for (const root of roots) { await processItem(root, rootFolder); }
+                const content = await zip.generateAsync({ type: 'blob' });
+                const zipUrl = URL.createObjectURL(content);
+                const link = document.createElement('a');
+                link.href = zipUrl;
+                link.download = `${curr.name}_Export.zip`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(zipUrl);
+            } catch (error) {
+                console.error('Erro na exportação ZIP:', error);
+                alert('Ocorreu um erro ao gerar o arquivo ZIP.');
+            } finally {
+                triggerBtn.innerHTML = originalBtnContent;
+                triggerBtn.disabled = false;
+            }
+        }
+    });
+}
+
 function updateThemeIcon() {
     const themeButtons = [
         document.getElementById('btn-theme-toggle'),
@@ -517,7 +607,7 @@ function toggleTheme() {
 }
 
 // DOM Elements
-let btnNewProject, btnExportZip, btnExportPoints, btnToggleEng, btnDeleteProject, btnRenameProject, btnOpenTemplate, btnAddRoot;
+let btnNewProject, btnExportZip, btnExportZipMgmt, btnExportPoints, btnToggleEng, btnDeleteProject, btnRenameProject, btnOpenTemplate, btnAddRoot;
 let checklistContainer, sidebarApf, btnToggleSidebar, managementContainer, trackingContainer, dueDateContainer;
 let tabs, tabContents, btnUnlock, btnBackToMain, inputPassword, passwordError, passwordLock, managementContent;
 let btnSettings, btnSaveSettings, btnResetModel, geminiModelInp, geminiKeyInp, btnToggleKey, apfPassInp;
@@ -554,6 +644,7 @@ function initDOMElements() {
     // Buttons
     btnNewProject = document.getElementById('btn-new-project');
     btnExportZip = document.getElementById('btn-export-zip');
+    btnExportZipMgmt = document.getElementById('btn-export-zip-mgmt');
     btnExportPoints = document.getElementById('btn-export-points');
     btnToggleEng = document.getElementById('btn-toggle-eng');
     btnDeleteProject = document.getElementById('btn-delete-project');
@@ -961,106 +1052,10 @@ function initEventListeners() {
     }
 
     if (btnExportZip) {
-        btnExportZip.addEventListener('click', async () => {
-            const curr = getCurrentProject();
-            if (!curr || curr.id === 'none') {
-                alert('Selecione um empreendimento primeiro.');
-                return;
-            }
-
-            showConfirm({
-                title: 'Baixar Documentação',
-                message: `Você deseja baixar toda a documentação anexa do empreendimento ${curr.name}? O sistema irá processar os arquivos em um ZIP.`,
-                confirmText: 'Baixar ZIP',
-                onConfirm: async () => {
-                    const originalBtnContent = btnExportZip.innerHTML;
-                    btnExportZip.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Gerando ZIP...';
-                    btnExportZip.disabled = true;
-                    try {
-                        const items = curr.items || [];
-                        const zip = new JSZip();
-                        const rootFolder = zip.folder(curr.name);
-                        async function processItem(item, parentFolder) {
-                            const children = items.filter(i => i.parentId === item.id);
-                            const attachments = item.attachments || [];
-                            const hasDocs = attachments.length > 0;
-                            const isFolder = children.length > 0;
-
-                            // Se não for nada (nem pasta nem doc), ignora
-                            if (!isFolder && !hasDocs) return;
-
-                            // Criar a pasta para este item
-                            const currentFolder = parentFolder.folder(item.name);
-
-                            // Processar anexos
-                            if (hasDocs) {
-                                for (const att of attachments) {
-                                    try {
-                                        let url = null;
-
-                                        // Tentar obter uma URL fresca se tivermos o caminho do storage (evita expiração de token)
-                                        if (att.storagePath) {
-                                            try {
-                                                const storageRef = ref(storage, att.storagePath);
-                                                url = await getDownloadURL(storageRef);
-                                            } catch (urlErr) {
-                                                console.warn(`Não foi possível gerar URL fresca para ${att.name}, tentando fallback...`, urlErr);
-                                            }
-                                        }
-
-                                        // Fallback para URLs estáticas
-                                        if (!url) {
-                                            url = att.downloadUrl || att.objectUrl || att.dropboxUrl;
-                                        }
-
-                                        if (!url) {
-                                            console.warn(`URL não encontrada para: ${att.name}`);
-                                            continue;
-                                        }
-
-                                        const response = await fetch(url);
-                                        if (!response.ok) throw new Error(`Status ${response.status}`);
-
-                                        const blob = await response.blob();
-                                        currentFolder.file(att.name, blob);
-                                    } catch (e) {
-                                        console.error(`Erro ao baixar "${att.name}" em "${item.name}":`, e);
-                                    }
-                                }
-                            }
-
-                            // Processar filhos recursivamente
-                            for (const child of children) {
-                                await processItem(child, currentFolder);
-                            }
-                        }
-                        const roots = items.filter(i => i.parentId === null);
-                        if (roots.length === 0) {
-                            alert('Não há itens para exportar.');
-                            btnExportZip.innerHTML = originalBtnContent;
-                            btnExportZip.disabled = false;
-                            return;
-                        }
-                        for (const root of roots) { await processItem(root, rootFolder); }
-                        const content = await zip.generateAsync({ type: 'blob' });
-                        const zipUrl = URL.createObjectURL(content);
-                        const link = document.createElement('a');
-                        link.href = zipUrl;
-                        link.download = `${curr.name}_Export.zip`;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                        URL.revokeObjectURL(zipUrl);
-                    } catch (error) {
-                        console.error('Erro na exportação ZIP:', error);
-                        alert('Ocorreu um erro ao gerar o arquivo ZIP.');
-                    } finally {
-                        btnExportZip.innerHTML = originalBtnContent;
-                        btnExportZip.disabled = false;
-                    }
-                }
-            });
-        });
+        btnExportZip.addEventListener('click', () => handleExportProjectZip(btnExportZip));
+    }
+    if (btnExportZipMgmt) {
+        btnExportZipMgmt.addEventListener('click', () => handleExportProjectZip(btnExportZipMgmt));
     }
 
     if (btnExportPoints) {
