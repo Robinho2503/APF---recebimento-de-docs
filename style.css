@@ -1237,8 +1237,52 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
     from { opacity: 0; transform: translateY(5px); }
     to { opacity: 1; transform: translateY(0); }
 }
+/* Compact Audit Log for Sidebar */
+.audit-entry-compact {
+    background: rgba(255, 255, 255, 0.02);
+    border-left: 3px solid var(--primary);
+    padding: 0.6rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s ease;
+}
 
-/* Fix for folder toggle when filtering */
+.audit-entry-compact:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.audit-entry-compact .audit-row-action {
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.audit-entry-compact .audit-row-time {
+    font-size: 0.65rem;
+    opacity: 0.7;
+}
+
+.audit-entry-compact .audit-row-desc {
+    font-size: 0.72rem;
+    padding-top: 0.2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.03);
+    margin-top: 0.2rem;
+}
+
+.audit-entry-compact.danger { border-left-color: var(--danger); }
+.audit-entry-compact.warning { border-left-color: var(--warning); }
+.audit-entry-compact.success { border-left-color: var(--accent); }
+
+#panel-project-history::-webkit-scrollbar {
+    width: 4px;
+}
+#panel-project-history::-webkit-scrollbar-thumb {
+    background: var(--panel-border);
+    border-radius: 10px;
+}
 .tree-node.force-visible {
     display: block !important;
 }

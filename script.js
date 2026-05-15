@@ -347,6 +347,7 @@ function renderAfterUpdate() {
     renderTree();
     updateThemeIcon();
     renderAuditLog();
+    renderProjectHistory();
     applyAuthState();
     applySidebarState();
 }
@@ -4466,6 +4467,51 @@ function addAuditLog(action, details, type = 'info') {
     if (state.auditLog.length > 200) state.auditLog = state.auditLog.slice(0, 200);
     saveState();
     renderAuditLog();
+    renderProjectHistory();
+}
+
+function renderProjectHistory() {
+    const container = document.getElementById('panel-project-history');
+    if (!container) return;
+
+    const curr = getCurrentProject();
+    if (!curr || curr.id === 'p_default') {
+        container.innerHTML = '<div style="text-align:center; padding:1.25rem; color:var(--text-muted); font-size:0.82rem;">Selecione um empreendimento para ver o histórico.</div>';
+        return;
+    }
+
+    const logs = (state.auditLog || []).filter(log => log.projectId === curr.id);
+
+    if (logs.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:1.25rem; color:var(--text-muted); font-size:0.82rem;">Nenhuma ação registrada para este projeto.</div>';
+        return;
+    }
+
+    container.innerHTML = logs.map(log => {
+        const date = new Date(log.timestamp);
+        const day = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        const time = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+        let typeClass = '';
+        let iconAction = 'ph-info';
+        if (log.type === 'danger') { typeClass = 'danger'; iconAction = 'ph-warning-circle'; }
+        else if (log.type === 'warning') { typeClass = 'warning'; iconAction = 'ph-warning-diamond'; }
+        else if (log.type === 'success') { typeClass = 'success'; iconAction = 'ph-check-circle'; }
+
+        return `
+            <div class="audit-entry-compact ${typeClass}">
+                <div class="audit-row-action">
+                    <i class="ph ${iconAction}"></i> ${log.action}
+                </div>
+                <div class="audit-row-time">
+                    <i class="ph ph-user-focus"></i> ${log.sector || 'Sistema'} | ${time} - ${day}
+                </div>
+                <div class="audit-row-desc">
+                    ${log.details}
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
 function renderAuditLog() {
