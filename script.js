@@ -1847,7 +1847,8 @@ function updateGlobalDateUI() {
 
 // Global filter handler for dashboard cards
 window.handleDashboardFilter = function (filter, count) {
-    if (count === 0 && filter !== 'all') {
+    // Permitir desativar o filtro atual mesmo que o count seja 0
+    if (count === 0 && filter !== 'all' && treeSearchFilter !== filter) {
         const labels = {
             'pendente': 'Pendentes',
             'apontamento': 'Apontamentos',
@@ -1861,7 +1862,6 @@ window.handleDashboardFilter = function (filter, count) {
     // Toggle filter: if clicking active, go back to 'all'
     if (treeSearchFilter === filter && filter !== 'all') {
         treeSearchFilter = 'all';
-        localUI.expandedIds.clear(); // Ocultar tudo ao limpar filtro
     } else {
         treeSearchFilter = filter;
         // Auto-expand ao aplicar filtro para mostrar os resultados encontrados
@@ -3214,7 +3214,6 @@ function createNode(item, level) {
                 btnSaveJust.title = 'Salvar Justificativa';
                 
                 const updateJustifyBtnStyle = () => {
-                    const btnJustify = document.getElementById(`btn-just-${item.id}`);
                     if (btnJustify) {
                         if (item.justification && item.justification.trim() !== '') {
                             btnJustify.classList.add('has-content');
@@ -3300,6 +3299,7 @@ function createNode(item, level) {
                     const oldStatus = item.validationStatus;
                     item.validationStatus = e.target.value;
                     saveState();
+                    updateGlobalDateUI();
                     renderTree();
                     addAuditLog('Status de Validação', `Status de <strong>${item.name}</strong> alterado de "${oldStatus || 'Pendente'}" para "${item.validationStatus}"`, 'warning');
                 };
@@ -3902,6 +3902,7 @@ function renderPendenciasMgmt() {
             valSel.onchange = (e) => {
                 p.validationStatus = e.target.value;
                 saveState();
+                updateGlobalDateUI();
                 renderPendenciasMgmt();
                 renderTree();
             };
