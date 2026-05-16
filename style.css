@@ -985,7 +985,7 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
 }
 
 .btn-just-toggle.has-content i, .btn-just-view-toggle.has-content i {
-    color: var(--warning);
+    color: var(--warning) !important;
 }
 
 .btn-just-toggle.active, .btn-just-view-toggle.active {
