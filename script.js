@@ -2845,6 +2845,33 @@ function adjustTreeFontSize() {
     });
 }
 
+function createStatusButtonGroup(item, onStatusChange) {
+    const group = document.createElement('div');
+    group.className = 'status-btn-group';
+    
+    const options = [
+        { label: 'Análise', value: 'Em Análise de APF', icon: 'ph-magnifying-glass', color: 'warning' },
+        { label: 'Validar', value: 'APF check', icon: 'ph-check-circle', color: 'success' },
+        { label: 'Apontar', value: 'Apontamento', icon: 'ph-warning-diamond', color: 'danger' }
+    ];
+
+    options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = `status-btn ${opt.color}`;
+        const isActive = item.validationStatus === opt.value || (opt.value === 'APF check' && item.validationStatus === 'Validado');
+        if (isActive) btn.classList.add('active');
+        
+        btn.innerHTML = `<i class="ph ${opt.icon}"></i> ${opt.label}`;
+        btn.onclick = (e) => {
+            if (e) e.stopPropagation();
+            onStatusChange(opt.value);
+        };
+        group.appendChild(btn);
+    });
+    
+    return group;
+}
+
 function createAttachmentBadge(att, itemId, canEdit, isMgmt = false, isPendencia = false) {
     const attBadge = document.createElement('div');
     attBadge.className = 'inline-attachment';
@@ -3286,24 +3313,16 @@ function createNode(item, level) {
             const isAPF = authenticatedSector === 'APF';
 
             if (item.attachments && item.attachments.length > 0) {
-                const valSelect = document.createElement('select');
-                valSelect.className = 'input-modern btn-sm';
-                ['Em Análise de APF', 'Validado', 'Apontamento'].forEach(opt => {
-                    const o = document.createElement('option');
-                    o.value = opt === 'Validado' ? 'APF check' : opt;
-                    o.textContent = opt;
-                    if (item.validationStatus === o.value || (opt === 'Validado' && item.validationStatus === 'Validado')) o.selected = true;
-                    valSelect.appendChild(o);
-                });
-                valSelect.onchange = (e) => {
+                const statusBtnGroup = createStatusButtonGroup(item, (newStatus) => {
                     const oldStatus = item.validationStatus;
-                    item.validationStatus = e.target.value;
+                    item.validationStatus = newStatus;
                     saveState();
                     updateGlobalDateUI();
                     renderTree();
                     addAuditLog('Status de Validação', `Status de <strong>${item.name}</strong> alterado de "${oldStatus || 'Pendente'}" para "${item.validationStatus}"`, 'warning');
-                };
-                mgmtFields.appendChild(valSelect);
+                });
+
+                mgmtFields.appendChild(statusBtnGroup);
 
                 if (item.validationStatus === 'Apontamento') {
                     const btnObsToggle = document.createElement('button');
@@ -3837,18 +3856,14 @@ function renderPendenciasMgmt() {
             </div>
             
             <div style="display: flex; gap: 0.5rem; align-items: center;">
-                <div class="mgmt-controls-group" style="display: flex; gap: 0.4rem; align-items: center;">
-                    ${p.attachments && p.attachments.length > 0 ? `
-                        <select class="input-modern btn-sm pendencia-val-select" style="max-width: 150px; padding: 0.2rem 0.4rem; font-size: 0.75rem;">
-                            <option value="Em Análise de APF" ${p.validationStatus === 'Em Análise de APF' ? 'selected' : ''}>Em Análise</option>
-                            <option value="APF check" ${p.validationStatus === 'APF check' || p.validationStatus === 'Validado' ? 'selected' : ''}>APF check</option>
-                            <option value="Apontamento" ${p.validationStatus === 'Apontamento' ? 'selected' : ''}>Apontamento</option>
-                        </select>
-                        ${p.validationStatus === 'Apontamento' ? `
-                            <input type="text" class="input-modern btn-sm pendencia-obs-inp" style="max-width: 150px; padding: 0.2rem 0.4rem; font-size: 0.75rem;" placeholder="Qual apontamento?" value="${p.observation || ''}">
-                        ` : ''}
-                    ` : '<span style="font-size: 0.7rem; color: var(--text-muted); font-style: italic;">Sem anexo</span>'}
+                <div class="mgmt-controls-group status-btns-container" style="display: flex; gap: 0.4rem; align-items: center;">
+                    <!-- Botões de status inseridos via JS -->
                 </div>
+                ${p.attachments && p.attachments.length > 0 && p.validationStatus === 'Apontamento' ? `
+                    <input type="text" class="input-modern btn-sm pendencia-obs-inp" style="max-width: 150px; padding: 0.2rem 0.4rem; font-size: 0.75rem;" placeholder="Qual apontamento?" value="${p.observation || ''}">
+                ` : ''}
+                ${!(p.attachments && p.attachments.length > 0) ? '<span style="font-size: 0.7rem; color: var(--text-muted); font-style: italic;">Sem anexo</span>' : ''}
+            </div>
 
                 <div style="display: flex; gap: 0.3rem;">
                     <button class="icon-btn edit" title="Editar Pendência">
@@ -3923,18 +3938,19 @@ function renderPendenciasMgmt() {
         listCont.appendChild(row);
 
         // Bind events for the new validation controls
-        const valSel = row.querySelector('.pendencia-val-select');
-        const obsInp = row.querySelector('.pendencia-obs-inp');
-
-        if (valSel) {
-            valSel.onchange = (e) => {
-                p.validationStatus = e.target.value;
+        const statusContainer = row.querySelector('.status-btns-container');
+        if (statusContainer && p.attachments && p.attachments.length > 0) {
+            const btns = createStatusButtonGroup(p, (newStatus) => {
+                p.validationStatus = newStatus;
                 saveState();
                 updateGlobalDateUI();
                 renderPendenciasMgmt();
                 renderTree();
-            };
+            });
+            statusContainer.appendChild(btns);
         }
+
+        const obsInp = row.querySelector('.pendencia-obs-inp');
         if (obsInp) {
             obsInp.oninput = (e) => {
                 const oldVal = p.observation || '';
