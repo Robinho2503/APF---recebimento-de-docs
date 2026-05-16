@@ -702,18 +702,17 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
 .tree-item.drag-over { background: rgba(99, 102, 241, 0.15); border-color: var(--primary); border-style: dashed; }
 .item-left { 
     display: flex; 
-    align-items: flex-start; 
+    align-items: center; 
     gap: 0.75rem; 
-    flex-grow: 1; 
-    flex-wrap: wrap; 
+    flex: 0 1 auto;
     min-width: 0;
 }
-.item-name.root-name { flex: 0 0 350px; } 
+.item-name.root-name { flex: 0 0 280px; } 
 .name-wrapper {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.25rem;
+    gap: 0.15rem;
     min-width: 0;
 }
 .root-stats-column { display: flex; gap: 0.5rem; flex-wrap: wrap; }
@@ -918,8 +917,7 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
-    width: 100%;
-    margin-top: 0.35rem;
+    margin-top: 0.25rem;
 }
 
 /* Pending Fields Styles */
