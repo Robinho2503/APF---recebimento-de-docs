@@ -3089,7 +3089,15 @@ function createNode(item, level) {
         itemLeft.prepend(spacer);
     }
 
-    itemLeft.appendChild(nameSpan);
+    const nameWrapper = document.createElement('div');
+    nameWrapper.className = 'name-wrapper';
+    nameWrapper.appendChild(nameSpan);
+    itemLeft.appendChild(nameWrapper);
+
+    // Container para informações extras abaixo do nome (Justificativa, etc)
+    const itemMeta = document.createElement('div');
+    itemMeta.className = 'item-meta';
+    nameWrapper.appendChild(itemMeta);
     const itemRight = document.createElement('div');
     itemRight.className = 'item-right';
 
@@ -3179,7 +3187,7 @@ function createNode(item, level) {
                 const btnJustify = document.createElement('button');
                 btnJustify.className = 'btn btn-outline btn-sm btn-just-toggle';
                 btnJustify.id = `btn-just-${item.id}`;
-                btnJustify.innerHTML = '<i class="ph ph-chat-text"></i> Justificativa';
+                btnJustify.innerHTML = '<i class="ph ph-chat-text"></i> Justificativa ou Observação';
                 if (!canEdit) {
                     btnJustify.disabled = true;
                     btnJustify.style.opacity = '0.5';
@@ -3193,7 +3201,7 @@ function createNode(item, level) {
 
                 const justInput = document.createElement('textarea');
                 justInput.className = 'input-modern justification-input';
-                justInput.placeholder = 'Escreva a justificativa aqui...';
+                justInput.placeholder = 'Escreva a justificativa ou observação aqui...';
                 justInput.value = item.justification || '';
 
                 const btnSaveJust = document.createElement('button');
@@ -3220,7 +3228,18 @@ function createNode(item, level) {
 
                 btnSaveJust.onclick = (e) => {
                     e.stopPropagation();
+                    
+                    // Se houver conteúdo, altera o status para 'Em Análise de APF'
+                    if (item.justification && item.justification.trim() !== '') {
+                        const oldStatus = item.validationStatus;
+                        item.validationStatus = 'Em Análise de APF';
+                        if (oldStatus !== 'Em Análise de APF') {
+                            addAuditLog('Status de Validação', `Status de <strong>${item.name}</strong> alterado para "Em Análise de APF" devido à nova justificativa`, 'warning');
+                        }
+                    }
+
                     saveState();
+                    renderTree(); // Re-render para mostrar a mudança de cor do status/ícone
                     btnSaveJust.innerHTML = '<i class="ph ph-check-circle"></i> Salvo';
                     setTimeout(() => { btnSaveJust.innerHTML = '<i class="ph ph-check"></i> Salvar'; }, 2000);
                     addAuditLog('Justificativa Adicionada', `Nova justificativa em <strong>${item.name}</strong>: "${item.justification}"`, 'info');
@@ -3242,11 +3261,11 @@ function createNode(item, level) {
                 };
 
                 pendingBar.appendChild(forecastGroup);
-                pendingBar.appendChild(btnJustify);
                 pendingBar.appendChild(btnAttach);
 
                 itemRight.appendChild(pendingBar);
-                itemRight.appendChild(justBox);
+                itemMeta.appendChild(btnJustify);
+                itemMeta.appendChild(justBox);
             }
             itemRight.appendChild(statusRow);
 
@@ -3389,14 +3408,14 @@ function createNode(item, level) {
                         // NOVO: Justificativa agora em botão expansível também na visão APF
                         const btnShowJust = document.createElement('button');
                         btnShowJust.className = 'btn btn-outline btn-sm btn-just-view-toggle has-content';
-                        btnShowJust.innerHTML = '<i class="ph ph-chat-text"></i> Ver Justificativa';
+                        btnShowJust.innerHTML = '<i class="ph ph-chat-text"></i> Ver Justificativa ou Observação';
                         
                         const justViewBox = document.createElement('div');
                         justViewBox.className = 'justification-view-box';
                         
                         const justText = document.createElement('div');
                         justText.className = 'sync-justification-text';
-                        justText.innerHTML = `<i class="ph ph-chat-text" style="color:var(--danger)"></i> <strong>Justificativa:</strong> ${item.justification}`;
+                        justText.innerHTML = `<i class="ph ph-chat-text" style="color:var(--danger)"></i> <strong>Justificativa ou Observação:</strong> ${item.justification}`;
                         
                         justViewBox.appendChild(justText);
                         
@@ -3404,11 +3423,11 @@ function createNode(item, level) {
                             e.stopPropagation();
                             const isOpen = justViewBox.classList.toggle('open');
                             btnShowJust.classList.toggle('active', isOpen);
-                            btnShowJust.innerHTML = isOpen ? '<i class="ph ph-x"></i> Fechar Justificativa' : '<i class="ph ph-chat-text"></i> Ver Justificativa';
+                            btnShowJust.innerHTML = isOpen ? '<i class="ph ph-x"></i> Fechar Justificativa' : '<i class="ph ph-chat-text"></i> Ver Justificativa ou Observação';
                         };
 
-                        infoArea.appendChild(btnShowJust);
-                        infoArea.appendChild(justViewBox);
+                        itemMeta.appendChild(btnShowJust);
+                        itemMeta.appendChild(justViewBox);
                     }
                     mgmtFields.appendChild(infoArea);
                 }
