@@ -3206,12 +3206,90 @@ function createNode(item, level) {
                 btnAttach.title = 'Apenas o setor proprietário pode anexar';
             }
 
+            // Justificativa / Observação (Sempre disponível para folhas)
+            const btnJustify = document.createElement('button');
+            btnJustify.className = 'btn btn-outline btn-sm btn-just-toggle';
+            btnJustify.id = `btn-just-${item.id}`;
+            btnJustify.innerHTML = '<i class="ph ph-chat-text"></i> Justificativa ou Observação';
+            
+            const updateJustifyBtnStyle = () => {
+                if (btnJustify) {
+                    if (item.justification && item.justification.trim() !== '') {
+                        btnJustify.classList.add('has-content');
+                    } else {
+                        btnJustify.classList.remove('has-content');
+                    }
+                }
+            };
+            updateJustifyBtnStyle();
+
+            if (!canEdit) {
+                btnJustify.disabled = true;
+                btnJustify.style.opacity = '0.5';
+            }
+
+            const justBox = document.createElement('div');
+            justBox.className = 'justification-box';
+            
+            const justContainer = document.createElement('div');
+            justContainer.className = 'justification-container';
+
+            const justTitle = document.createElement('div');
+            justTitle.className = 'justification-title';
+            justTitle.innerHTML = '<i class="ph ph-chat-text" style="color:var(--warning)"></i> Justificativa ou Observação:';
+            justContainer.appendChild(justTitle);
+
+            const justInput = document.createElement('textarea');
+            justInput.className = 'input-modern justification-input';
+            justInput.placeholder = 'Escreva a justificativa ou observação aqui...';
+            justInput.value = item.justification || '';
+            justInput.oninput = (e) => {
+                item.justification = e.target.value;
+                updateJustifyBtnStyle();
+            };
+
+            const btnSaveJust = document.createElement('button');
+            btnSaveJust.className = 'btn btn-primary btn-sm btn-save-just';
+            btnSaveJust.innerHTML = '<i class="ph ph-check"></i> Salvar';
+            btnSaveJust.onclick = (e) => {
+                e.stopPropagation();
+                if (item.justification && item.justification.trim() !== '') {
+                    const oldStatus = item.validationStatus;
+                    item.validationStatus = 'Em Análise de APF';
+                    if (oldStatus !== 'Em Análise de APF') {
+                        addAuditLog('Status de Validação', `Status de <strong>${item.name}</strong> alterado para "Análise" devido à nova justificativa`, 'warning');
+                    }
+                }
+                saveState();
+                renderTree();
+                btnSaveJust.innerHTML = '<i class="ph ph-check-circle"></i> Salvo';
+                setTimeout(() => { btnSaveJust.innerHTML = '<i class="ph ph-check"></i> Salvar'; }, 2000);
+            };
+
+            if (!canEdit) {
+                justInput.disabled = true;
+                btnSaveJust.style.display = 'none';
+            }
+
+            justContainer.appendChild(justInput);
+            justContainer.appendChild(btnSaveJust);
+            justBox.appendChild(justContainer);
+
+            btnJustify.onclick = (e) => {
+                e.stopPropagation();
+                const isOpen = justBox.classList.toggle('open');
+                btnJustify.classList.toggle('active', isOpen);
+            };
+
+            itemMeta.appendChild(btnJustify);
+            itemMeta.appendChild(justBox);
+
             if (hasAtt) {
-                // Anexos agora são renderizados abaixo via node-attachments-container
                 statusRow.appendChild(btnAttach);
             } else if (!item.isNotApplicable) {
                 const pendingBar = document.createElement('div');
                 pendingBar.className = 'pending-action-bar';
+                
                 const forecastGroup = document.createElement('div');
                 forecastGroup.style.display = 'flex';
                 forecastGroup.style.alignItems = 'center';
@@ -3229,8 +3307,6 @@ function createNode(item, level) {
                 }
                 forecastInput.onchange = (e) => {
                     item.forecastDate = e.target.value;
-                    if (e.target.value) e.target.classList.add('has-value');
-                    else e.target.classList.remove('has-value');
                     saveState();
                 };
                 if (!canEdit) forecastInput.disabled = true;
@@ -3238,92 +3314,9 @@ function createNode(item, level) {
                 forecastGroup.innerHTML = '<label style="font-size:0.75rem; color:var(--text-muted);">Prev:</label>';
                 forecastGroup.appendChild(forecastInput);
 
-                const btnJustify = document.createElement('button');
-                btnJustify.className = 'btn btn-outline btn-sm btn-just-toggle';
-                btnJustify.id = `btn-just-${item.id}`;
-                btnJustify.innerHTML = '<i class="ph ph-chat-text"></i> Justificativa ou Observação';
-                if (!canEdit) {
-                    btnJustify.disabled = true;
-                    btnJustify.style.opacity = '0.5';
-                }
-
-                const justBox = document.createElement('div');
-                justBox.className = 'justification-box';
-                
-                const justContainer = document.createElement('div');
-                justContainer.className = 'justification-container';
-
-                const justTitle = document.createElement('div');
-                justTitle.className = 'justification-title';
-                justTitle.innerHTML = '<i class="ph ph-chat-text" style="color:var(--warning)"></i> Justificativa ou Observação:';
-                justContainer.appendChild(justTitle);
-
-                const justInput = document.createElement('textarea');
-                justInput.className = 'input-modern justification-input';
-                justInput.placeholder = 'Escreva a justificativa ou observação aqui...';
-                justInput.value = item.justification || '';
-
-                const btnSaveJust = document.createElement('button');
-                btnSaveJust.className = 'btn btn-primary btn-sm btn-save-just';
-                btnSaveJust.innerHTML = '<i class="ph ph-check"></i> Salvar';
-                btnSaveJust.title = 'Salvar Justificativa';
-                
-                const updateJustifyBtnStyle = () => {
-                    if (btnJustify) {
-                        if (item.justification && item.justification.trim() !== '') {
-                            btnJustify.classList.add('has-content');
-                        } else {
-                            btnJustify.classList.remove('has-content');
-                        }
-                    }
-                };
-                updateJustifyBtnStyle();
-
-                justInput.oninput = (e) => {
-                    item.justification = e.target.value;
-                    updateJustifyBtnStyle();
-                };
-
-                btnSaveJust.onclick = (e) => {
-                    e.stopPropagation();
-                    
-                    // Se houver conteúdo, altera o status para 'Em Análise de APF'
-                    if (item.justification && item.justification.trim() !== '') {
-                        const oldStatus = item.validationStatus;
-                        item.validationStatus = 'Em Análise de APF';
-                        if (oldStatus !== 'Em Análise de APF') {
-                            addAuditLog('Status de Validação', `Status de <strong>${item.name}</strong> alterado para "Em Análise de APF" devido à nova justificativa`, 'warning');
-                        }
-                    }
-
-                    saveState();
-                    renderTree(); // Re-render para mostrar a mudança de cor do status/ícone
-                    btnSaveJust.innerHTML = '<i class="ph ph-check-circle"></i> Salvo';
-                    setTimeout(() => { btnSaveJust.innerHTML = '<i class="ph ph-check"></i> Salvar'; }, 2000);
-                    addAuditLog('Justificativa Adicionada', `Nova justificativa em <strong>${item.name}</strong>: "${item.justification}"`, 'info');
-                };
-
-                if (!canEdit) {
-                    justInput.disabled = true;
-                    btnSaveJust.style.display = 'none';
-                }
-
-                justContainer.appendChild(justInput);
-                justContainer.appendChild(btnSaveJust);
-                justBox.appendChild(justContainer);
-
-                btnJustify.onclick = (e) => {
-                    e.stopPropagation();
-                    const isOpen = justBox.classList.toggle('open');
-                    btnJustify.classList.toggle('active', isOpen);
-                };
-
                 pendingBar.appendChild(forecastGroup);
                 pendingBar.appendChild(btnAttach);
-
                 itemRight.appendChild(pendingBar);
-                itemMeta.appendChild(btnJustify);
-                itemMeta.appendChild(justBox);
             }
             itemRight.appendChild(statusRow);
 
@@ -3621,7 +3614,7 @@ function createNode(item, level) {
 
     nodeWrapper.appendChild(itemDiv);
 
-    if (!isMgmt && !isRootFolder && !hasChildren && item.validationStatus === 'Apontamento' && item.observation && item.attachments?.length > 0) {
+    if (!isMgmt && !isRootFolder && !hasChildren && item.validationStatus === 'Apontamento' && item.observation) {
         const obsBox = document.createElement('div');
         obsBox.className = 'observation-box';
         obsBox.innerHTML = `<strong><i class="ph ph-warning-circle"></i> Apontamento de APF:</strong> ${item.observation}`;
@@ -3634,8 +3627,13 @@ function createNode(item, level) {
         respInput.value = item.response || '';
         respInput.onchange = (e) => { 
             item.response = e.target.value; 
+            if (item.response && item.response.trim() !== '') {
+                item.validationStatus = 'Em Análise de APF';
+                addAuditLog('Resposta ao Apontamento', `Setor respondeu ao apontamento em <strong>${item.name}</strong>. Status alterado para Análise.`, 'info');
+            }
             saveState(); 
-            addAuditLog('Resposta ao Apontamento', `Setor respondeu ao apontamento em <strong>${item.name}</strong>`, 'info');
+            updateGlobalDateUI();
+            renderTree();
         };
         if (!canEdit) {
             respInput.disabled = true;
