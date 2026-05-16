@@ -970,6 +970,12 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
     animation: slideDown 0.4s ease;
 }
 
+.justification-container.danger {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-left: 4px solid var(--danger);
+}
+
 @keyframes slideDown {
     from { transform: translateY(-10px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
@@ -983,6 +989,15 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
     background: var(--input-bg);
 }
 
+.justification-container.danger .justification-input {
+    color: var(--danger);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.justification-container.danger .justification-input::placeholder {
+    color: rgba(239, 68, 68, 0.5);
+}
+
 .btn-just-toggle, .btn-just-view-toggle {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -993,8 +1008,18 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
     background: rgba(245, 158, 11, 0.05);
 }
 
+.btn-just-toggle.danger.has-content, .btn-just-view-toggle.danger.has-content {
+    border-color: var(--danger);
+    color: var(--text-main);
+    background: rgba(239, 68, 68, 0.05);
+}
+
 .btn-just-toggle.has-content i, .btn-just-view-toggle.has-content i {
     color: var(--warning) !important;
+}
+
+.btn-just-toggle.danger.has-content i, .btn-just-view-toggle.danger.has-content i {
+    color: var(--danger) !important;
 }
 
 .btn-just-toggle.active, .btn-just-view-toggle.active {

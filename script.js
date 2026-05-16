@@ -3306,42 +3306,70 @@ function createNode(item, level) {
                 mgmtFields.appendChild(valSelect);
 
                 if (item.validationStatus === 'Apontamento') {
+                    const btnObsToggle = document.createElement('button');
+                    btnObsToggle.className = 'btn btn-outline btn-sm btn-just-toggle danger';
+                    btnObsToggle.id = `btn-obs-${item.id}`;
+                    btnObsToggle.innerHTML = '<i class="ph ph-warning-diamond"></i> Descrever Apontamento';
+                    
+                    const obsBox = document.createElement('div');
+                    obsBox.className = 'justification-box';
+                    
                     const obsContainer = document.createElement('div');
-                    obsContainer.style.display = 'flex';
-                    obsContainer.style.gap = '0.3rem';
-                    obsContainer.style.width = '100%';
+                    obsContainer.className = 'justification-container danger';
 
-                    const obsInp = document.createElement('input');
-                    obsInp.type = 'text';
-                    obsInp.className = 'input-modern btn-sm';
-                    obsInp.style.flex = '1';
-                    obsInp.placeholder = 'Qual apontamento?';
+                    const obsTitle = document.createElement('div');
+                    obsTitle.className = 'justification-title';
+                    obsTitle.innerHTML = '<i class="ph ph-warning-diamond" style="color:var(--danger)"></i> Detalhes do Apontamento:';
+                    obsContainer.appendChild(obsTitle);
+
+                    const obsInp = document.createElement('textarea');
+                    obsInp.className = 'input-modern justification-input';
+                    obsInp.placeholder = 'Descreva aqui o motivo do apontamento ou o que precisa ser corrigido...';
                     obsInp.value = item.observation || '';
-                    obsInp.oninput = (e) => {
-                        item.observation = e.target.value;
-                    };
-                    obsInp.onblur = () => renderTree();
                     
                     const btnSaveObs = document.createElement('button');
-                    btnSaveObs.className = 'icon-btn';
-                    btnSaveObs.style.background = 'transparent';
-                    btnSaveObs.style.border = '1px solid rgba(255, 255, 255, 0.1)';
-                    btnSaveObs.style.color = 'var(--danger)';
-                    btnSaveObs.innerHTML = '<i class="ph ph-paper-plane-right"></i>';
-                    btnSaveObs.title = 'Salvar Apontamento';
+                    btnSaveObs.className = 'btn btn-danger btn-sm btn-save-just';
+                    btnSaveObs.innerHTML = '<i class="ph ph-check"></i> Salvar Apontamento';
 
-                    btnSaveObs.onmouseover = () => btnSaveObs.style.background = 'rgba(239, 68, 68, 0.1)';
-                    btnSaveObs.onmouseout = () => btnSaveObs.style.background = 'transparent';
+                    const updateObsBtnStyle = () => {
+                        if (btnObsToggle) {
+                            if (item.observation && item.observation.trim() !== '') {
+                                btnObsToggle.classList.add('has-content');
+                            } else {
+                                btnObsToggle.classList.remove('has-content');
+                            }
+                        }
+                    };
+                    updateObsBtnStyle();
+
+                    obsInp.oninput = (e) => {
+                        item.observation = e.target.value;
+                        updateObsBtnStyle();
+                    };
+
                     btnSaveObs.onclick = (e) => {
                         e.stopPropagation();
                         saveState();
-                        btnSaveObs.innerHTML = '<i class="ph ph-check-circle"></i>';
-                        setTimeout(() => { btnSaveObs.innerHTML = '<i class="ph ph-paper-plane-right"></i>'; }, 2000);
+                        renderTree();
+                        btnSaveObs.innerHTML = '<i class="ph ph-check-circle"></i> Salvo';
+                        setTimeout(() => { btnSaveObs.innerHTML = '<i class="ph ph-check"></i> Salvar Apontamento'; }, 2000);
+                        if (item.observation) {
+                            addAuditLog('Apontamento', `Novo apontamento em <strong>${item.name}</strong>: "${item.observation}"`, 'danger');
+                        }
+                    };
+
+                    btnObsToggle.onclick = (e) => {
+                        e.stopPropagation();
+                        const isOpen = obsBox.classList.toggle('open');
+                        btnObsToggle.classList.toggle('active', isOpen);
                     };
 
                     obsContainer.appendChild(obsInp);
                     obsContainer.appendChild(btnSaveObs);
-                    mgmtFields.appendChild(obsContainer);
+                    obsBox.appendChild(obsContainer);
+                    
+                    mgmtFields.appendChild(btnObsToggle);
+                    mgmtFields.appendChild(obsBox);
 
                     // NOVO: Exibir Resposta do Setor para a APF (Se houver)
                     if (item.response) {
