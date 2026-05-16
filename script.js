@@ -3199,6 +3199,11 @@ function createNode(item, level) {
                 const justContainer = document.createElement('div');
                 justContainer.className = 'justification-container';
 
+                const justTitle = document.createElement('div');
+                justTitle.className = 'justification-title';
+                justTitle.innerHTML = '<i class="ph ph-chat-text" style="color:var(--warning)"></i> Justificativa ou Observação:';
+                justContainer.appendChild(justTitle);
+
                 const justInput = document.createElement('textarea');
                 justInput.className = 'input-modern justification-input';
                 justInput.placeholder = 'Escreva a justificativa ou observação aqui...';
@@ -3415,7 +3420,7 @@ function createNode(item, level) {
                         
                         const justText = document.createElement('div');
                         justText.className = 'sync-justification-text';
-                        justText.innerHTML = `<i class="ph ph-chat-text" style="color:var(--danger)"></i> <strong>Justificativa ou Observação:</strong> ${item.justification}`;
+                        justText.innerHTML = `<i class="ph ph-chat-text" style="color:var(--warning)"></i> <strong>Justificativa ou Observação:</strong> ${item.justification}`;
                         
                         justViewBox.appendChild(justText);
                         

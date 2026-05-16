@@ -999,6 +999,17 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
     min-width: 100px;
 }
 
+.justification-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
 .sync-justification-text {
     font-size: 0.85rem;
     color: var(--text-main);
