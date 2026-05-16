@@ -2160,6 +2160,9 @@ function renderTracking() {
                 <div style="width: 100%; margin-top: 0.2rem;">
                     ${trackingLine}
                 </div>
+                <div class="card-progress-mini">
+                    <i class="ph ph-chart-line-up"></i> ${getProjectProgress(p)}%
+                </div>
             </div>
         `;
         trackingContainer.appendChild(card);
@@ -2170,6 +2173,19 @@ function renderTracking() {
 
 
 // Rendering Tree Helpers
+function getProjectProgress(p) {
+    if (!p || !p.items) return 0;
+    const items = p.items;
+    const leafItems = items.filter(i => {
+        const hasChildren = items.some(child => child.parentId === i.id);
+        return i.parentId !== null && !hasChildren && !i.isNotApplicable;
+    });
+
+    if (leafItems.length === 0) return 0;
+    const deliveredCount = leafItems.filter(i => i.attachments && i.attachments.length > 0 && i.validationStatus !== 'Apontamento').length;
+    return Math.round((deliveredCount / leafItems.length) * 100);
+}
+
 function getChildItems(parentId) {
     return getItems()
         .filter(item => item.parentId === parentId)
