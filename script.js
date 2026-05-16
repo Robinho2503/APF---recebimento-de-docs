@@ -2160,9 +2160,10 @@ function renderTracking() {
                 <div style="width: 100%; margin-top: 0.2rem;">
                     ${trackingLine}
                 </div>
+                ${!p.engAnalysisOpened ? `
                 <div class="card-progress-mini">
                     <i class="ph ph-file-text"></i> ${getProjectProgress(p)}%
-                </div>
+                </div>` : ''}
             </div>
         `;
         trackingContainer.appendChild(card);
@@ -2174,7 +2175,18 @@ function renderTracking() {
 
 // Rendering Tree Helpers
 function getProjectProgress(p) {
-    if (!p || !p.items) return 0;
+    if (!p) return 0;
+
+    // Se estiver em pendência ativa, o cálculo é baseado na lista de pendências críticas
+    if (p.pendenciaActive) {
+        const pendencias = p.pendencias || [];
+        if (pendencias.length === 0) return 0;
+        const resolved = pendencias.filter(item => item.attachments && item.attachments.length > 0 && item.validationStatus !== 'Apontamento').length;
+        return Math.round((resolved / pendencias.length) * 100);
+    }
+
+    // Caso contrário, usa o cálculo padrão de itens do checklist
+    if (!p.items) return 0;
     const items = p.items;
     const leafItems = items.filter(i => {
         const hasChildren = items.some(child => child.parentId === i.id);
