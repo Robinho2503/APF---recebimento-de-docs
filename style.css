@@ -211,7 +211,7 @@ body {
 
 .card-progress-mini {
     position: absolute;
-    bottom: 0.5rem;
+    top: 0.6rem;
     right: 0.8rem;
     font-size: 0.65rem;
     font-weight: 800;

@@ -2147,7 +2147,7 @@ function renderTracking() {
 
         card.innerHTML = `
             <div class="tracking-body" style="transition: padding 0.3s ease;">
-                <div class="mb-1 flex-between" style="align-items: flex-start; gap: 0.5rem; margin-bottom: 2px;">
+                <div class="mb-1 flex-between" style="align-items: flex-start; gap: 0.5rem; margin-bottom: 2px; padding-right: 2.8rem;">
                     <h3 style="font-weight:700; font-size: 0.85rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: normal; flex: 1; margin: 0; line-height: 1.25; ${titleStyle}" title="${p.name}">
                         <i class="ph ph-buildings" style="${iconStyle}; font-size: 0.95rem; margin-right: 0.25rem; margin-top: 0.1rem; display: inline-block;"></i>${p.name}
                     </h3>
@@ -2161,7 +2161,7 @@ function renderTracking() {
                     ${trackingLine}
                 </div>
                 <div class="card-progress-mini">
-                    <i class="ph ph-chart-line-up"></i> ${getProjectProgress(p)}%
+                    <i class="ph ph-file-text"></i> ${getProjectProgress(p)}%
                 </div>
             </div>
         `;
