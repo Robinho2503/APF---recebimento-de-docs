@@ -707,7 +707,7 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
     flex: 0 1 auto;
     min-width: 0;
 }
-.item-name.root-name { flex: 0 0 280px; } 
+.item-name.root-name { flex: 0 0 100px; } 
 .name-wrapper {
     display: flex;
     flex-direction: column;
