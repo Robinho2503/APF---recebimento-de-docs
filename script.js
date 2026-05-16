@@ -3177,9 +3177,9 @@ function createNode(item, level) {
                 forecastGroup.appendChild(forecastInput);
 
                 const btnJustify = document.createElement('button');
-                btnJustify.className = 'btn btn-outline btn-sm';
+                btnJustify.className = 'btn btn-outline btn-sm btn-just-toggle';
                 btnJustify.id = `btn-just-${item.id}`;
-                btnJustify.innerHTML = '<i class="ph ph-chat-text"></i> Justif.';
+                btnJustify.innerHTML = '<i class="ph ph-chat-text"></i> Justificativa';
                 if (!canEdit) {
                     btnJustify.disabled = true;
                     btnJustify.style.opacity = '0.5';
@@ -3189,36 +3189,25 @@ function createNode(item, level) {
                 justBox.className = 'justification-box';
                 
                 const justContainer = document.createElement('div');
-                justContainer.style.display = 'flex';
-                justContainer.style.gap = '0.5rem';
-                justContainer.style.width = '100%';
+                justContainer.className = 'justification-container';
 
                 const justInput = document.createElement('textarea');
-                justInput.className = 'input-modern';
-                justInput.style.flex = '1';
+                justInput.className = 'input-modern justification-input';
                 justInput.placeholder = 'Escreva a justificativa aqui...';
                 justInput.value = item.justification || '';
 
                 const btnSaveJust = document.createElement('button');
-                btnSaveJust.className = 'icon-btn';
-                btnSaveJust.style.background = 'transparent';
-                btnSaveJust.style.border = '1px solid rgba(255, 255, 255, 0.1)';
-                btnSaveJust.style.color = 'var(--accent)';
-                btnSaveJust.innerHTML = '<i class="ph ph-check"></i>';
+                btnSaveJust.className = 'btn btn-primary btn-sm btn-save-just';
+                btnSaveJust.innerHTML = '<i class="ph ph-check"></i> Salvar';
                 btnSaveJust.title = 'Salvar Justificativa';
                 
-                btnSaveJust.onmouseover = () => btnSaveJust.style.background = 'rgba(16, 185, 129, 0.1)';
-                btnSaveJust.onmouseout = () => btnSaveJust.style.background = 'transparent';
-
                 const updateJustifyBtnStyle = () => {
                     const btnJustify = document.getElementById(`btn-just-${item.id}`);
                     if (btnJustify) {
-                        if (item.justification) {
-                            btnJustify.style.borderColor = 'var(--accent)';
-                            btnJustify.style.color = 'var(--accent)';
+                        if (item.justification && item.justification.trim() !== '') {
+                            btnJustify.classList.add('has-content');
                         } else {
-                            btnJustify.style.borderColor = '';
-                            btnJustify.style.color = '';
+                            btnJustify.classList.remove('has-content');
                         }
                     }
                 };
@@ -3229,10 +3218,11 @@ function createNode(item, level) {
                     updateJustifyBtnStyle();
                 };
 
-                btnSaveJust.onclick = () => {
+                btnSaveJust.onclick = (e) => {
+                    e.stopPropagation();
                     saveState();
-                    btnSaveJust.innerHTML = '<i class="ph ph-check-circle"></i>';
-                    setTimeout(() => { btnSaveJust.innerHTML = '<i class="ph ph-check"></i>'; }, 2000);
+                    btnSaveJust.innerHTML = '<i class="ph ph-check-circle"></i> Salvo';
+                    setTimeout(() => { btnSaveJust.innerHTML = '<i class="ph ph-check"></i> Salvar'; }, 2000);
                     addAuditLog('Justificativa Adicionada', `Nova justificativa em <strong>${item.name}</strong>: "${item.justification}"`, 'info');
                 };
 
@@ -3245,7 +3235,11 @@ function createNode(item, level) {
                 justContainer.appendChild(btnSaveJust);
                 justBox.appendChild(justContainer);
 
-                btnJustify.onclick = () => justBox.classList.toggle('open');
+                btnJustify.onclick = (e) => {
+                    e.stopPropagation();
+                    const isOpen = justBox.classList.toggle('open');
+                    btnJustify.classList.toggle('active', isOpen);
+                };
 
                 pendingBar.appendChild(forecastGroup);
                 pendingBar.appendChild(btnJustify);
@@ -3391,11 +3385,30 @@ function createNode(item, level) {
                         infoArea.appendChild(dateBadge);
                     }
 
-                    if (item.justification) {
+                    if (item.justification && item.justification.trim() !== '') {
+                        // NOVO: Justificativa agora em botão expansível também na visão APF
+                        const btnShowJust = document.createElement('button');
+                        btnShowJust.className = 'btn btn-outline btn-sm btn-just-view-toggle has-content';
+                        btnShowJust.innerHTML = '<i class="ph ph-chat-text"></i> Ver Justificativa';
+                        
+                        const justViewBox = document.createElement('div');
+                        justViewBox.className = 'justification-view-box';
+                        
                         const justText = document.createElement('div');
                         justText.className = 'sync-justification-text';
                         justText.innerHTML = `<i class="ph ph-chat-text" style="color:var(--danger)"></i> <strong>Justificativa:</strong> ${item.justification}`;
-                        infoArea.appendChild(justText);
+                        
+                        justViewBox.appendChild(justText);
+                        
+                        btnShowJust.onclick = (e) => {
+                            e.stopPropagation();
+                            const isOpen = justViewBox.classList.toggle('open');
+                            btnShowJust.classList.toggle('active', isOpen);
+                            btnShowJust.innerHTML = isOpen ? '<i class="ph ph-x"></i> Fechar Justificativa' : '<i class="ph ph-chat-text"></i> Ver Justificativa';
+                        };
+
+                        infoArea.appendChild(btnShowJust);
+                        infoArea.appendChild(justViewBox);
                     }
                     mgmtFields.appendChild(infoArea);
                 }
