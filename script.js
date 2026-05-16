@@ -2850,8 +2850,7 @@ function createAttachmentBadge(att, itemId, canEdit, isMgmt = false, isPendencia
     attBadge.className = 'inline-attachment';
     
     const nameTxt = document.createElement('span');
-    nameTxt.className = 'text-truncate';
-    nameTxt.style.maxWidth = isMgmt ? '250px' : '350px';
+    nameTxt.className = 'text-attachment-name';
     nameTxt.title = att.name;
     nameTxt.textContent = att.name;
 
