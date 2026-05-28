@@ -257,12 +257,12 @@
             </section>
 
             <!-- Acesso APF Tab Content -->
-            <section id="tab-management" class="tab-content glass-panel mt-4">
+            <section id="tab-management" class="tab-content mt-4">
                 <!-- Management Content -->
                 <div id="management-content" style="display: none;">
-                    <div style="display: flex; gap: 1.5rem; align-items: flex-start; width: 100%;">
+                    <div class="checklist-analysis-layout">
                         <!-- Coluna principal: Gestão -->
-                        <div style="flex: 1; min-width: 0;">
+                        <div class="checklist-main-col glass-panel" style="padding: 1.75rem;">
                     <!-- Management Controls moved to header -->
                     <div class="management-controls mb-4" style="display: none;">
                         <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
@@ -285,7 +285,6 @@
                         </div>
                         </div>
 
-                    </div>
                     </div>
                     <div id="eng-analysis-mgmt-panel" class="glass-panel mb-4 hidden" style="padding: 1.25rem; border-color: #3b82f6 !important; background: rgba(59, 130, 246, 0.05);">
                         <div class="flex-between">
@@ -342,8 +341,8 @@
                         </div> <!-- fecha a coluna principal de gestão -->
 
                         <!-- Painel de Histórico no Acesso APF (Apenas Histórico como solicitado) -->
-                        <aside id="aside-project-history-mgmt" class="analysis-side-panel" style="display: none; width: 320px; flex-shrink: 0; padding-left: 1.5rem; margin-top: 0; border-left: 1px solid rgba(255, 255, 255, 0.08);">
-                            <div class="analysis-panel-header" style="padding-top: 0;">
+                        <aside id="aside-project-history-mgmt" class="analysis-side-panel glass-panel" style="display: none; width: 320px; flex-shrink: 0; padding: 1.25rem; margin-top: 0; background: rgba(255, 255, 255, 0.02);">
+                            <div class="analysis-panel-header">
                                 <h3><i class="ph ph-clock-counter-clockwise" style="color:var(--info);"></i> Histórico do Projeto</h3>
                             </div>
                             <div id="panel-project-history-mgmt" style="max-height: 450px; overflow-y: auto; padding-right: 0.5rem;">
