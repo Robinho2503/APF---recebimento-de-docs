@@ -257,12 +257,12 @@
             </section>
 
             <!-- Acesso APF Tab Content -->
-            <section id="tab-management" class="tab-content mt-4">
+            <section id="tab-management" class="tab-content glass-panel mt-4">
                 <!-- Management Content -->
                 <div id="management-content" style="display: none;">
-                    <div class="checklist-analysis-layout">
+                    <div style="display: flex; gap: 1.5rem; align-items: flex-start; width: 100%;">
                         <!-- Coluna principal: Gestão -->
-                        <div class="checklist-main-col glass-panel" style="padding: 1.75rem;">
+                        <div style="flex: 1; min-width: 0;">
                     <!-- Management Controls moved to header -->
                     <div class="management-controls mb-4" style="display: none;">
                         <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
@@ -339,8 +339,20 @@
                     <div id="management-render-area" class="tree-container management-mode">
                         <!-- Tree rendered via JS -->
                     </div>
-                        </div> <!-- fecha .checklist-main-col -->
-                    </div> <!-- fecha .checklist-analysis-layout -->
+                        </div> <!-- fecha a coluna principal de gestão -->
+
+                        <!-- Painel de Histórico no Acesso APF (Apenas Histórico como solicitado) -->
+                        <aside id="aside-project-history-mgmt" class="analysis-side-panel" style="display: none; width: 320px; flex-shrink: 0; padding-left: 1.5rem; margin-top: 0; border-left: 1px solid rgba(255, 255, 255, 0.08);">
+                            <div class="analysis-panel-header" style="padding-top: 0;">
+                                <h3><i class="ph ph-clock-counter-clockwise" style="color:var(--info);"></i> Histórico do Projeto</h3>
+                            </div>
+                            <div id="panel-project-history-mgmt" style="max-height: 450px; overflow-y: auto; padding-right: 0.5rem;">
+                                <div style="text-align:center; padding:1.5rem; color:var(--text-muted); font-size:0.82rem;">
+                                    Nenhuma ação registrada.
+                                </div>
+                            </div>
+                        </aside>
+                    </div> <!-- fecha a div flexível interna -->
                 </div>
             </section>
         </main>

@@ -1652,7 +1652,6 @@ function applyAuthState(silentRedirect = false) {
             topAuthInfo.style.display = 'none';
         }
     }
-    syncAnalysisWrapperPosition();
 }
 
 function logout() {
@@ -4604,84 +4603,78 @@ function addAuditLog(action, details, type = 'info') {
     renderProjectHistory();
 }
 
-function syncAnalysisWrapperPosition() {
-    const wrapper = document.querySelector('.analysis-panels-wrapper');
-    if (!wrapper) return;
-
-    const activeSection = document.querySelector('.tab-content.active');
-    if (!activeSection) return;
-
-    const targetLayout = activeSection.querySelector('.checklist-analysis-layout');
-    if (targetLayout) {
-        if (wrapper.parentElement !== targetLayout) {
-            targetLayout.appendChild(wrapper);
-            console.log(`[Layout] Painel de análise movido para a aba ativa: ${activeSection.id}`);
-        }
-    }
-}
-
 function updateHistorySidebarVisibility() {
     const btn = document.getElementById('btn-show-history');
-    const panel = document.getElementById('aside-project-history');
+    const panelChecklist = document.getElementById('aside-project-history');
+    const panelMgmt = document.getElementById('aside-project-history-mgmt');
     if (!btn) return;
 
     const isAPF = (authenticatedSector === 'APF');
 
-    if (isAPF && localUI.showHistorySidebar) {
+    if (localUI.showHistorySidebar) {
         btn.classList.add('active');
-        if (panel) {
-            panel.style.display = 'flex';
+        if (isAPF) {
+            if (panelMgmt) panelMgmt.style.display = 'flex';
+            if (panelChecklist) panelChecklist.style.display = 'none';
+        } else {
+            if (panelMgmt) panelMgmt.style.display = 'none';
+            if (panelChecklist) panelChecklist.style.display = 'flex';
         }
     } else {
         btn.classList.remove('active');
-        if (panel) {
-            panel.style.display = 'none';
-        }
+        if (panelChecklist) panelChecklist.style.display = 'none';
+        if (panelMgmt) panelMgmt.style.display = 'none';
     }
 }
 
 function renderProjectHistory() {
-    const container = document.getElementById('panel-project-history');
-    if (!container) return;
+    const containerChecklist = document.getElementById('panel-project-history');
+    const containerMgmt = document.getElementById('panel-project-history-mgmt');
+    if (!containerChecklist && !containerMgmt) return;
 
     const curr = getCurrentProject();
-    if (!curr || curr.id === 'p_default') {
-        container.innerHTML = '<div style="text-align:center; padding:1.25rem; color:var(--text-muted); font-size:0.82rem;">Selecione um empreendimento para ver o histórico.</div>';
-        return;
-    }
 
-    const logs = (state.auditLog || []).filter(log => log.projectId === curr.id);
+    const buildHtml = () => {
+        if (!curr || curr.id === 'p_default') {
+            return '<div style="text-align:center; padding:1.25rem; color:var(--text-muted); font-size:0.82rem;">Selecione um empreendimento para ver o histórico.</div>';
+        }
 
-    if (logs.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:1.25rem; color:var(--text-muted); font-size:0.82rem;">Nenhuma ação registrada para este projeto.</div>';
-        return;
-    }
+        const logs = (state.auditLog || []).filter(log => log.projectId === curr.id);
 
-    container.innerHTML = logs.map(log => {
-        const date = new Date(log.timestamp);
-        const day = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-        const time = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        if (logs.length === 0) {
+            return '<div style="text-align:center; padding:1.25rem; color:var(--text-muted); font-size:0.82rem;">Nenhuma ação registrada para este projeto.</div>';
+        }
 
-        let typeClass = '';
-        let iconAction = 'ph-info';
-        if (log.type === 'danger') { typeClass = 'danger'; iconAction = 'ph-warning-circle'; }
-        else if (log.type === 'warning') { typeClass = 'warning'; iconAction = 'ph-warning-diamond'; }
-        else if (log.type === 'success') { typeClass = 'success'; iconAction = 'ph-check-circle'; }
+        return logs.map(log => {
+            const date = new Date(log.timestamp);
+            const day = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+            const time = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-        return `
-            <div class="audit-entry-compact ${typeClass}">
-                <div class="audit-row-action">
-                    <i class="ph ${iconAction}"></i> ${log.action}
+            let typeClass = '';
+            let iconAction = 'ph-info';
+            if (log.type === 'danger') { typeClass = 'danger'; iconAction = 'ph-warning-circle'; }
+            else if (log.type === 'warning') { typeClass = 'warning'; iconAction = 'ph-warning-diamond'; }
+            else if (log.type === 'success') { typeClass = 'success'; iconAction = 'ph-check-circle'; }
+
+            return `
+                <div class="audit-entry-compact ${typeClass}">
+                    <div class="audit-row-action">
+                        <i class="ph ${iconAction}"></i> ${log.action}
+                    </div>
+                    <div class="audit-row-time">
+                        <i class="ph ph-user-focus"></i> ${log.sector || 'Sistema'} | ${time} - ${day}
+                    </div>
+                    <div class="audit-row-desc">
+                        ${log.details}
+                    </div>
                 </div>
-                <div class="audit-row-time">
-                    <i class="ph ph-user-focus"></i> ${log.sector || 'Sistema'} | ${time} - ${day}
-                </div>
-                <div class="audit-row-desc">
-                    ${log.details}
-                </div>
-            </div>
-        `;
-    }).join('');
+            `;
+        }).join('');
+    };
+
+    const html = buildHtml();
+    if (containerChecklist) containerChecklist.innerHTML = html;
+    if (containerMgmt) containerMgmt.innerHTML = html;
 }
 
 function renderAuditLog() {
