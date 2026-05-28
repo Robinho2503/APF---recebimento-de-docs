@@ -595,6 +595,13 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
 }
 .icon-btn:hover, .view-link:hover { background: var(--btn-outline-bg); color: var(--primary); transform: translateY(-1px) scale(1.05); }
 .icon-btn:active, .view-link:active { transform: scale(0.92); }
+.icon-btn.active {
+    background: var(--primary) !important;
+    color: #ffffff !important;
+    border: 1px solid var(--primary) !important;
+    box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+    transform: scale(1.05);
+}
 .icon-btn.delete:hover { color: var(--danger); }
 
 /* Badges */

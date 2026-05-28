@@ -59,7 +59,8 @@ let localUI = {
     expandedIds: new Set(),
     showFullChecklistDuringPendencia: false,
     currentProjectId: null,
-    sidebarCollapsed: false
+    sidebarCollapsed: false,
+    showHistorySidebar: false
 };
 let treeSearchQuery = '';
 let treeSearchFilter = 'all'; // all, pendente, apontamento
@@ -164,6 +165,7 @@ function loadLocalUI() {
             localUI = JSON.parse(saved);
             // Ensure expandedIds is a Set
             localUI.expandedIds = new Set(localUI.expandedIds || []);
+            localUI.showHistorySidebar = !!localUI.showHistorySidebar;
         }
     } catch (e) { console.warn("Erro ao carregar IU local", e); }
 }
@@ -173,7 +175,8 @@ function saveLocalUI() {
         expandedIds: Array.from(localUI.expandedIds),
         showFullChecklistDuringPendencia: localUI.showFullChecklistDuringPendencia,
         currentProjectId: localUI.currentProjectId,
-        sidebarCollapsed: localUI.sidebarCollapsed
+        sidebarCollapsed: localUI.sidebarCollapsed,
+        showHistorySidebar: localUI.showHistorySidebar
     };
     localStorage.setItem('apf_local_ui_v1', JSON.stringify(toSave));
 }
@@ -793,6 +796,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Check session after state is loaded (to populate sectors)
     applyAuthState(true);
+    updateHistorySidebarVisibility();
+    renderProjectHistory();
 
     initAIEngine();
     initSettings();
@@ -970,6 +975,7 @@ function initEventListeners() {
             const curr = getCurrentProject();
             if (curr && curr.id !== 'p_default') {
                 curr.dueDate = e.target.value;
+                addAuditLog('Prazo Geral Alterado', `O prazo geral do empreendimento foi alterado para <strong>${e.target.value}</strong>.`, 'warning');
                 saveState();
                 updateGlobalDateUI();
                 renderTracking();
@@ -1026,6 +1032,7 @@ function initEventListeners() {
                     proj.cidade = city;
                     proj.dueDate = dueDate;
                     proj.isOle = isOle;
+                    addAuditLog('Empreendimento Editado', `Os dados do empreendimento <strong>${name}</strong> foram atualizados.`, 'info');
                     showTemporaryMessage(`Empreendimento "${name}" atualizado com sucesso!`);
                 }
             } else {
@@ -1056,6 +1063,7 @@ function initEventListeners() {
                 state.projects.push(newProj);
                 localUI.currentProjectId = newProj.id;
                 localUI.expandedIds.clear();
+                addAuditLog('Empreendimento Criado', `O empreendimento <strong>${name}</strong> foi criado com sucesso.`, 'success');
                 showTemporaryMessage(`Empreendimento "${name}" criado com sucesso!`);
             }
 
@@ -1102,6 +1110,10 @@ function initEventListeners() {
                     curr.engAnalysisStartDate = '';
                 }
 
+                const actType = curr.engAnalysisOpened ? 'Abertura de Engenharia' : 'Fechamento de Engenharia';
+                const actDesc = curr.engAnalysisOpened ? 'Análise de engenharia foi aberta para este empreendimento.' : 'Análise de engenharia foi fechada para este empreendimento.';
+                addAuditLog(actType, actDesc, curr.engAnalysisOpened ? 'success' : 'warning');
+
                 saveState();
                 updateGlobalDateUI();
                 renderTracking();
@@ -1114,6 +1126,7 @@ function initEventListeners() {
             const curr = getCurrentProject();
             if (curr && curr.id !== 'p_default') {
                 curr.engAnalysisStartDate = e.target.value;
+                addAuditLog('Data de Engenharia Alterada', `A data de início da análise de engenharia foi alterada para <strong>${e.target.value}</strong>.`, 'info');
                 saveState();
                 updateGlobalDateUI();
                 renderTracking();
@@ -1134,6 +1147,7 @@ function initEventListeners() {
                 type: 'danger',
                 confirmText: 'Excluir permanentemente',
                 onConfirm: () => {
+                    addAuditLog('Empreendimento Excluído', `O empreendimento <strong>${curr.name}</strong> foi excluído permanentemente.`, 'danger');
                     const nextProj = state.projects.find(p => p.id !== localUI.currentProjectId) || state.projects[0];
                     state.projects = state.projects.filter(p => p.id !== localUI.currentProjectId);
                     localUI.currentProjectId = nextProj.id;
@@ -1218,6 +1232,9 @@ function initEventListeners() {
                 return;
             }
             curr.pendenciaActive = !curr.pendenciaActive;
+            const actType = curr.pendenciaActive ? 'Resolução de Pendências Iniciada' : 'Resolução de Pendências Encerrada';
+            const actDesc = curr.pendenciaActive ? 'Modo de resolução de pendências CAIXA foi ativado.' : 'Modo de resolução de pendências CAIXA foi desativado.';
+            addAuditLog(actType, actDesc, curr.pendenciaActive ? 'warning' : 'success');
             saveState();
             renderTree();
             renderTracking();
@@ -1236,6 +1253,7 @@ function initEventListeners() {
             const curr = getCurrentProject();
             if (curr) {
                 curr.pendenciaStartDate = e.target.value;
+                addAuditLog('Data de Pendência Alterada', `A data de início da resolução de pendências foi alterada para <strong>${e.target.value}</strong>.`, 'info');
                 saveState();
                 renderTracking();
             }
@@ -1262,9 +1280,11 @@ function initEventListeners() {
                 if (editingPendenciaId) {
                     const pend = curr.pendencias.find(p => p.id === editingPendenciaId);
                     if (pend) {
+                        const oldName = pend.docName;
                         pend.docName = name;
                         pend.sector = sector;
                         pend.specification = specification;
+                        addAuditLog('Pendência Editada', `A pendência <strong>${oldName}</strong> foi atualizada para <strong>${name}</strong> do setor <strong>${sector}</strong>.`, 'warning');
                     }
                     editingPendenciaId = null;
                     btnAddPendencia.innerHTML = '<i class="ph ph-plus"></i> Adicionar';
@@ -1274,6 +1294,7 @@ function initEventListeners() {
                     curr.pendencias.push({
                         id: generateId(), docName: name, sector: sector, specification: specification, attachments: [], observation: ''
                     });
+                    addAuditLog('Pendência Criada', `Nova pendência <strong>${name}</strong> adicionada para o setor <strong>${sector}</strong>.`, 'warning');
                 }
                 nameInp.value = '';
                 sectorSel.value = '';
@@ -3954,6 +3975,7 @@ function renderPendenciasMgmt() {
                         document.getElementById('new-pendencia-spec').value = '';
                     }
                     curr.pendencias = curr.pendencias.filter(item => item.id !== p.id);
+                    addAuditLog('Pendência Removida', `A pendência <strong>${p.docName}</strong> do setor <strong>${p.sector}</strong> foi removida.`, 'danger');
                     saveState();
                     renderPendenciasMgmt();
                     renderTree();
@@ -4236,6 +4258,8 @@ function renderAnalysisPanels() {
         if (wrapperEl) wrapperEl.style.display = 'flex';
     }
 
+    updateHistorySidebarVisibility();
+
     // ---- PAINEL: Análise por Setor (projeto selecionado) ----
     const nonBase = state.projects.filter(p => p.id !== 'p_default');
     const curr = getCurrentProject();
@@ -4351,8 +4375,10 @@ function initSettings() {
     // History Modal Events
     if (btnShowHistory) {
         btnShowHistory.onclick = () => {
-            renderAuditLog();
-            historyModal.classList.remove('hidden');
+            localUI.showHistorySidebar = !localUI.showHistorySidebar;
+            saveLocalUI();
+            updateHistorySidebarVisibility();
+            renderProjectHistory();
         };
     }
     if (btnCloseHistory) {
@@ -4575,6 +4601,26 @@ function addAuditLog(action, details, type = 'info') {
     saveState();
     renderAuditLog();
     renderProjectHistory();
+}
+
+function updateHistorySidebarVisibility() {
+    const btn = document.getElementById('btn-show-history');
+    const panel = document.getElementById('aside-project-history');
+    if (!btn) return;
+
+    const isAPF = (authenticatedSector === 'APF');
+
+    if (isAPF && localUI.showHistorySidebar) {
+        btn.classList.add('active');
+        if (panel) {
+            panel.style.display = 'flex';
+        }
+    } else {
+        btn.classList.remove('active');
+        if (panel) {
+            panel.style.display = 'none';
+        }
+    }
 }
 
 function renderProjectHistory() {
