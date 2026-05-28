@@ -1652,6 +1652,7 @@ function applyAuthState(silentRedirect = false) {
             topAuthInfo.style.display = 'none';
         }
     }
+    syncAnalysisWrapperPosition();
 }
 
 function logout() {
@@ -4601,6 +4602,22 @@ function addAuditLog(action, details, type = 'info') {
     saveState();
     renderAuditLog();
     renderProjectHistory();
+}
+
+function syncAnalysisWrapperPosition() {
+    const wrapper = document.querySelector('.analysis-panels-wrapper');
+    if (!wrapper) return;
+
+    const activeSection = document.querySelector('.tab-content.active');
+    if (!activeSection) return;
+
+    const targetLayout = activeSection.querySelector('.checklist-analysis-layout');
+    if (targetLayout) {
+        if (wrapper.parentElement !== targetLayout) {
+            targetLayout.appendChild(wrapper);
+            console.log(`[Layout] Painel de análise movido para a aba ativa: ${activeSection.id}`);
+        }
+    }
 }
 
 function updateHistorySidebarVisibility() {
