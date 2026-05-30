@@ -353,9 +353,7 @@ function renderAfterUpdate() {
     renderProjectHistory();
     applyAuthState();
     applySidebarState();
-    if (isMgmtActive()) {
-        updateFirebaseStorageUI();
-    }
+    updateFirebaseStorageUI();
 }
 
 let saveTimeout = null;
