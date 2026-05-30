@@ -3470,14 +3470,15 @@ function createNode(item, level) {
 
                     btnSaveObs.onclick = (e) => {
                         e.stopPropagation();
+                        
+                        const obsValue = obsInp.value.trim();
+                        item.observation = obsValue;
+                        updateObsBtnStyle();
+                        
                         saveState();
-                        renderTree();
-                        btnSaveObs.innerHTML = '<i class="ph ph-check-circle"></i> Salvo';
-                        setTimeout(() => { btnSaveObs.innerHTML = '<i class="ph ph-check"></i> Salvar Apontamento'; }, 2000);
-                        if (item.observation) {
-                            addAuditLog('Apontamento', `Novo apontamento em <strong>${item.name}</strong>: "${item.observation}"`, 'danger');
-                            
-                            // Disparar Notificação para o Teams com o Setor
+                        
+                        // Envia a notificação imediatamente antes do redesenho da árvore para garantir integridade do DOM
+                        if (obsValue !== '') {
                             const sectorName = getItemSector(item.id) || 'Geral';
                             const currProj = getCurrentProject();
                             const projectName = currProj?.name || 'Desconhecido';
@@ -3485,8 +3486,24 @@ function createNode(item, level) {
                             sendTeamsNotification(sectorName, {
                                 projectName: projectName,
                                 documentName: item.name,
-                                details: item.observation
+                                details: obsValue
                             });
+                        }
+
+                        renderTree();
+                        
+                        // Dar o feedback visual de salvo
+                        const newlyRenderedBtn = document.querySelector(`.btn-save-just`);
+                        if (newlyRenderedBtn) {
+                            newlyRenderedBtn.innerHTML = '<i class="ph ph-check-circle"></i> Salvo';
+                            setTimeout(() => { newlyRenderedBtn.innerHTML = '<i class="ph ph-check"></i> Salvar Apontamento'; }, 2000);
+                        } else {
+                            btnSaveObs.innerHTML = '<i class="ph ph-check-circle"></i> Salvo';
+                            setTimeout(() => { btnSaveObs.innerHTML = '<i class="ph ph-check"></i> Salvar Apontamento'; }, 2000);
+                        }
+
+                        if (obsValue !== '') {
+                            addAuditLog('Apontamento', `Novo apontamento em <strong>${item.name}</strong>: "${obsValue}"`, 'danger');
                         }
                     };
 
