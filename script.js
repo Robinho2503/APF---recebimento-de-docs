@@ -2185,7 +2185,7 @@ function renderTracking() {
                 </div>
                 ${!p.engAnalysisOpened ? `
                 <div class="card-progress-mini">
-                    <i class="ph ph-file-text"></i> ${getProjectProgress(p)}%
+                    ${getProjectProgress(p)}%
                 </div>` : ''}
             </div>
         `;

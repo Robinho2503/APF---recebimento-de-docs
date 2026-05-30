@@ -211,26 +211,30 @@ body {
 
 .card-progress-mini {
     position: absolute;
-    top: 0.6rem;
+    top: 0.65rem;
     right: 0.8rem;
-    font-size: 0.65rem;
+    font-size: 0.68rem;
     font-weight: 800;
     color: var(--accent);
-    background: rgba(16, 185, 129, 0.1);
-    padding: 0.15rem 0.4rem;
-    border-radius: 0.4rem;
+    background: rgba(16, 185, 129, 0.08);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
     border: 1px solid rgba(16, 185, 129, 0.2);
     display: flex;
     align-items: center;
-    gap: 0.25rem;
+    justify-content: center;
     pointer-events: none;
     z-index: 2;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+    transition: all 0.3s ease;
 }
 
 .sidebar .tracking-card.active .card-progress-mini {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.15);
     color: white;
     border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
 }
 
 .sidebar .tracking-card h3 {
