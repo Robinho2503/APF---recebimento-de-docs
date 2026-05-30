@@ -5411,15 +5411,55 @@ async function sendTeamsNotification(sector, data) {
     };
 
     try {
-        const response = await fetch(TEAMS_WEBHOOK_URL, {
+        console.log("[Teams Webhook] Tentando enviar via Proxy Serverless da Vercel...");
+        
+        const apiEndpoint = '/api/teams-webhook';
+        
+        const response = await fetch(apiEndpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({
+                webhookUrl: TEAMS_WEBHOOK_URL,
+                payload: payload
+            })
         });
-        console.log(`[Teams Webhook] Notificação enviada com sucesso para o setor: ${sector}`);
+
+        if (response.ok) {
+            console.log(`[Teams Webhook] Notificação enviada via proxy Vercel com sucesso para o setor: ${sector}`);
+            return;
+        }
+
+        if (response.status === 404) {
+            console.warn("[Teams Webhook] API de Proxy não encontrada (provavelmente rodando local). Tentando envio direto...");
+            await fetch(TEAMS_WEBHOOK_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload),
+                mode: 'no-cors'
+            });
+            console.log("[Teams Webhook] Disparo de fallback direto concluído.");
+        } else {
+            const errText = await response.text();
+            console.error(`[Teams Webhook] Erro retornado pelo proxy: Status ${response.status} - ${errText}`);
+        }
     } catch (error) {
-        console.error("[Teams Webhook] Erro ao enviar notificação para o Teams:", error);
+        console.error("[Teams Webhook] Erro ao enviar notificação via proxy. Tentando envio direto como fallback...", error);
+        try {
+            await fetch(TEAMS_WEBHOOK_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload),
+                mode: 'no-cors'
+            });
+            console.log("[Teams Webhook] Disparo de fallback direto (pós-erro) concluído.");
+        } catch (directErr) {
+            console.error("[Teams Webhook] Falha definitiva no envio de fallback direto:", directErr);
+        }
     }
 }
