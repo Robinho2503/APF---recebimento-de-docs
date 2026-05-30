@@ -5449,12 +5449,10 @@ async function sendTeamsNotification(sector, data) {
         }]
     };
 
+    // Método 1: Tentar via Proxy Serverless da Vercel (Se hospedado lá)
     try {
-        console.log("[Teams Webhook] Tentando enviar via Proxy Serverless da Vercel...");
-        
-        const apiEndpoint = '/api/teams-webhook';
-        
-        const response = await fetch(apiEndpoint, {
+        console.log("[Teams Webhook] Camada 1: Tentando via Proxy Serverless da Vercel...");
+        const response = await fetch('/api/teams-webhook', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -5469,36 +5467,49 @@ async function sendTeamsNotification(sector, data) {
             console.log(`[Teams Webhook] Notificação enviada via proxy Vercel com sucesso para o setor: ${sector}`);
             return;
         }
+        
+        console.warn(`[Teams Webhook] Proxy Vercel retornou status: ${response.status}. Acionando Camada 2...`);
+    } catch (e) {
+        console.warn("[Teams Webhook] Erro ao conectar com o Proxy da Vercel. Acionando Camada 2...", e);
+    }
 
-        if (response.status === 404) {
-            console.warn("[Teams Webhook] API de Proxy não encontrada (provavelmente rodando local). Tentando envio direto...");
-            await fetch(TEAMS_WEBHOOK_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload),
-                mode: 'no-cors'
-            });
-            console.log("[Teams Webhook] Disparo de fallback direto concluído.");
-        } else {
-            const errText = await response.text();
-            console.error(`[Teams Webhook] Erro retornado pelo proxy: Status ${response.status} - ${errText}`);
+    // Método 2: Tentar via Proxy CORS Público Altamente Estável (corsproxy.io)
+    // Isso garante funcionamento 100% imediato e contorna o CORS direto no navegador, mesmo em outras hospedagens ou localhost
+    try {
+        console.log("[Teams Webhook] Camada 2: Tentando enviar via CORSProxy.io...");
+        const corsProxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(TEAMS_WEBHOOK_URL)}`;
+        
+        const response = await fetch(corsProxyUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            console.log(`[Teams Webhook] Notificação enviada via CORSProxy com sucesso para o setor: ${sector}`);
+            return;
         }
-    } catch (error) {
-        console.error("[Teams Webhook] Erro ao enviar notificação via proxy. Tentando envio direto como fallback...", error);
-        try {
-            await fetch(TEAMS_WEBHOOK_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload),
-                mode: 'no-cors'
-            });
-            console.log("[Teams Webhook] Disparo de fallback direto (pós-erro) concluído.");
-        } catch (directErr) {
-            console.error("[Teams Webhook] Falha definitiva no envio de fallback direto:", directErr);
-        }
+        
+        console.warn(`[Teams Webhook] CORSProxy retornou status: ${response.status}. Acionando Camada 3 de fallback...`);
+    } catch (e) {
+        console.error("[Teams Webhook] Erro ao enviar via CORSProxy. Acionando Camada 3...", e);
+    }
+
+    // Método 3: Fallback direto no-cors (Último recurso)
+    try {
+        console.log("[Teams Webhook] Camada 3: Tentando envio direto com no-cors...");
+        await fetch(TEAMS_WEBHOOK_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload),
+            mode: 'no-cors'
+        });
+        console.log("[Teams Webhook] Envio direto concluído (opaco/no-cors).");
+    } catch (e) {
+        console.error("[Teams Webhook] Falha definitiva no envio em todas as camadas:", e);
     }
 }

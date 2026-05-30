@@ -1,7 +1,10 @@
+import https from 'https';
+import { URL } from 'url';
+
 /**
- * Proxy Serverless para o Webhook do Microsoft Teams.
- * Como o Teams não fornece cabeçalhos CORS, esta função do lado do servidor (Vercel)
- * recebe a requisição do frontend e a envia com segurança para o webhook da Microsoft.
+ * Proxy Serverless de alta compatibilidade para o Microsoft Teams.
+ * Utiliza o módulo HTTPS nativo do Node.js para garantir funcionamento
+ * em qualquer versão do Node na Vercel (livre de dependência de fetch global).
  */
 export default async function handler(req, res) {
     // Adiciona cabeçalhos de CORS para permitir chamadas locais e de testes
@@ -25,22 +28,44 @@ export default async function handler(req, res) {
     }
 
     try {
-        console.log(`[Proxy] Encaminhando webhook para o Teams...`);
-        const response = await fetch(webhookUrl, {
+        console.log(`[Proxy] Encaminhando webhook para o Teams via HTTPS nativo...`);
+        
+        const urlParsed = new URL(webhookUrl);
+        const postData = JSON.stringify(payload);
+
+        const options = {
+            hostname: urlParsed.hostname,
+            path: urlParsed.pathname + urlParsed.search,
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(postData)
+            }
+        };
+
+        const teamsReq = https.request(options, (teamsRes) => {
+            let data = '';
+            
+            teamsRes.on('data', (chunk) => {
+                data += chunk;
+            });
+            
+            teamsRes.on('end', () => {
+                console.log(`[Proxy] Resposta do Teams: Status ${teamsRes.statusCode}, Conteúdo: ${data}`);
+                res.status(teamsRes.statusCode).send(data);
+            });
         });
 
-        const status = response.status;
-        const text = await response.text();
-        console.log(`[Proxy] Resposta do Teams: Status ${status}, Conteúdo: ${text}`);
+        teamsReq.on('error', (error) => {
+            console.error("[Proxy Error] Erro HTTPS ao enviar para o Teams:", error);
+            res.status(500).json({ error: error.message });
+        });
 
-        res.status(status).send(text);
+        teamsReq.write(postData);
+        teamsReq.end();
+
     } catch (error) {
-        console.error("[Proxy Error] Erro ao enviar para o Teams:", error);
+        console.error("[Proxy Error] Erro geral ao enviar para o Teams:", error);
         res.status(500).json({ error: error.message });
     }
 }
