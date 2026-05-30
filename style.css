@@ -211,14 +211,14 @@ body {
 
 .card-progress-mini {
     position: absolute;
-    top: 0.65rem;
-    right: 0.8rem;
-    font-size: 0.68rem;
+    top: 0.6rem;
+    right: 0.7rem;
+    font-size: 0.58rem;
     font-weight: 800;
     color: var(--accent);
     background: rgba(16, 185, 129, 0.08);
-    width: 32px;
-    height: 32px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
     border: 1px solid rgba(16, 185, 129, 0.2);
     display: flex;
