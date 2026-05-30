@@ -2221,10 +2221,47 @@ function getProjectProgress(p) {
     return Math.round((deliveredCount / leafItems.length) * 100);
 }
 
+function getItemSortPriority(item) {
+    const allItems = getItems();
+    // Se for uma pasta (ou seja, possui filhos no checklist), tem prioridade 0 (fica no topo)
+    const isFolder = allItems.some(child => child.parentId === item.id);
+    if (isFolder) {
+        return 0;
+    }
+
+    const hasAtt = item.attachments && item.attachments.length > 0;
+    const status = (item.validationStatus || '').trim().toLowerCase();
+
+    // Grupo 1: Pendente (sem anexo e aplicável) ou com Apontamento
+    if ((!hasAtt && !item.isNotApplicable) || status === 'apontamento') {
+        return 1;
+    }
+    // Grupo 2: Em Análise
+    if (hasAtt && status !== 'validado' && status !== 'apf check' && status !== 'apontamento') {
+        return 2;
+    }
+    // Grupo 3: Validado ou Não se Aplica
+    if (item.isNotApplicable || status === 'validado' || status === 'apf check') {
+        return 3;
+    }
+
+    return 1; // Fallback
+}
+
 function getChildItems(parentId) {
     return getItems()
         .filter(item => item.parentId === parentId)
-        .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }));
+        .sort((a, b) => {
+            const prioA = getItemSortPriority(a);
+            const prioB = getItemSortPriority(b);
+
+            if (prioA !== prioB) {
+                return prioA - prioB;
+            }
+
+            // Desempate: ordem alfabética por nome
+            return a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' });
+        });
 }
 
 function getNodeStats(itemId) {
