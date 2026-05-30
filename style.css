@@ -3074,3 +3074,26 @@ hr {
     cursor: not-allowed;
 }
 
+.storage-refresh-btn-minimal {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem;
+    border-radius: 0.35rem;
+    transition: all 0.2s;
+}
+
+.storage-refresh-btn-minimal:hover {
+    color: var(--text-main);
+    background: var(--btn-outline-bg);
+}
+
+.storage-refresh-btn-minimal:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+

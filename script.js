@@ -5310,40 +5310,27 @@ function renderStorageWidget(container, usedBytes, fileCount, isLoading) {
     }
 
     container.innerHTML = `
-        <div class="storage-widget-header flex-between mb-3">
+        <div class="storage-widget-header flex-between mb-2">
             <h4 class="storage-title">
-                <i class="ph ph-hard-drive"></i> Armazenamento do Firebase Storage
+                <i class="ph ph-cloud-arrow-up"></i> Armazenamento: <span class="font-semibold text-main ml-1">${formatBytes(usedBytes)}</span> <span style="font-size:0.75rem; color:var(--text-muted); font-weight:normal; margin-left:0.25rem;">/ ${formatBytes(totalBytes)}</span>
             </h4>
-            <div class="storage-badge" style="background: ${statusColor}15; color: ${statusColor};">
-                ${statusText}
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div class="storage-badge" style="background: ${statusColor}15; color: ${statusColor}; border: 1px solid ${statusColor}25; font-size: 0.65rem; padding: 0.1rem 0.4rem;">
+                    ${statusText}
+                </div>
+                <button id="btn-refresh-storage" class="storage-refresh-btn-minimal" title="Atualizar" ${isLoading ? 'disabled' : ''}>
+                    <i class="ph ph-arrows-clockwise ${isLoading ? 'ph-spin' : ''}" style="font-size: 0.95rem;"></i>
+                </button>
             </div>
         </div>
 
-        <div class="storage-stats-row mb-3">
-            <div class="storage-stat-col">
-                <span class="storage-stat-label">Utilizado</span>
-                <span class="storage-stat-val text-main font-semibold">${formatBytes(usedBytes)}</span>
-                <span class="storage-stat-sub">${usedPercentage.toFixed(1)}%</span>
-            </div>
-            <div class="storage-stat-col text-right">
-                <span class="storage-stat-label">Livre</span>
-                <span class="storage-stat-val text-main font-semibold">${formatBytes(freeBytes)}</span>
-                <span class="storage-stat-sub">${freePercentage.toFixed(1)}%</span>
-            </div>
-        </div>
-
-        <div class="storage-bar-track mb-3">
+        <div class="storage-bar-track mb-2" style="height: 6px;">
             <div class="storage-bar-fill ${barGradientClass}" style="width: ${usedPercentage}%;"></div>
         </div>
 
-        <div class="storage-widget-footer flex-between">
-            <span class="storage-footer-info">
-                <i class="ph ph-files"></i> Total de <b>${fileCount}</b> arquivos armazenados
-            </span>
-            <button id="btn-refresh-storage" class="storage-refresh-btn" ${isLoading ? 'disabled' : ''}>
-                <i class="ph ph-arrows-clockwise ${isLoading ? 'ph-spin' : ''}"></i> 
-                ${isLoading ? 'Atualizando...' : 'Atualizar'}
-            </button>
+        <div class="flex-between" style="font-size: 0.72rem; color: var(--text-muted);">
+            <span>${usedPercentage.toFixed(1)}% utilizado • <b>${fileCount}</b> arquivos</span>
+            <span>${formatBytes(freeBytes)} livres</span>
         </div>
     `;
 
