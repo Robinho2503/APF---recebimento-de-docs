@@ -5441,24 +5441,35 @@ async function sendTeamsNotification(sector, data) {
     const payload = {
         "@type": "MessageCard",
         "@context": "http://schema.org/extensions",
-        "themeColor": "ef4444",
-        "summary": `Novo Apontamento no Setor: ${sector}`,
-        "sections": [{
-            "activityTitle": `📢 **Novo Apontamento no Setor: ${sector}**`,
-            "activitySubtitle": `Empreendimento: **${data.projectName}**`,
-            "activityImage": "https://raw.githubusercontent.com/Robinho2503/APF---recebimento-de-docs/main/login_icon_new.png",
-            "facts": [
-                { "name": "Setor Responsável:", "value": `🌟 **${sector}**` },
-                { "name": "Documento:", "value": data.documentName },
-                { "name": "Status:", "value": "🔴 Pendência / Apontamento de Correção" },
-                { "name": "Data/Hora:", "value": formattedDate }
-            ],
-            "markdown": true
-        }],
-        "text": `⚠️ **Mensagem de Apontamento para o setor ${sector}:**\n\n> "${data.details}"`,
+        "themeColor": "EF4444",
+        "summary": `🚨 Apontamento de Correção - Setor ${sector}`,
+        "sections": [
+            {
+                "activityTitle": "🚨 **Novo Apontamento de Correção**",
+                "activitySubtitle": `Setor Responsável: **${sector}** | Empreendimento: **${data.projectName}**`,
+                "activityImage": "https://raw.githubusercontent.com/Robinho2503/APF---recebimento-de-docs/main/login_icon_new.png",
+                "markdown": true
+            },
+            {
+                "title": "📋 **Detalhes da Pendência**",
+                "facts": [
+                    { "name": "🏢 Empreendimento:", "value": `**${data.projectName}**` },
+                    { "name": "📂 Setor Afetado:", "value": `**${sector}**` },
+                    { "name": "📄 Documento:", "value": `_${data.documentName}_` },
+                    { "name": "📅 Data do Registro:", "value": formattedDate },
+                    { "name": "👤 Registrado por:", "value": "Administração APF" }
+                ],
+                "markdown": true
+            },
+            {
+                "title": "💬 **Observações e Justificativa da APF**",
+                "text": `> "${data.details}"`,
+                "markdown": true
+            }
+        ],
         "potentialAction": [{
             "@type": "OpenUri",
-            "name": "Abrir Checklist no Sistema",
+            "name": "🔗 Abrir Checklist no Sistema",
             "targets": [{
                 "os": "default",
                 "uri": window.location.href
