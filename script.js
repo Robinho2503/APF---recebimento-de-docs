@@ -32,6 +32,9 @@ try {
 const storage = getStorage(app);
 const GLOBAL_DOC_PATH = "apf_data/v2_global_state";
 
+// URL do Webhook do Microsoft Teams (Unificada para todos os setores)
+const TEAMS_WEBHOOK_URL = "https://vianaemoura.webhook.office.com/webhookb2/1054365b-3fda-40bd-8ae4-7a6175d61b96@63c474e6-d8b2-4c52-a134-94ca3d624634/IncomingWebhook/00c2f490ae2b4329be065272ea3bd166/e0b9de19-0895-47e1-aaa6-0b0f9c07d374/V29kyRlQjiZzRL4sIhHwUJlC8USHvDi7PEFvFpQFPIjbs1";
+
 // Data Models & State Initialization
 const DEFAULT_ITEMS = [
     { id: 'sec1', name: 'Legalização', parentId: null, protected: true, expanded: false, attachments: [] },
@@ -3460,6 +3463,17 @@ function createNode(item, level) {
                         setTimeout(() => { btnSaveObs.innerHTML = '<i class="ph ph-check"></i> Salvar Apontamento'; }, 2000);
                         if (item.observation) {
                             addAuditLog('Apontamento', `Novo apontamento em <strong>${item.name}</strong>: "${item.observation}"`, 'danger');
+                            
+                            // Disparar Notificação para o Teams com o Setor
+                            const sectorName = getItemSector(item.id) || 'Geral';
+                            const currProj = getCurrentProject();
+                            const projectName = currProj?.name || 'Desconhecido';
+                            
+                            sendTeamsNotification(sectorName, {
+                                projectName: projectName,
+                                documentName: item.name,
+                                details: item.observation
+                            });
                         }
                     };
 
@@ -5356,5 +5370,56 @@ function renderStorageWidget(container, usedBytes, fileCount, isLoading) {
             });
             updateFirebaseStorageUI();
         };
+    }
+}
+
+/**
+ * Envia uma notificação premium para o canal do Microsoft Teams via Webhook
+ * destacando explicitamente o setor afetado no título e no corpo do cartão.
+ */
+async function sendTeamsNotification(sector, data) {
+    if (!TEAMS_WEBHOOK_URL) return;
+
+    const formattedDate = new Date().toLocaleString('pt-BR', { timeZone: 'America/Recife' });
+
+    const payload = {
+        "@type": "MessageCard",
+        "@context": "http://schema.org/extensions",
+        "themeColor": "ef4444",
+        "summary": `Novo Apontamento no Setor: ${sector}`,
+        "sections": [{
+            "activityTitle": `📢 **Novo Apontamento no Setor: ${sector}**`,
+            "activitySubtitle": `Empreendimento: **${data.projectName}**`,
+            "activityImage": "https://raw.githubusercontent.com/Robinho2503/APF---recebimento-de-docs/main/login_icon_new.png",
+            "facts": [
+                { "name": "Setor Responsável:", "value": `🌟 **${sector}**` },
+                { "name": "Documento:", "value": data.documentName },
+                { "name": "Status:", "value": "🔴 Pendência / Apontamento de Correção" },
+                { "name": "Data/Hora:", "value": formattedDate }
+            ],
+            "markdown": true
+        }],
+        "text": `⚠️ **Mensagem de Apontamento para o setor ${sector}:**\n\n> "${data.details}"`,
+        "potentialAction": [{
+            "@type": "OpenUri",
+            "name": "Abrir Checklist no Sistema",
+            "targets": [{
+                "os": "default",
+                "uri": window.location.href
+            }]
+        }]
+    };
+
+    try {
+        const response = await fetch(TEAMS_WEBHOOK_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+        console.log(`[Teams Webhook] Notificação enviada com sucesso para o setor: ${sector}`);
+    } catch (error) {
+        console.error("[Teams Webhook] Erro ao enviar notificação para o Teams:", error);
     }
 }
