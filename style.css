@@ -2933,3 +2933,144 @@ hr {
     animation-delay: 0.05s;
 }
 
+/* Widget de Armazenamento do Firebase */
+.storage-widget-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--card-border);
+    border-radius: 1rem;
+    padding: 1.25rem;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.light-mode .storage-widget-card {
+    background: rgba(0, 0, 0, 0.02);
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+.storage-widget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.storage-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.storage-title i {
+    color: var(--info);
+    font-size: 1.2rem;
+}
+
+.storage-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.35rem;
+    letter-spacing: 0.05em;
+}
+
+.storage-stats-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.storage-stat-col {
+    display: flex;
+    flex-direction: column;
+}
+
+.storage-stat-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.15rem;
+}
+
+.storage-stat-val {
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.storage-stat-sub {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.1rem;
+}
+
+.storage-bar-track {
+    width: 100%;
+    height: 8px;
+    background: var(--progress-track);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.storage-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Gradientes neon modernos e dinâmicos */
+.storage-gradient-safe {
+    background: linear-gradient(90deg, #10b981, #3b82f6);
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+}
+
+.storage-gradient-warning {
+    background: linear-gradient(90deg, #f59e0b, #ef4444);
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+}
+
+.storage-gradient-danger {
+    background: linear-gradient(90deg, #ef4444, #b91c1c);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
+}
+
+.storage-widget-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    border-top: 1px solid var(--panel-border);
+    padding-top: 0.75rem;
+}
+
+.storage-refresh-btn {
+    background: transparent;
+    border: none;
+    color: var(--info);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.35rem;
+}
+
+.storage-refresh-btn:hover {
+    color: var(--text-main);
+    background: var(--btn-outline-bg);
+}
+
+.storage-refresh-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+

@@ -2,7 +2,7 @@
 console.log("APF Script: Iniciando carregamento...");
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, onSnapshot, getDoc, getDocs, collection, query, where, serverTimestamp, deleteDoc, enableIndexedDbPersistence } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject, getMetadata } from "firebase/storage";
 
 // Firebase Configuration & Initialization
 const firebaseConfig = {
@@ -353,6 +353,9 @@ function renderAfterUpdate() {
     renderProjectHistory();
     applyAuthState();
     applySidebarState();
+    if (isMgmtActive()) {
+        updateFirebaseStorageUI();
+    }
 }
 
 let saveTimeout = null;
@@ -937,6 +940,7 @@ function initEventListeners() {
 
                 if (tab.dataset.tab === 'management') {
                     listenToActiveDevices();
+                    updateFirebaseStorageUI();
                 }
 
                 applyAuthState();
@@ -4115,6 +4119,7 @@ window.handleFileUpload = async function (itemId, files, isPendencia = false) {
                         id: id,
                         name: file.name,
                         type: file.type,
+                        size: fileToUpload.size,
                         storagePath: fbStoragePath,
                         downloadUrl: downloadUrl,
                         objectUrl: downloadUrl,
@@ -5154,4 +5159,175 @@ function initPlexusBackground() {
 
     resize();
     animate();
+}
+
+// =========================================================================
+// WIDGET DE ARMAZENAMENTO DO FIREBASE
+// =========================================================================
+const FIREBASE_STORAGE_LIMIT_BYTES = 5 * 1024 * 1024 * 1024; // 5 GB em bytes
+let isStorageCalculating = false;
+
+function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+async function updateFirebaseStorageUI() {
+    const widget = document.getElementById('firebase-storage-widget');
+    if (!widget) return;
+
+    // Se o usuário não for do setor APF, oculta o widget
+    if (authenticatedSector !== 'APF') {
+        widget.style.display = 'none';
+        return;
+    }
+    widget.style.display = 'block';
+
+    // 1. Coletar todos os anexos de todos os projetos reais (id !== 'p_default')
+    let totalBytes = 0;
+    let fileCount = 0;
+    let missingSizeFiles = [];
+
+    state.projects.forEach(project => {
+        if (project.id === 'p_default') return;
+        const items = project.items || [];
+        items.forEach(item => {
+            const attachments = item.attachments || [];
+            attachments.forEach(att => {
+                fileCount++;
+                if (att.size !== undefined && typeof att.size === 'number') {
+                    totalBytes += att.size;
+                } else if (att.storagePath) {
+                    missingSizeFiles.push({ project, item, attachment: att });
+                }
+            });
+        });
+    });
+
+    // Se existirem arquivos sem o campo 'size', busca os metadados do Firebase Storage
+    if (missingSizeFiles.length > 0 && !isStorageCalculating) {
+        isStorageCalculating = true;
+        
+        // Renderiza estado inicial carregando/calculando
+        renderStorageWidget(widget, totalBytes, fileCount, true);
+
+        // Processa de forma assíncrona para não travar a UI
+        (async () => {
+            console.log(`[Firebase Storage] Curando metadados de tamanho para ${missingSizeFiles.length} arquivos antigos...`);
+            let updatedAny = false;
+            
+            // Faremos as requisições sequencialmente rápidas para evitar gargalos de API
+            for (const itemData of missingSizeFiles) {
+                const att = itemData.attachment;
+                const storageRef = ref(storage, att.storagePath);
+                try {
+                    const metadata = await getMetadata(storageRef);
+                    if (metadata && metadata.size) {
+                        att.size = metadata.size;
+                        totalBytes += metadata.size;
+                        updatedAny = true;
+                    }
+                } catch (err) {
+                    console.warn(`[Firebase Storage] Não foi possível obter tamanho para "${att.name}":`, err);
+                    // Definimos como 0 para não tentar recarregar da próxima vez
+                    att.size = 0;
+                    updatedAny = true;
+                }
+            }
+
+            isStorageCalculating = false;
+
+            if (updatedAny) {
+                console.log("[Firebase Storage] Metadados curados com sucesso! Salvando no Firestore...");
+                saveState();
+            }
+            
+            // Re-renderiza com os dados completos
+            renderStorageWidget(widget, totalBytes, fileCount, false);
+        })();
+    } else {
+        renderStorageWidget(widget, totalBytes, fileCount, isStorageCalculating);
+    }
+}
+
+function renderStorageWidget(container, usedBytes, fileCount, isLoading) {
+    const totalBytes = FIREBASE_STORAGE_LIMIT_BYTES;
+    const usedPercentage = Math.min(100, (usedBytes / totalBytes) * 100);
+    const freeBytes = Math.max(0, totalBytes - usedBytes);
+    const freePercentage = 100 - usedPercentage;
+
+    let barGradientClass = 'storage-gradient-safe';
+    let statusText = 'Excelente';
+    let statusColor = '#10b981'; // Verde
+
+    if (usedPercentage > 85) {
+        barGradientClass = 'storage-gradient-danger';
+        statusText = 'Crítico';
+        statusColor = '#ef4444'; // Vermelho
+    } else if (usedPercentage > 65) {
+        barGradientClass = 'storage-gradient-warning';
+        statusText = 'Atenção';
+        statusColor = '#f59e0b'; // Laranja
+    }
+
+    container.innerHTML = `
+        <div class="storage-widget-header flex-between mb-3">
+            <h4 class="storage-title">
+                <i class="ph ph-hard-drive"></i> Armazenamento do Firebase Storage
+            </h4>
+            <div class="storage-badge" style="background: ${statusColor}15; color: ${statusColor};">
+                ${statusText}
+            </div>
+        </div>
+
+        <div class="storage-stats-row mb-3">
+            <div class="storage-stat-col">
+                <span class="storage-stat-label">Utilizado</span>
+                <span class="storage-stat-val text-main font-semibold">${formatBytes(usedBytes)}</span>
+                <span class="storage-stat-sub">${usedPercentage.toFixed(1)}%</span>
+            </div>
+            <div class="storage-stat-col text-right">
+                <span class="storage-stat-label">Livre</span>
+                <span class="storage-stat-val text-main font-semibold">${formatBytes(freeBytes)}</span>
+                <span class="storage-stat-sub">${freePercentage.toFixed(1)}%</span>
+            </div>
+        </div>
+
+        <div class="storage-bar-track mb-3">
+            <div class="storage-bar-fill ${barGradientClass}" style="width: ${usedPercentage}%;"></div>
+        </div>
+
+        <div class="storage-widget-footer flex-between">
+            <span class="storage-footer-info">
+                <i class="ph ph-files"></i> Total de <b>${fileCount}</b> arquivos armazenados
+            </span>
+            <button id="btn-refresh-storage" class="storage-refresh-btn" ${isLoading ? 'disabled' : ''}>
+                <i class="ph ph-arrows-clockwise ${isLoading ? 'ph-spin' : ''}"></i> 
+                ${isLoading ? 'Atualizando...' : 'Atualizar'}
+            </button>
+        </div>
+    `;
+
+    const btnRefresh = container.querySelector('#btn-refresh-storage');
+    if (btnRefresh) {
+        btnRefresh.onclick = (e) => {
+            e.stopPropagation();
+            console.log("[Firebase Storage] Atualização manual solicitada. Recalculando...");
+            state.projects.forEach(project => {
+                if (project.id === 'p_default') return;
+                const items = project.items || [];
+                items.forEach(item => {
+                    const attachments = item.attachments || [];
+                    attachments.forEach(att => {
+                        delete att.size;
+                    });
+                });
+            });
+            updateFirebaseStorageUI();
+        };
+    }
 }
