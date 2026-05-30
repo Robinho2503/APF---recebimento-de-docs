@@ -3409,6 +3409,19 @@ function createNode(item, level) {
                     updateGlobalDateUI();
                     renderTree();
                     addAuditLog('Status de Validação', `Status de <strong>${item.name}</strong> alterado de "${oldStatus || 'Pendente'}" para "${item.validationStatus}"`, 'warning');
+                    
+                    // Notificar no Teams caso mude para Apontamento e já exista uma observação salva
+                    if (newStatus === 'Apontamento' && item.observation && item.observation.trim() !== '') {
+                        const sectorName = getItemSector(item.id) || 'Geral';
+                        const currProj = getCurrentProject();
+                        const projectName = currProj?.name || 'Desconhecido';
+                        
+                        sendTeamsNotification(sectorName, {
+                            projectName: projectName,
+                            documentName: item.name,
+                            details: item.observation
+                        });
+                    }
                 });
 
                 mgmtFields.appendChild(statusBtnGroup);
@@ -4052,6 +4065,19 @@ function renderPendenciasMgmt() {
                 updateGlobalDateUI();
                 renderPendenciasMgmt();
                 renderTree();
+                
+                // Notificar no Teams caso a pendência mude para Apontamento e já tenha observação
+                if (newStatus === 'Apontamento' && p.observation && p.observation.trim() !== '') {
+                    const sectorName = p.sector || 'Geral';
+                    const currProj = getCurrentProject();
+                    const projectName = currProj?.name || 'Desconhecido';
+                    
+                    sendTeamsNotification(sectorName, {
+                        projectName: projectName,
+                        documentName: p.docName,
+                        details: p.observation
+                    });
+                }
             });
             statusContainer.appendChild(btns);
         }
@@ -4067,6 +4093,19 @@ function renderPendenciasMgmt() {
                 renderTree();
                 if (p.observation) {
                     addAuditLog('Apontamento de Pendência', `Novo apontamento em <strong>${p.docName}</strong>: "${p.observation}"`, 'warning');
+                    
+                    // Notificar no Teams ao desfocar (terminar de escrever o apontamento da pendência)
+                    if (p.validationStatus === 'Apontamento') {
+                        const sectorName = p.sector || 'Geral';
+                        const currProj = getCurrentProject();
+                        const projectName = currProj?.name || 'Desconhecido';
+                        
+                        sendTeamsNotification(sectorName, {
+                            projectName: projectName,
+                            documentName: p.docName,
+                            details: p.observation
+                        });
+                    }
                 }
             };
         }
