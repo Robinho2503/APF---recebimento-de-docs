@@ -1465,7 +1465,21 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
     gap: 0.2rem;
     margin-bottom: 0.5rem;
     transition: all 0.2s ease;
+    animation: cascadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    opacity: 0;
 }
+
+.audit-entry-compact:nth-child(1) { animation-delay: 0.05s; }
+.audit-entry-compact:nth-child(2) { animation-delay: 0.10s; }
+.audit-entry-compact:nth-child(3) { animation-delay: 0.15s; }
+.audit-entry-compact:nth-child(4) { animation-delay: 0.20s; }
+.audit-entry-compact:nth-child(5) { animation-delay: 0.25s; }
+.audit-entry-compact:nth-child(6) { animation-delay: 0.30s; }
+.audit-entry-compact:nth-child(7) { animation-delay: 0.35s; }
+.audit-entry-compact:nth-child(8) { animation-delay: 0.40s; }
+.audit-entry-compact:nth-child(9) { animation-delay: 0.45s; }
+.audit-entry-compact:nth-child(10) { animation-delay: 0.50s; }
+.audit-entry-compact:nth-child(n+11) { animation-delay: 0.55s; }
 
 .audit-entry-compact:hover {
     background: rgba(255, 255, 255, 0.04);
