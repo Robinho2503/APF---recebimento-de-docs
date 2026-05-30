@@ -2229,19 +2229,24 @@ function getItemSortPriority(item) {
         return 0;
     }
 
+    // Se for marcado como "Não Obrigatório", vai para o final absoluto (Prioridade 4)
+    if (item.isNotApplicable) {
+        return 4;
+    }
+
     const hasAtt = item.attachments && item.attachments.length > 0;
     const status = (item.validationStatus || '').trim().toLowerCase();
 
-    // Grupo 1: Pendente (sem anexo e aplicável) ou com Apontamento
-    if ((!hasAtt && !item.isNotApplicable) || status === 'apontamento') {
+    // Grupo 1: Pendente (sem anexo) ou com Apontamento
+    if (!hasAtt || status === 'apontamento') {
         return 1;
     }
     // Grupo 2: Em Análise
     if (hasAtt && status !== 'validado' && status !== 'apf check' && status !== 'apontamento') {
         return 2;
     }
-    // Grupo 3: Validado ou Não se Aplica
-    if (item.isNotApplicable || status === 'validado' || status === 'apf check') {
+    // Grupo 3: Validado
+    if (status === 'validado' || status === 'apf check') {
         return 3;
     }
 
