@@ -3073,9 +3073,7 @@ function createAttachmentBadge(att, itemId, canEdit, isMgmt = false, isPendencia
     btnDel.onclick = (e) => { e.stopPropagation(); window.handleDeleteFile(itemId, att.id, isPendencia); };
     
     if (!canEdit) {
-        btnDel.disabled = true;
-        btnDel.style.opacity = '0.3';
-        btnDel.style.cursor = 'not-allowed';
+        btnDel.style.display = 'none';
     }
     attBadge.appendChild(btnDel);
 
@@ -3095,7 +3093,7 @@ function createNode(item, level) {
     const isOleUser = authenticatedSector === 'Olé';
     const isOleProject = !!currProj.isOle;
 
-    let canEdit = isAPF || authenticatedSector === nodeSector;
+    let canEdit = isAPF || (authenticatedSector || '').trim().toLowerCase() === (nodeSector || '').trim().toLowerCase();
 
     // Login Olé tem acesso irrestrito em projetos Olé
     if (isOleUser && isOleProject) {
@@ -3329,9 +3327,7 @@ function createNode(item, level) {
             }
 
             if (!canEdit) {
-                btnAttach.disabled = true;
-                btnAttach.style.opacity = '0.3';
-                btnAttach.title = 'Apenas o setor proprietário pode anexar';
+                btnAttach.style.display = 'none';
             }
 
             // Justificativa / Observação (Sempre disponível para folhas)
