@@ -2490,6 +2490,9 @@ function renderPendenciasChecklist(curr) {
         itemRight.appendChild(btnObs);
         itemRight.appendChild(obsBox);
 
+        node.appendChild(itemLeft);
+        node.appendChild(itemRight);
+
         // NOVO: Listagem de Anexos Vertical (Agora dentro do quadro do item)
         if (hasAtt) {
             const attContainer = document.createElement('div');
