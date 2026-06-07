@@ -359,21 +359,37 @@ function renderAfterUpdate() {
     updateFirebaseStorageUI();
 }
 
+let dirtyProjectIds = new Set();
 let saveTimeout = null;
+
 function saveState() {
+    // Adicionar síncronamente o projeto atual modificado à lista de salvamento pendente
+    const curr = getCurrentProject();
+    if (curr && curr.id !== 'none' && curr.id !== 'p_default') {
+        dirtyProjectIds.add(curr.id);
+    }
+
     if (saveTimeout) clearTimeout(saveTimeout);
 
     // Aumento de Debounce para 2000ms (Sugestão 2)
     saveTimeout = setTimeout(async () => {
         console.log("Sincronizando com o cloud...");
 
-        // 1. Salvar o documento individual do projeto selecionado (Sugestão 1 e 3)
-        const curr = getCurrentProject();
-        if (curr && curr.id !== 'none') {
-            const projectDocRef = doc(db, `projects/${curr.id}`);
-            try {
-                await setDoc(projectDocRef, curr);
-            } catch (e) { console.error("Erro ao salvar projeto individual:", e); }
+        // 1. Salvar todos os projetos modificados (Surgidos por race condition)
+        const idsToSave = Array.from(dirtyProjectIds);
+        dirtyProjectIds.clear(); // Limpar a fila antes de iniciar as escritas assíncronas
+
+        for (const id of idsToSave) {
+            const proj = state.projects.find(p => p.id === id);
+            if (proj) {
+                const projectDocRef = doc(db, `projects/${id}`);
+                try {
+                    await setDoc(projectDocRef, proj);
+                    console.log(`Projeto ${id} individual sincronizado.`);
+                } catch (e) {
+                    console.error(`Erro ao salvar projeto individual ${id}:`, e);
+                }
+            }
         }
 
         // 2. Salvar o Registro Global (Índice) sem os itens pesados (Sugestão 3)
