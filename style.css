@@ -446,6 +446,26 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
     border-color: var(--primary) !important;
 }
 
+.auth-nav-tabs .tab-btn-static {
+    border: 1px solid var(--primary) !important;
+    background: var(--primary) !important;
+    color: var(--bg-dark) !important;
+    border-radius: 0.5rem !important;
+    padding: 0.4rem 1rem !important;
+    font-weight: 700 !important;
+    font-size: 0.85rem !important;
+    margin: 0 !important;
+    height: 34px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+    opacity: 1;
+    cursor: default;
+    pointer-events: none;
+    user-select: none;
+}
+
 /* Badges & Indicators */
 .badges-group {
     display: flex;
