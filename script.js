@@ -2106,7 +2106,7 @@ function renderTracking() {
 
         // Define color for the status indicator pseudo-element
         let statusColor = 'var(--primary)';
-        if (p.pendenciaActive) statusColor = 'var(--danger)';
+        if (p.pendenciaActive) statusColor = 'var(--purple)';
         else if (p.engAnalysisOpened) statusColor = 'var(--info)';
         card.style.setProperty('--indicator-color', statusColor);
 
@@ -2171,7 +2171,7 @@ function renderTracking() {
             const displayDays = diffDays >= 0 ? diffDays : 0;
 
             trackingLine = `
-                <div class="status-banner status-banner-danger">
+                <div class="status-banner status-banner-purple">
                     <i class="ph ph-warning-diamond" style="font-size: 0.8rem;"></i> Resolução de pendências │ ${displayDays}d
                 </div>
             `;
@@ -2212,8 +2212,8 @@ function renderTracking() {
         let titleStyle = '';
         let iconStyle = 'color: var(--primary);';
         if (p.pendenciaActive) {
-            titleStyle = 'color: var(--danger);';
-            iconStyle = 'color: var(--danger);';
+            titleStyle = 'color: var(--purple);';
+            iconStyle = 'color: var(--purple);';
         } else if (p.engAnalysisOpened) {
             titleStyle = 'color: var(--info);';
             iconStyle = 'color: var(--info);';

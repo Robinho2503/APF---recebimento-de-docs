@@ -14,6 +14,8 @@
     --bg-dark: #121212;
     --primary-rgb: 250, 250, 250;
     --danger-rgb: 239, 68, 68;
+    --purple: #8b5cf6;
+    --purple-rgb: 139, 92, 246;
     --panel-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
     --sidebar-glass: rgba(10, 10, 12, 0.1);
     --card-bg: rgba(255, 255, 255, 0.03);
@@ -39,6 +41,8 @@
     --bg-dark: #f8fafc;
     --primary-rgb: 15, 23, 42;
     --danger-rgb: 220, 38, 38;
+    --purple: #6d28d9;
+    --purple-rgb: 109, 40, 217;
     --panel-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
     --sidebar-glass: rgba(255, 255, 255, 0.1);
     --card-bg: rgba(15, 23, 42, 0.03);
@@ -2047,11 +2051,11 @@ hr {
     visibility: hidden !important;
 }
 
-/* Sidebar PendÃƒÂªncia Destaque - ReforÃƒÂ§ado */
+/* Sidebar Pendência Destaque - Roxo */
 .sidebar .tracking-card.pendencia-active {
-    border: 2px solid var(--danger) !important;
+    border: 2px solid var(--purple) !important;
     border-left-width: 6px !important;
-    box-shadow: 0 0 15px rgba(239, 68, 68, 0.1);
+    box-shadow: 0 0 15px rgba(var(--purple-rgb), 0.15);
 }
 
 /* PendÃƒÂªncia Item Layout - Fixed Right */
@@ -2906,6 +2910,7 @@ hr {
 }
 .status-banner-danger { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: var(--danger); }
 .status-banner-info { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); color: var(--info); }
+.status-banner-purple { background: rgba(var(--purple-rgb), 0.1); border: 1px solid rgba(var(--purple-rgb), 0.2); color: var(--purple); }
 
 .light-mode .status-banner-danger { background: rgba(239, 68, 68, 0.08) !important; border-color: rgba(239, 68, 68, 0.15) !important; color: #991b1b !important; }
 .light-mode .status-banner-info { background: rgba(59, 130, 246, 0.08) !important; border-color: rgba(59, 130, 246, 0.15) !important; color: #0369a1 !important; }
