@@ -2053,8 +2053,7 @@ hr {
 
 /* Sidebar Pendência Destaque - Roxo */
 .sidebar .tracking-card.pendencia-active {
-    border: 2px solid var(--purple) !important;
-    border-left-width: 6px !important;
+    border: none !important;
     box-shadow: 0 0 15px rgba(var(--purple-rgb), 0.15);
 }
 
