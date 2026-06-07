@@ -1442,14 +1442,18 @@ function applySidebarState() {
     if (!sidebarApf) return;
     const appContainer = document.querySelector('.app-container');
 
+    const topBarTitle = document.getElementById('top-bar-title-text');
+
     if (localUI.sidebarCollapsed) {
         sidebarApf.classList.add('collapsed');
         if (appContainer) appContainer.classList.add('expanded');
         if (btnToggleSidebar) btnToggleSidebar.classList.remove('active');
+        if (topBarTitle) topBarTitle.style.display = 'none';
     } else {
         sidebarApf.classList.remove('collapsed');
         if (appContainer) appContainer.classList.remove('expanded');
         if (btnToggleSidebar) btnToggleSidebar.classList.add('active');
+        if (topBarTitle) topBarTitle.style.display = '';
     }
 
     // Em mobile, também controlamos a classe mobile-active se necessário, 
