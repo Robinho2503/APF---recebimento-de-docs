@@ -2,7 +2,7 @@
 console.log("APF Script: Iniciando carregamento...");
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, onSnapshot, getDoc, getDocs, collection, query, where, serverTimestamp, deleteDoc, enableIndexedDbPersistence } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject, getMetadata } from "firebase/storage";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject, getMetadata, listAll } from "firebase/storage";
 
 // Firebase Configuration & Initialization
 const firebaseConfig = {
@@ -307,6 +307,9 @@ async function syncWithCloud() {
                     pendenciaStartDate: ''
                 });
             }
+            
+            if (cloudData.storageBytes === undefined) cloudData.storageBytes = 0;
+            if (cloudData.storageFileCount === undefined) cloudData.storageFileCount = 0;
 
             state = cloudData;
             localStorage.setItem(CACHE_KEY, JSON.stringify(state)); // Update cache
@@ -430,7 +433,9 @@ function saveState() {
                 };
             }),
             settings: state.settings || {},
-            auditLog: (state.auditLog || []).slice(-100) // Limitar histórico no cloud para 100 itens
+            auditLog: (state.auditLog || []).slice(-100), // Limitar histórico no cloud para 100 itens
+            storageBytes: state.storageBytes || 0,
+            storageFileCount: state.storageFileCount || 0
         };
 
         // Cache local completo
@@ -4294,6 +4299,11 @@ window.handleFileUpload = async function (itemId, files, isPendencia = false) {
                         source: 'firebase'
                     });
 
+                    // Atualizar cache local de armazenamento em tempo real
+                    state.storageBytes = (state.storageBytes || 0) + fileToUpload.size;
+                    state.storageFileCount = (state.storageFileCount || 0) + 1;
+                    updateFirebaseStorageUI();
+
                     targetItem.validationStatus = 'Em Análise de APF';
                 } catch (err) {
                     console.error("Erro no upload para o Firebase Storage", err);
@@ -4375,6 +4385,13 @@ window.handleDeleteFile = async function (itemId, fileId, isPendencia = false) {
                         const storageRef = ref(storage, att.storagePath);
                         await deleteObject(storageRef);
                     }
+                    // Atualizar cache local de armazenamento em tempo real
+                    if (att.size !== undefined && typeof att.size === 'number') {
+                        state.storageBytes = Math.max(0, (state.storageBytes || 0) - att.size);
+                    }
+                    state.storageFileCount = Math.max(0, (state.storageFileCount || 0) - 1);
+                    updateFirebaseStorageUI();
+
                     const deletedFileName = att.name;
                     targetItem.attachments = targetItem.attachments.filter(a => a.id !== fileId);
                     saveState();
@@ -5372,6 +5389,67 @@ function formatBytes(bytes, decimals = 2) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
+async function calculateStorageFromFirebaseStorage() {
+    console.log("[Firebase Storage] Iniciando varredura recursiva do bucket...");
+    
+    async function scanFolder(folderRef) {
+        let bytes = 0;
+        let files = 0;
+        
+        try {
+            const res = await listAll(folderRef);
+            
+            // Obter metadados de todos os arquivos nesta pasta em paralelo
+            const itemPromises = res.items.map(async (itemRef) => {
+                try {
+                    const meta = await getMetadata(itemRef);
+                    return { size: meta.size || 0, count: 1 };
+                } catch (err) {
+                    console.warn(`[Firebase Storage] Erro ao obter metadados de ${itemRef.fullPath}:`, err);
+                    return { size: 0, count: 0 };
+                }
+            });
+            
+            const itemResults = await Promise.all(itemPromises);
+            for (const r of itemResults) {
+                bytes += r.size;
+                files += r.count;
+            }
+            
+            // Processar subpastas recursivamente em paralelo
+            if (res.prefixes && res.prefixes.length > 0) {
+                const subfolderPromises = res.prefixes.map(prefixRef => scanFolder(prefixRef));
+                const subfolderResults = await Promise.all(subfolderPromises);
+                for (const r of subfolderResults) {
+                    bytes += r.bytes;
+                    files += r.files;
+                }
+            }
+        } catch (err) {
+            console.error(`[Firebase Storage] Erro ao listar a pasta ${folderRef.fullPath || 'raiz'}:`, err);
+        }
+        
+        return { bytes, files };
+    }
+    
+    // Tenta primeiro no root (ref(storage)), se falhar tenta na subpasta APF_Projetos
+    try {
+        const rootRef = ref(storage);
+        const result = await scanFolder(rootRef);
+        return result;
+    } catch (e) {
+        console.warn("[Firebase Storage] Falha ao escanear raiz do bucket. Tentando na subpasta APF_Projetos...", e);
+        try {
+            const apfRef = ref(storage, "APF_Projetos");
+            const result = await scanFolder(apfRef);
+            return result;
+        } catch (subErr) {
+            console.error("[Firebase Storage] Falha geral ao escanear bucket de armazenamento:", subErr);
+            throw subErr;
+        }
+    }
+}
+
 async function updateFirebaseStorageUI(forceFetchAll = false) {
     const widget = document.getElementById('firebase-storage-widget');
     if (!widget) return;
@@ -5383,76 +5461,20 @@ async function updateFirebaseStorageUI(forceFetchAll = false) {
     }
     widget.style.display = 'block';
 
-    // Verificamos se precisamos carregar os itens de todos os projetos para calcular o tamanho.
-    // Fazemos isso se:
-    // 1. Algum projeto (que não seja p_default) não tiver os itens carregados em memória E não tiver storageBytes definido.
-    // 2. Ou se forceFetchAll for true.
-    const needsFetch = forceFetchAll || state.projects.some(p => p.id !== 'p_default' && !p.items && p.storageBytes === undefined);
+    const needsFetch = forceFetchAll || state.storageBytes === undefined || state.storageBytes === null;
 
     if (needsFetch && !isStorageCalculating) {
         isStorageCalculating = true;
-        renderStorageWidget(widget, 0, 0, true);
+        renderStorageWidget(widget, state.storageBytes || 0, state.storageFileCount || 0, true);
 
         // Processa de forma assíncrona para não travar a UI
         (async () => {
-            console.log("[Firebase Storage] Calculando armazenamento total de todos os projetos...");
-            let totalBytes = 0;
-            let fileCount = 0;
-            
             try {
-                const projectsCol = collection(db, "projects");
-                const snap = await getDocs(projectsCol);
+                const result = await calculateStorageFromFirebaseStorage();
+                state.storageBytes = result.bytes;
+                state.storageFileCount = result.files;
                 
-                snap.forEach(docSnap => {
-                    const id = docSnap.id;
-                    if (id === 'p_default') return;
-                    const fullData = docSnap.data();
-                    
-                    // Atualizar o projeto na memória com os dados mais recentes do Firestore
-                    const proj = state.projects.find(p => p.id === id);
-                    if (proj) {
-                        proj.items = fullData.items || [];
-                        Object.assign(proj, fullData);
-                    }
-                });
-
-                // Agora que todos os projetos estão na memória com seus itens, calculamos o tamanho
-                state.projects.forEach(project => {
-                    if (project.id === 'p_default') return;
-                    let projBytes = 0;
-                    let projFiles = 0;
-
-                    const items = project.items || [];
-                    items.forEach(item => {
-                        const attachments = item.attachments || [];
-                        attachments.forEach(att => {
-                            projFiles++;
-                            if (att.size !== undefined && typeof att.size === 'number') {
-                                projBytes += att.size;
-                            }
-                        });
-                    });
-
-                    // Também contar pendências Caixa
-                    const pends = project.pendencias || [];
-                    pends.forEach(p => {
-                        const attachments = p.attachments || [];
-                        attachments.forEach(att => {
-                            projFiles++;
-                            if (att.size !== undefined && typeof att.size === 'number') {
-                                projBytes += att.size;
-                            }
-                        });
-                    });
-
-                    project.storageBytes = projBytes;
-                    project.storageFileCount = projFiles;
-                    
-                    totalBytes += projBytes;
-                    fileCount += projFiles;
-                });
-
-                console.log(`[Firebase Storage] Armazenamento total recalculado: ${formatBytes(totalBytes)} (${fileCount} arquivos)`);
+                console.log(`[Firebase Storage] Armazenamento total recalculado: ${formatBytes(state.storageBytes)} (${state.storageFileCount} arquivos)`);
                 
                 // Salvar o estado com os metadados calculados
                 saveState();
@@ -5460,51 +5482,14 @@ async function updateFirebaseStorageUI(forceFetchAll = false) {
                 console.error("[Firebase Storage] Erro ao calcular armazenamento total:", err);
             } finally {
                 isStorageCalculating = false;
-                renderStorageWidget(widget, totalBytes, fileCount, false);
+                renderStorageWidget(widget, state.storageBytes || 0, state.storageFileCount || 0, false);
             }
         })();
         return;
     }
 
-    // Se já temos as informações calculadas (ou estamos calculando), apenas somamos os metadados
-    let totalBytes = 0;
-    let fileCount = 0;
-
-    state.projects.forEach(project => {
-        if (project.id === 'p_default') return;
-        
-        // Se os itens estão em memória, recalculamos o valor mais recente (para capturar uploads em tempo real do projeto ativo)
-        if (project.items) {
-            let projBytes = 0;
-            let projFiles = 0;
-            project.items.forEach(item => {
-                const attachments = item.attachments || [];
-                attachments.forEach(att => {
-                    projFiles++;
-                    if (att.size !== undefined && typeof att.size === 'number') {
-                        projBytes += att.size;
-                    }
-                });
-            });
-            const pends = project.pendencias || [];
-            pends.forEach(p => {
-                const attachments = p.attachments || [];
-                attachments.forEach(att => {
-                    projFiles++;
-                    if (att.size !== undefined && typeof att.size === 'number') {
-                        projBytes += att.size;
-                    }
-                });
-            });
-            project.storageBytes = projBytes;
-            project.storageFileCount = projFiles;
-        }
-
-        totalBytes += project.storageBytes || 0;
-        fileCount += project.storageFileCount || 0;
-    });
-
-    renderStorageWidget(widget, totalBytes, fileCount, isStorageCalculating);
+    // Se já temos as informações calculadas (ou estamos calculando), apenas exibimos o cache
+    renderStorageWidget(widget, state.storageBytes || 0, state.storageFileCount || 0, isStorageCalculating);
 }
 
 function renderStorageWidget(container, usedBytes, fileCount, isLoading) {
