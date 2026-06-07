@@ -410,9 +410,9 @@ async function selectProject(projectId) {
     // Se o projeto já é o atual E já possui itens, ignoramos para evitar redundância
     if (!isNewSelection && (project.items || []).length > 0) return;
 
-    // Se o projeto não tem itens carregados, busca no Firestore
-    if (!(project.items || []).length && projectId !== 'none') {
-        console.log(`Carregando detalhes do projeto ${projectId}...`);
+    // Sempre carregar/atualizar os dados do Firestore se for uma nova seleção ou se não tiver itens carregados
+    if ((isNewSelection || !(project.items || []).length) && projectId !== 'none') {
+        console.log(`Carregando/atualizando detalhes do projeto ${projectId}...`);
         const projectDocRef = doc(db, `projects/${projectId}`);
         try {
             const snap = await getDoc(projectDocRef);
@@ -2381,7 +2381,7 @@ function renderPendenciasChecklist(curr) {
     const isAPF = authenticatedSector === 'APF';
 
     curr.pendencias.forEach(p => {
-        const canEditPend = isAPF || authenticatedSector === p.sector;
+        const canEditPend = isAPF || (authenticatedSector || '').trim().toLowerCase() === (p.sector || '').trim().toLowerCase();
         const pNodeWrapper = document.createElement('div');
         pNodeWrapper.className = 'tree-node pendencia-node';
 
@@ -2429,19 +2429,21 @@ function renderPendenciasChecklist(curr) {
             statusRow.appendChild(valBadge);
         }
 
-        // Attach Button
-        const btnAttach = document.createElement('button');
-        btnAttach.className = 'icon-btn attach-icon-btn';
-        btnAttach.title = 'Anexar documento de pendência';
-        btnAttach.innerHTML = '<i class="ph ph-paperclip"></i>';
-        btnAttach.onclick = (e) => {
-            e.stopPropagation();
-            activeUploadItemId = p.id;
-            isUploadPendencia = true;
-            if (globalFileInput) globalFileInput.click();
-        };
+        // Attach Button - Permitido apenas para o setor responsável ou APF
+        if (canEditPend) {
+            const btnAttach = document.createElement('button');
+            btnAttach.className = 'icon-btn attach-icon-btn';
+            btnAttach.title = 'Anexar documento de pendência';
+            btnAttach.innerHTML = '<i class="ph ph-paperclip"></i>';
+            btnAttach.onclick = (e) => {
+                e.stopPropagation();
+                activeUploadItemId = p.id;
+                isUploadPendencia = true;
+                if (globalFileInput) globalFileInput.click();
+            };
+            statusRow.appendChild(btnAttach);
+        }
 
-        statusRow.appendChild(btnAttach);
         itemRight.appendChild(statusRow);
 
         // Observation Field (Compact and toggleable)
@@ -2460,16 +2462,23 @@ function renderPendenciasChecklist(curr) {
         obsInput.style.width = '100%';
         obsInput.style.height = '60px';
         obsInput.style.fontSize = '0.75rem';
-        obsInput.placeholder = 'Observação...';
-        obsInput.value = p.observation || '';
-        obsInput.onchange = (e) => {
-            const oldVal = p.observation || '';
-            p.observation = e.target.value;
-            saveState();
-            if (oldVal !== p.observation) {
-                addAuditLog('Observação Adicionada', `Nova observação em <strong>${p.docName}</strong>: "${p.observation}"`, 'info');
-            }
-        };
+        
+        if (canEditPend) {
+            obsInput.placeholder = 'Observação...';
+            obsInput.value = p.observation || '';
+            obsInput.onchange = (e) => {
+                const oldVal = p.observation || '';
+                p.observation = e.target.value;
+                saveState();
+                if (oldVal !== p.observation) {
+                    addAuditLog('Observação Adicionada', `Nova observação em <strong>${p.docName}</strong>: "${p.observation}"`, 'info');
+                }
+            };
+        } else {
+            obsInput.disabled = true;
+            obsInput.placeholder = 'Apenas o setor responsável pode adicionar observações.';
+            obsInput.value = p.observation || '';
+        }
 
         obsBox.appendChild(obsInput);
         if (p.observation && p.observation.trim() !== '') {
@@ -2535,10 +2544,11 @@ function updateProjectProgressUI(curr) {
 
     let filteredStatsItems = allStatsItems;
     if (!isAPF) {
+        const userSectorNormalized = (authenticatedSector || '').trim().toLowerCase();
         if (isPendenciaMode) {
-            filteredStatsItems = allStatsItems.filter(i => i.sector === authenticatedSector);
+            filteredStatsItems = allStatsItems.filter(i => (i.sector || '').trim().toLowerCase() === userSectorNormalized);
         } else {
-            filteredStatsItems = allStatsItems.filter(i => getItemSector(i.id) === authenticatedSector);
+            filteredStatsItems = allStatsItems.filter(i => (getItemSector(i.id) || '').trim().toLowerCase() === userSectorNormalized);
         }
     }
 
@@ -4168,7 +4178,10 @@ window.handleFileUpload = async function (itemId, files, isPendencia = false) {
         const itemSector = isPendencia ? targetItem?.sector : getItemSector(itemId);
         const hasOleUnrestrictedAccess = isOleUser && isOleProject;
 
-        if (itemSector !== authenticatedSector && !hasOleUnrestrictedAccess) {
+        const itemSectorNormalized = (itemSector || '').trim().toLowerCase();
+        const userSectorNormalized = (authenticatedSector || '').trim().toLowerCase();
+
+        if (itemSectorNormalized !== userSectorNormalized && !hasOleUnrestrictedAccess) {
             showTemporaryMessage(`Acesso negado. Você só pode enviar documentos para o setor "${authenticatedSector}".`);
             return;
         }
@@ -4284,7 +4297,10 @@ window.handleDeleteFile = async function (itemId, fileId, isPendencia = false) {
         const itemSector = isPendencia ? currProject?.pendencias.find(p => p.id === itemId)?.sector : getItemSector(itemId);
         const hasOleUnrestrictedAccess = isOleUser && isOleProject;
 
-        if (itemSector !== authenticatedSector && !hasOleUnrestrictedAccess) {
+        const itemSectorNormalized = (itemSector || '').trim().toLowerCase();
+        const userSectorNormalized = (authenticatedSector || '').trim().toLowerCase();
+
+        if (itemSectorNormalized !== userSectorNormalized && !hasOleUnrestrictedAccess) {
             showTemporaryMessage("Acesso negado. Você não tem permissão para excluir documentos de outros setores.");
             return;
         }
@@ -4343,9 +4359,34 @@ window.openPreview = function (fileObj) {
 function initAIEngine() {
     const btnRefresh = document.getElementById('btn-refresh-analysis');
     if (btnRefresh) {
-        btnRefresh.onclick = () => {
+        btnRefresh.onclick = async () => {
             btnRefresh.querySelector('i').style.animation = 'spin 0.6s linear';
-            renderAnalysisPanels();
+            
+            // Buscar dados atualizados do projeto ativo no Firestore
+            const curr = getCurrentProject();
+            if (curr && curr.id !== 'none' && curr.id !== 'p_default') {
+                console.log(`Atualizando dados do projeto ${curr.id} do Firestore...`);
+                const projectDocRef = doc(db, `projects/${curr.id}`);
+                try {
+                    const snap = await getDoc(projectDocRef);
+                    if (snap.exists()) {
+                        const fullData = snap.data();
+                        curr.items = fullData.items || [];
+                        Object.assign(curr, fullData);
+                        localStorage.setItem(CACHE_KEY, JSON.stringify(state));
+                        renderAfterUpdate();
+                        showTemporaryMessage("Dados do empreendimento atualizados com sucesso!");
+                    } else {
+                        renderAnalysisPanels();
+                    }
+                } catch (e) {
+                    console.error("Erro ao atualizar projeto:", e);
+                    renderAnalysisPanels();
+                }
+            } else {
+                renderAnalysisPanels();
+            }
+            
             setTimeout(() => { if (btnRefresh.querySelector('i')) btnRefresh.querySelector('i').style.animation = ''; }, 700);
         };
     }
