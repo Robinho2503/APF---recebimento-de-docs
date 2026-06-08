@@ -4130,6 +4130,21 @@ function renderPendenciasMgmt() {
                 }
             });
         };
+        if (p.attachments && p.attachments.length > 0) {
+            const attContainer = document.createElement('div');
+            attContainer.className = 'node-attachments-container';
+            attContainer.style.paddingLeft = '0'; // alinhado à esquerda
+            attContainer.style.marginTop = '0.5rem';
+            p.attachments.forEach(att => {
+                const badge = createAttachmentBadge(att, p.id, true, true, true);
+                attContainer.appendChild(badge);
+            });
+            const leftCol = row.firstElementChild;
+            if (leftCol) {
+                leftCol.appendChild(attContainer);
+            }
+        }
+
         listCont.appendChild(row);
 
         // Bind events for the new validation controls
