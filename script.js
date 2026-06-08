@@ -191,8 +191,7 @@ function generateId() { return Math.random().toString(36).substr(2, 9); }
 function getCurrentProject() { return state.projects.find(p => p.id === localUI.currentProjectId); }
 function getItems() { return getCurrentProject()?.items || []; }
 function isMgmtActive() {
-    const activeTabObj = Array.from(tabs).find(t => t.classList.contains('active'));
-    return activeTabObj && activeTabObj.dataset.tab === 'management';
+    return authenticatedSector === 'APF';
 }
 
 
