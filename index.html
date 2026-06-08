@@ -116,14 +116,18 @@
             <!-- Conteúdo Real (Abas, Checklist, Análise) -->
             <div id="main-content-wrapper" style="display: none;">
                 <div class="flex-between mb-2">
-                    <!-- Esquerda: Ações de Gestão (Visível apenas para APF) -->
-                    <div id="header-mgmt-actions" style="display: none; align-items: center; gap: 0.75rem;">
-                        <button id="btn-new-project" class="icon-btn-highlight" title="Novo Empreendimento">
-                            <i class="ph ph-plus"></i>
+                    <div id="header-mgmt-actions" style="display: none; position: relative;">
+                        <button id="btn-new-project-dropdown" class="icon-btn-highlight" title="Gestão de Empreendimentos" style="display: flex; align-items: center; justify-content: center; gap: 0.35rem; width: auto; padding: 0.4rem 0.8rem; border-radius: 0.6rem;">
+                            <i class="ph ph-plus"></i> Novo Empreendimento <i class="ph ph-caret-down" style="font-size: 0.75rem;"></i>
                         </button>
-                        <button id="btn-open-template" class="icon-btn-premium" title="Modelo de Entrega">
-                            <i class="ph ph-layout"></i>
-                        </button>
+                        <div id="new-project-menu" class="edit-actions-dropdown hidden" style="left: 0; right: auto; min-width: 200px;">
+                            <button id="btn-new-project" class="dropdown-item">
+                                <i class="ph ph-plus-circle" style="color: var(--primary);"></i> Criar Empreendimento
+                            </button>
+                            <button id="btn-open-template" class="dropdown-item">
+                                <i class="ph ph-layout" style="color: var(--accent);"></i> Modelo de Checklist
+                            </button>
+                        </div>
                     </div>
                     <div style="flex-grow: 1;"></div>
                 <div style="display: flex; gap: 0.5rem; align-items: center; position: relative;">

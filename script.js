@@ -1061,6 +1061,34 @@ function initEventListeners() {
         });
     }
 
+    // Controle do Dropdown de Novo Empreendimento / Modelo de Checklist
+    const btnNewProjectDropdown = document.getElementById('btn-new-project-dropdown');
+    const newProjectMenu = document.getElementById('new-project-menu');
+
+    if (btnNewProjectDropdown && newProjectMenu) {
+        btnNewProjectDropdown.addEventListener('click', (e) => {
+            e.stopPropagation();
+            newProjectMenu.classList.toggle('hidden');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!btnNewProjectDropdown.contains(e.target) && !newProjectMenu.contains(e.target)) {
+                newProjectMenu.classList.add('hidden');
+            }
+        });
+
+        if (btnNewProject) {
+            btnNewProject.addEventListener('click', () => {
+                newProjectMenu.classList.add('hidden');
+            });
+        }
+        if (btnOpenTemplate) {
+            btnOpenTemplate.addEventListener('click', () => {
+                newProjectMenu.classList.add('hidden');
+            });
+        }
+    }
+
     if (btnConfirmNewProject) {
         btnConfirmNewProject.addEventListener('click', () => {
             const name = newProjNameInp.value.trim();
