@@ -61,6 +61,7 @@ let isInitialCloudLoad = true;
 let localUI = {
     expandedIds: new Set(),
     expandedPendenciasSectors: new Set(),
+    expandedMgmtPendenciasSectors: new Set(),
     showFullChecklistDuringPendencia: false,
     currentProjectId: null,
     sidebarCollapsed: false,
@@ -167,9 +168,10 @@ function loadLocalUI() {
         const saved = localStorage.getItem('apf_local_ui_v1');
         if (saved) {
             localUI = JSON.parse(saved);
-            // Ensure expandedIds and expandedPendenciasSectors are Sets
+            // Ensure expandedIds, expandedPendenciasSectors and expandedMgmtPendenciasSectors are Sets
             localUI.expandedIds = new Set(localUI.expandedIds || []);
             localUI.expandedPendenciasSectors = new Set(localUI.expandedPendenciasSectors || []);
+            localUI.expandedMgmtPendenciasSectors = new Set(localUI.expandedMgmtPendenciasSectors || []);
             localUI.showHistorySidebar = !!localUI.showHistorySidebar;
         }
     } catch (e) { console.warn("Erro ao carregar IU local", e); }
@@ -179,6 +181,7 @@ function saveLocalUI() {
     const toSave = {
         expandedIds: Array.from(localUI.expandedIds),
         expandedPendenciasSectors: Array.from(localUI.expandedPendenciasSectors || []),
+        expandedMgmtPendenciasSectors: Array.from(localUI.expandedMgmtPendenciasSectors || []),
         showFullChecklistDuringPendencia: localUI.showFullChecklistDuringPendencia,
         currentProjectId: localUI.currentProjectId,
         sidebarCollapsed: localUI.sidebarCollapsed,
@@ -4267,29 +4270,170 @@ function renderPendenciasMgmt() {
         return;
     }
 
+    // Agrupar pendências por setor
+    const pendenciasPorSetor = {};
     curr.pendencias.forEach(p => {
-        const row = document.createElement('div');
-        row.className = 'pendencia-mgmt-row';
-        if (editingPendenciaId === p.id) row.style.borderColor = 'var(--warning)';
+        const sectorName = p.sector || 'Geral';
+        if (!pendenciasPorSetor[sectorName]) {
+            pendenciasPorSetor[sectorName] = [];
+        }
+        pendenciasPorSetor[sectorName].push(p);
+    });
 
-        row.innerHTML = `
-            <div style="display: flex; flex-direction: column; flex: 1;">
-                <strong style="font-size: 0.85rem; color: white;">${p.docName}</strong>
-                <span style="font-size: 0.7rem; color: var(--text-muted);">${p.sector}</span>
-                ${p.specification ? `<span style="font-size: 0.7rem; color: var(--primary); font-style: italic;">Obs: ${p.specification}</span>` : ''}
-            </div>
-            
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
-                <div class="mgmt-controls-group status-btns-container" style="display: flex; gap: 0.4rem; align-items: center;">
-                    <!-- Botões de status inseridos via JS -->
+    const sortedSectors = Object.keys(pendenciasPorSetor).sort();
+
+    if (!localUI.expandedMgmtPendenciasSectors) {
+        localUI.expandedMgmtPendenciasSectors = new Set();
+    }
+
+    sortedSectors.forEach(sectorName => {
+        const pendenciasDoSetor = pendenciasPorSetor[sectorName];
+        const isExpanded = localUI.expandedMgmtPendenciasSectors.has(sectorName);
+
+        const sectorNode = document.createElement('div');
+        sectorNode.className = `tree-node ${isExpanded ? '' : 'collapsed'}`;
+        sectorNode.style.marginBottom = '0.75rem';
+
+        const sectorItem = document.createElement('div');
+        sectorItem.className = 'tree-item';
+        sectorItem.style.cursor = 'pointer';
+
+        // Lado Esquerdo do item de setor (Chevron + Ícone + Nome do Setor)
+        const itemLeft = document.createElement('div');
+        itemLeft.className = 'item-left';
+
+        const chevron = document.createElement('i');
+        chevron.className = 'ph ph-caret-down';
+        chevron.style.marginRight = '0.5rem';
+
+        const icon = document.createElement('i');
+        let iconClass = 'ph-folder';
+        const n = sectorName.toLowerCase();
+        if (n.includes('legaliza')) iconClass = 'ph-scales';
+        else if (n.includes('arquit') || n.includes('urbani')) iconClass = 'ph-compass-tool';
+        else if (n.includes('engenh')) iconClass = 'ph-wrench';
+        else if (n.includes('sustent')) iconClass = 'ph-leaf';
+        icon.className = `ph ${iconClass} item-icon`;
+
+        // Estatísticas do setor de pendências
+        const total = pendenciasDoSetor.length;
+        const entregues = pendenciasDoSetor.filter(p => p.attachments && p.attachments.length > 0).length;
+        const validadas = pendenciasDoSetor.filter(p => p.attachments && p.attachments.length > 0 && (p.validationStatus === 'Validado' || p.validationStatus === 'APF check')).length;
+        const apontamentos = pendenciasDoSetor.filter(p => p.validationStatus === 'Apontamento').length;
+
+        // Definir cor do ícone
+        let iconColor = 'var(--danger)';
+        if (total === validadas) {
+            iconColor = 'var(--accent)';
+        } else if (total === entregues) {
+            iconColor = 'var(--warning)';
+        } else if (apontamentos > 0) {
+            iconColor = 'var(--danger)';
+        }
+        icon.style.color = iconColor;
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'item-name root-name';
+        nameSpan.style.display = 'flex';
+        nameSpan.style.alignItems = 'center';
+        nameSpan.style.gap = '0.5rem';
+        nameSpan.style.fontSize = '1.05rem';
+        nameSpan.style.fontWeight = '700';
+
+        nameSpan.appendChild(chevron);
+        nameSpan.appendChild(icon);
+
+        const titleText = document.createTextNode(' ' + sectorName);
+        nameSpan.appendChild(titleText);
+
+        itemLeft.appendChild(nameSpan);
+
+        // Lado Direito do item de setor (Contadores de progresso e indicador de pendência)
+        const itemRight = document.createElement('div');
+        itemRight.className = 'item-right';
+
+        // Badge de progresso (ex: "1/3 Entregues")
+        const progBadge = document.createElement('span');
+        progBadge.className = entregues === total ? 'badge badge-validado badge-sm' : 'badge badge-analise badge-sm';
+        progBadge.textContent = `${entregues}/${total} Entregues`;
+        itemRight.appendChild(progBadge);
+
+        // Se houver apontamentos, exibir badge de apontamento
+        if (apontamentos > 0) {
+            const apBadge = document.createElement('span');
+            apBadge.className = 'badge badge-apontamento badge-sm';
+            apBadge.textContent = `${apontamentos} Apontamento(s)`;
+            itemRight.appendChild(apBadge);
+        }
+
+        // Se houver pendências críticas não entregues, exibir contador vermelho
+        const naoEntregues = total - entregues;
+        if (naoEntregues > 0) {
+            const pendCircle = document.createElement('span');
+            pendCircle.className = 'pending-circle';
+            pendCircle.textContent = naoEntregues;
+            itemRight.appendChild(pendCircle);
+        }
+
+        sectorItem.appendChild(itemLeft);
+        sectorItem.appendChild(itemRight);
+
+        // Clique no setor para alternar expansão
+        sectorItem.onclick = () => {
+            if (localUI.expandedMgmtPendenciasSectors.has(sectorName)) {
+                localUI.expandedMgmtPendenciasSectors.delete(sectorName);
+            } else {
+                localUI.expandedMgmtPendenciasSectors.add(sectorName);
+            }
+            saveLocalUI();
+            renderPendenciasMgmt();
+        };
+
+        sectorNode.appendChild(sectorItem);
+
+        // Container de filhos para as pendências de gestão
+        const childCont = document.createElement('div');
+        childCont.className = 'children-container';
+
+        pendenciasDoSetor.forEach(p => {
+            const row = document.createElement('div');
+            row.className = 'pendencia-mgmt-row';
+            if (editingPendenciaId === p.id) row.style.borderColor = 'var(--warning)';
+
+            // Borda colorida conforme o status na gestão também!
+            let borderCol = 'rgba(255,255,255,0.05)';
+            const hasAtt = p.attachments && p.attachments.length > 0;
+            if (hasAtt) {
+                if (p.validationStatus === 'Validado' || p.validationStatus === 'APF check') {
+                    borderCol = 'var(--accent)';
+                } else if (p.validationStatus === 'Apontamento') {
+                    borderCol = 'var(--danger)';
+                } else {
+                    borderCol = 'var(--warning)';
+                }
+            } else {
+                borderCol = 'rgba(239, 68, 68, 0.3)'; // Borda vermelha sutil para pendente
+            }
+            row.style.borderLeft = `3px solid ${borderCol}`;
+
+            row.innerHTML = `
+                <div style="display: flex; flex-direction: column; flex: 1; min-width: 0;">
+                    <strong style="font-size: 0.85rem; color: white; white-space: normal; word-break: break-word;">${p.docName}</strong>
+                    <span style="font-size: 0.7rem; color: var(--text-muted);">${p.sector}</span>
+                    ${p.specification ? `<span style="font-size: 0.7rem; color: var(--primary); font-style: italic; margin-top: 0.15rem; white-space: normal; word-break: break-word;">Obs: ${p.specification}</span>` : ''}
                 </div>
-                ${p.attachments && p.attachments.length > 0 && p.validationStatus === 'Apontamento' ? `
-                    <input type="text" class="input-modern btn-sm pendencia-obs-inp" style="max-width: 150px; padding: 0.2rem 0.4rem; font-size: 0.75rem;" placeholder="Qual apontamento?" value="${p.observation || ''}">
-                ` : ''}
-                ${!(p.attachments && p.attachments.length > 0) ? '<span style="font-size: 0.7rem; color: var(--text-muted); font-style: italic;">Sem anexo</span>' : ''}
-            </div>
+                
+                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                    <div class="mgmt-controls-group status-btns-container" style="display: flex; gap: 0.4rem; align-items: center;">
+                        <!-- Botões de status inseridos via JS -->
+                    </div>
+                    ${p.attachments && p.attachments.length > 0 && p.validationStatus === 'Apontamento' ? `
+                        <input type="text" class="input-modern btn-sm pendencia-obs-inp" style="max-width: 150px; padding: 0.2rem 0.4rem; font-size: 0.75rem;" placeholder="Qual apontamento?" value="${p.observation || ''}">
+                    ` : ''}
+                    ${!(p.attachments && p.attachments.length > 0) ? '<span style="font-size: 0.7rem; color: var(--text-muted); font-style: italic;">Sem anexo</span>' : ''}
+                </div>
 
-                <div style="display: flex; gap: 0.3rem;">
+                <div style="display: flex; gap: 0.3rem; align-items: center;">
                     <button class="icon-btn edit" title="Editar Pendência">
                         <i class="ph ph-pencil-simple"></i>
                     </button>
@@ -4297,126 +4441,96 @@ function renderPendenciasMgmt() {
                         <i class="ph ph-trash"></i>
                     </button>
                 </div>
-            </div>
-        `;
+            `;
 
-        row.querySelector('.edit').onclick = () => {
-            editingPendenciaId = p.id;
-            document.getElementById('new-pendencia-name').value = p.docName;
+            row.querySelector('.edit').onclick = () => {
+                editingPendenciaId = p.id;
+                document.getElementById('new-pendencia-name').value = p.docName;
 
-            const sectorSel = document.getElementById('new-pendencia-sector');
-            const sectorOtherInp = document.getElementById('new-pendencia-sector-other');
+                const sectorSel = document.getElementById('new-pendencia-sector');
+                const sectorOtherInp = document.getElementById('new-pendencia-sector-other');
 
-            // Check if sector exists in dropdown
-            let internalSector = false;
-            for (let opt of sectorSel.options) {
-                if (opt.value === p.sector) {
-                    sectorSel.value = p.sector;
-                    internalSector = true;
-                    break;
+                // Check if sector exists in dropdown
+                let internalSector = false;
+                for (let opt of sectorSel.options) {
+                    if (opt.value === p.sector) {
+                        sectorSel.value = p.sector;
+                        internalSector = true;
+                        break;
+                    }
+                }
+
+                if (!internalSector) {
+                    sectorSel.value = 'other';
+                    sectorOtherInp.value = p.sector;
+                    sectorOtherInp.classList.remove('hidden');
+                } else {
+                    sectorOtherInp.classList.add('hidden');
+                }
+
+                document.getElementById('new-pendencia-spec').value = p.specification || '';
+
+                btnAddPendencia.innerHTML = '<i class="ph ph-check"></i> Salvar Alterações';
+                btnAddPendencia.classList.remove('btn-danger');
+                btnAddPendencia.classList.add('btn-warning');
+
+                renderPendenciasMgmt(); // Re-render list to show active edit state
+                document.getElementById('pendencias-mgmt-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            };
+
+            row.querySelector('.delete').onclick = () => {
+                showConfirm({
+                    title: 'Remover Pendência',
+                    message: `Deseja remover a pendência "${p.docName}"?`,
+                    type: 'danger',
+                    confirmText: 'Remover',
+                    onConfirm: () => {
+                        if (editingPendenciaId === p.id) {
+                            editingPendenciaId = null;
+                            btnAddPendencia.innerHTML = '<i class="ph ph-plus"></i> Adicionar';
+                            btnAddPendencia.classList.remove('btn-warning');
+                            btnAddPendencia.classList.add('btn-danger');
+                            document.getElementById('new-pendencia-name').value = '';
+                            document.getElementById('new-pendencia-sector').value = '';
+                            document.getElementById('new-pendencia-spec').value = '';
+                        }
+                        curr.pendencias = curr.pendencias.filter(item => item.id !== p.id);
+                        addAuditLog('Pendência Removida', `A pendência <strong>${p.docName}</strong> do setor <strong>${p.sector}</strong> foi removida.`, 'danger');
+                        saveState();
+                        renderPendenciasMgmt();
+                        renderTree();
+                        showTemporaryMessage("Pendência removida.");
+                    }
+                });
+            };
+
+            if (p.attachments && p.attachments.length > 0) {
+                const attContainer = document.createElement('div');
+                attContainer.className = 'node-attachments-container';
+                attContainer.style.paddingLeft = '0'; // alinhado à esquerda
+                attContainer.style.marginTop = '0.5rem';
+                p.attachments.forEach(att => {
+                    const badge = createAttachmentBadge(att, p.id, true, true, true);
+                    attContainer.appendChild(badge);
+                });
+                const leftCol = row.firstElementChild;
+                if (leftCol) {
+                    leftCol.appendChild(attContainer);
                 }
             }
 
-            if (!internalSector) {
-                sectorSel.value = 'other';
-                sectorOtherInp.value = p.sector;
-                sectorOtherInp.classList.remove('hidden');
-            } else {
-                sectorOtherInp.classList.add('hidden');
-            }
-
-            document.getElementById('new-pendencia-spec').value = p.specification || '';
-
-            btnAddPendencia.innerHTML = '<i class="ph ph-check"></i> Salvar Alterações';
-            btnAddPendencia.classList.remove('btn-danger');
-            btnAddPendencia.classList.add('btn-warning');
-
-            renderPendenciasMgmt(); // Re-render list to show active edit state
-            document.getElementById('pendencias-mgmt-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
-        };
-
-        row.querySelector('.delete').onclick = () => {
-            showConfirm({
-                title: 'Remover Pendência',
-                message: `Deseja remover a pendência "${p.docName}"?`,
-                type: 'danger',
-                confirmText: 'Remover',
-                onConfirm: () => {
-                    if (editingPendenciaId === p.id) {
-                        editingPendenciaId = null;
-                        btnAddPendencia.innerHTML = '<i class="ph ph-plus"></i> Adicionar';
-                        btnAddPendencia.classList.remove('btn-warning');
-                        btnAddPendencia.classList.add('btn-danger');
-                        document.getElementById('new-pendencia-name').value = '';
-                        document.getElementById('new-pendencia-sector').value = '';
-                        document.getElementById('new-pendencia-spec').value = '';
-                    }
-                    curr.pendencias = curr.pendencias.filter(item => item.id !== p.id);
-                    addAuditLog('Pendência Removida', `A pendência <strong>${p.docName}</strong> do setor <strong>${p.sector}</strong> foi removida.`, 'danger');
+            // Bind events for the new validation controls
+            const statusContainer = row.querySelector('.status-btns-container');
+            if (statusContainer && p.attachments && p.attachments.length > 0) {
+                const btns = createStatusButtonGroup(p, (newStatus) => {
+                    p.validationStatus = newStatus;
                     saveState();
+                    updateGlobalDateUI();
                     renderPendenciasMgmt();
                     renderTree();
-                    showTemporaryMessage("Pendência removida.");
-                }
-            });
-        };
-        if (p.attachments && p.attachments.length > 0) {
-            const attContainer = document.createElement('div');
-            attContainer.className = 'node-attachments-container';
-            attContainer.style.paddingLeft = '0'; // alinhado à esquerda
-            attContainer.style.marginTop = '0.5rem';
-            p.attachments.forEach(att => {
-                const badge = createAttachmentBadge(att, p.id, true, true, true);
-                attContainer.appendChild(badge);
-            });
-            const leftCol = row.firstElementChild;
-            if (leftCol) {
-                leftCol.appendChild(attContainer);
-            }
-        }
-
-        listCont.appendChild(row);
-
-        // Bind events for the new validation controls
-        const statusContainer = row.querySelector('.status-btns-container');
-        if (statusContainer && p.attachments && p.attachments.length > 0) {
-            const btns = createStatusButtonGroup(p, (newStatus) => {
-                p.validationStatus = newStatus;
-                saveState();
-                updateGlobalDateUI();
-                renderPendenciasMgmt();
-                renderTree();
-                
-                // Notificar no Teams caso a pendência mude para Apontamento e já tenha observação
-                if (newStatus === 'Apontamento' && p.observation && p.observation.trim() !== '') {
-                    const sectorName = p.sector || 'Geral';
-                    const currProj = getCurrentProject();
-                    const projectName = currProj?.name || 'Desconhecido';
                     
-                    sendTeamsNotification(sectorName, {
-                        projectName: projectName,
-                        documentName: p.docName,
-                        details: p.observation
-                    });
-                }
-            });
-            statusContainer.appendChild(btns);
-        }
-
-        const obsInp = row.querySelector('.pendencia-obs-inp');
-        if (obsInp) {
-            obsInp.oninput = (e) => {
-                const oldVal = p.observation || '';
-                p.observation = e.target.value;
-                saveState();
-            };
-            obsInp.onblur = () => {
-                renderTree();
-                if (p.observation) {
-                    addAuditLog('Apontamento de Pendência', `Novo apontamento em <strong>${p.docName}</strong>: "${p.observation}"`, 'warning');
-                    
-                    // Notificar no Teams ao desfocar (terminar de escrever o apontamento da pendência)
-                    if (p.validationStatus === 'Apontamento') {
+                    // Notificar no Teams caso a pendência mude para Apontamento e já tenha observação
+                    if (newStatus === 'Apontamento' && p.observation && p.observation.trim() !== '') {
                         const sectorName = p.sector || 'Geral';
                         const currProj = getCurrentProject();
                         const projectName = currProj?.name || 'Desconhecido';
@@ -4427,9 +4541,43 @@ function renderPendenciasMgmt() {
                             details: p.observation
                         });
                     }
-                }
-            };
-        }
+                });
+                statusContainer.appendChild(btns);
+            }
+
+            const obsInp = row.querySelector('.pendencia-obs-inp');
+            if (obsInp) {
+                obsInp.oninput = (e) => {
+                    const oldVal = p.observation || '';
+                    p.observation = e.target.value;
+                    saveState();
+                };
+                obsInp.onblur = () => {
+                    renderTree();
+                    if (p.observation) {
+                        addAuditLog('Apontamento de Pendência', `Novo apontamento em <strong>${p.docName}</strong>: "${p.observation}"`, 'warning');
+                        
+                        // Notificar no Teams ao desfocar (terminar de escrever o apontamento da pendência)
+                        if (p.validationStatus === 'Apontamento') {
+                            const sectorName = p.sector || 'Geral';
+                            const currProj = getCurrentProject();
+                            const projectName = currProj?.name || 'Desconhecido';
+                            
+                            sendTeamsNotification(sectorName, {
+                                projectName: projectName,
+                                documentName: p.docName,
+                                details: p.observation
+                            });
+                        }
+                    }
+                };
+            }
+
+            childCont.appendChild(row);
+        });
+
+        sectorNode.appendChild(childCont);
+        listCont.appendChild(sectorNode);
     });
 }
 
