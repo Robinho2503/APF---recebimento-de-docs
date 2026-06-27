@@ -3934,7 +3934,7 @@ function createNode(item, level) {
             if (item.isNotApplicable) {
                 const naBadge = document.createElement('span');
                 naBadge.className = 'badge badge-na badge-sm';
-                naBadge.textContent = 'Não Necessário';
+                naBadge.textContent = 'Dispensado';
                 statusRow.appendChild(naBadge);
             }
 
@@ -4247,7 +4247,7 @@ function createNode(item, level) {
                 };
 
                 naLabel.appendChild(naCheck);
-                naLabel.appendChild(document.createTextNode('Não Obrigatório'));
+                naLabel.appendChild(document.createTextNode('Dispensado'));
 
                 statusRow.appendChild(statusText);
                 if (currProj && currProj.id !== 'p_default') {
