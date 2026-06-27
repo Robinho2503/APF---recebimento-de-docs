@@ -1570,7 +1570,7 @@ function showTemporaryMessage(msg, type = 'info') {
     // Glassmorphism Style
     toast.style.background = type === 'danger' ? 'rgba(239, 68, 68, 0.9)' : 'rgba(16, 185, 129, 0.9)';
     toast.style.backdropFilter = 'blur(10px)';
-    toast.style.border = '1px solid rgba(255, 255, 255, 0.2)';
+    toast.style.border = '1px solid rgba(var(--primary-rgb), )';
 
     toast.style.color = 'white';
     toast.style.boxShadow = '0 15px 35px rgba(0,0,0,0.4)';
@@ -4800,7 +4800,7 @@ function renderPendenciasMgmt() {
             if (editingPendenciaId === p.id) row.style.borderColor = 'var(--warning)';
 
             // Borda colorida conforme o status na gestão também!
-            let borderCol = 'rgba(255,255,255,0.05)';
+            let borderCol = 'rgba(var(--primary-rgb), )';
             const hasAtt = p.attachments && p.attachments.length > 0;
             if (hasAtt) {
                 if (p.validationStatus === 'Validado' || p.validationStatus === 'APF check') {
@@ -5412,7 +5412,7 @@ function initSettings() {
 
     btnResetModel.addEventListener('click', () => {
         geminiModelInp.value = 'gemini-2.5-flash';
-        geminiModelInp.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+        geminiModelInp.style.backgroundColor = 'rgba(var(--primary-rgb), )';
         setTimeout(() => geminiModelInp.style.backgroundColor = '', 500);
     });
 
