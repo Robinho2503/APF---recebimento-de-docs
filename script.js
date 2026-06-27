@@ -2995,12 +2995,25 @@ function generateOficioWord() {
     const projectName = currentProject.name || 'Empreendimento';
 
     let tableRows = '';
-    currentProject.pendencias.forEach((p) => {
+    currentProject.pendencias.forEach((p, index) => {
+        const num = index + 1;
         tableRows += `
-            <tr>
-                <td style="border: 1px solid #000; padding: 5px;">${p.name || 'Documento'} - ${p.spec || ''}</td>
-                <td style="border: 1px solid #000; padding: 5px; width: 50%;"></td>
-            </tr>
+            <table style="border-collapse: collapse; width: 100%; margin-bottom: 20px; font-family: Arial, sans-serif; font-size: 11pt;">
+                <tr>
+                    <td style="border: 1px solid #000; padding: 8px; width: 5%; vertical-align: top; text-align: center;">
+                        <strong>${num}</strong>
+                    </td>
+                    <td style="border: 1px solid #000; padding: 8px; width: 95%; vertical-align: top; text-align: justify;">
+                        <strong>${p.name || 'Documento'}</strong><br><br>
+                        <span style="color: #555555;">${p.spec || ''}</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2" style="border: 1px solid #000; padding: 8px; vertical-align: top;">
+                        <strong>Resolução:</strong><br><br><br><br><br>
+                    </td>
+                </tr>
+            </table>
         `;
     });
 
@@ -3011,30 +3024,31 @@ function generateOficioWord() {
             <title>Ofício</title>
             <style>
                 body { font-family: Arial, sans-serif; }
-                table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-                th, td { border: 1px solid #000; padding: 8px; text-align: left; }
-                th { background-color: #f2f2f2; }
             </style>
         </head>
         <body>
-            <div style="text-align: right; margin-bottom: 30px;">
-                <p>Data: ${dateStr}</p>
-            </div>
-            
-            <h1 style="font-size: 18px; text-align: center;">${projectName}</h1>
-            <h2 style="font-size: 16px; text-align: center;">Ofício de atendimento às pendências</h2>
-            
-            <table>
+            <!-- Cabeçalho com Logo e Título -->
+            <table style="width: 100%; border: none; margin-bottom: 30px;">
                 <tr>
-                    <th style="width: 50%;">Pendência</th>
-                    <th style="width: 50%;">Observação</th>
+                    <td style="width: 80%; text-align: center; vertical-align: middle; border: none;">
+                        <span style="font-size: 14pt; font-weight: bold;">RESPOSTA ÀS PENDÊNCIAS DE ENGENHARIA:</span><br>
+                        <span style="font-size: 14pt; font-weight: bold; text-transform: uppercase;">${projectName}</span>
+                    </td>
+                    <td style="width: 20%; text-align: right; vertical-align: top; border: none;">
+                        <!-- Espaço para logo, usando URL web para funcionar no Word -->
+                        <!-- <img src="URL_DA_LOGO" width="120" /> -->
+                    </td>
                 </tr>
-                ${tableRows}
             </table>
             
-            <div style="margin-top: 80px; text-align: center;">
-                <p>___________________________________________________</p>
-                <p>Assinatura do Responsável</p>
+            <p style="font-size: 11pt; text-align: justify; margin-bottom: 30px; line-height: 1.5;">
+                Venho por meio deste, esclarecer os apontamentos realizados na análise de engenharia feita para o empreendimento <strong>${projectName}</strong>.
+            </p>
+            
+            ${tableRows}
+            
+            <div style="margin-top: 50px; text-align: center;">
+                <p>Data: ${dateStr}</p>
             </div>
         </body>
         </html>
