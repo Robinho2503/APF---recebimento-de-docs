@@ -2608,6 +2608,7 @@ function renderTracking() {
         });
 
         const progressPct = p.progressPct !== undefined ? p.progressPct : getProjectProgress(p);
+        const isCaixaAnalysis = activeStage && activeStage.type === 'analise_caixa';
 
         // Prazo / Vencimento no rodapé (Apenas exibido se estiver no estágio de Documentação Inicial)
         let footerInfoHTML = '';
@@ -2663,12 +2664,13 @@ function renderTracking() {
                     ${footerInfoHTML}
                 </div>
 
+                ${!isCaixaAnalysis ? `
                 <div class="card-progress-row">
                     <div class="card-progress-bar-container">
                         <div class="card-progress-bar" style="width: ${progressPct}%; background: ${progressPct === 100 ? 'var(--accent)' : 'var(--primary)'};"></div>
                     </div>
                     <span class="card-progress-text">${progressPct}%</span>
-                </div>
+                </div>` : ''}
             </div>
         `;
         trackingContainer.appendChild(card);
