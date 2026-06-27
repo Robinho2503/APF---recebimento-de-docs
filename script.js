@@ -1951,7 +1951,169 @@ function updateGlobalDateUI() {
             engAnalysisMgmtPanel.classList.add('hidden');
         }
     }
+
+    renderProjectStagesStepper(p);
 }
+
+// Stepper de Estágios do Empreendimento
+function renderProjectStagesStepper(p) {
+    const stepperContainer = document.getElementById('project-stages-stepper');
+    if (!stepperContainer) return;
+
+    if (!p || p.id === 'none' || p.id === 'p_default') {
+        stepperContainer.style.display = 'none';
+        return;
+    }
+    stepperContainer.style.display = 'flex';
+
+    const isAPF = authenticatedSector === 'APF';
+
+    // Determinar o estágio atual
+    let activeStage = 1; // 1: Documentação Inicial, 2: Análise CAIXA, 3: Resolução de Pendências
+    if (p.pendenciaActive) {
+        activeStage = 3;
+    } else if (p.engAnalysisOpened) {
+        activeStage = 2;
+    }
+
+    // Calcular dias em cada fase para descrição
+    let engDays = 0;
+    if (p.engAnalysisStartDate) {
+        const start = new Date(p.engAnalysisStartDate);
+        start.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
+        engDays = diff >= 0 ? diff : 0;
+    }
+
+    let pendDays = 0;
+    if (p.pendenciaStartDate) {
+        const start = new Date(p.pendenciaStartDate);
+        start.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
+        pendDays = diff >= 0 ? diff : 0;
+    }
+
+    // Configurações das 3 etapas
+    const stages = [
+        {
+            num: 1,
+            title: 'Documentação Inicial',
+            desc: activeStage === 1 ? 'Em envio / validação' : 'Concluído',
+            icon: 'ph ph-file-arrow-up',
+            color: 'var(--accent)',
+            colorRgb: '16, 185, 129'
+        },
+        {
+            num: 2,
+            title: 'Análise CAIXA',
+            desc: activeStage === 2 ? `Em análise a ${engDays} dias` : (activeStage > 2 ? 'Concluído' : 'Aguardando envio'),
+            icon: activeStage === 2 ? 'ph ph-spinner ph-spin' : 'ph ph-calendar',
+            color: 'var(--info)',
+            colorRgb: '96, 165, 250'
+        },
+        {
+            num: 3,
+            title: 'Resolução de Pendências',
+            desc: activeStage === 3 ? `Em correção a ${pendDays} dias` : 'Aguardando retorno',
+            icon: 'ph ph-warning-diamond',
+            color: 'var(--danger)',
+            colorRgb: '239, 68, 68'
+        }
+    ];
+
+    let html = '';
+    stages.forEach((s, idx) => {
+        let stateClass = '';
+        if (s.num === activeStage) {
+            stateClass = 'active';
+        } else if (s.num < activeStage) {
+            stateClass = 'completed';
+        }
+
+        const isClickable = isAPF;
+        const clickableClass = isClickable ? 'clickable-step' : '';
+
+        // Estilos customizados de variáveis CSS para o estado ativo
+        const styleVars = `style="--step-color: ${s.color}; --step-color-rgb: ${s.colorRgb};"`;
+
+        html += `
+            <div class="step-item ${stateClass} ${clickableClass}" ${styleVars} onclick="handleStageTransition(${s.num})">
+                <div class="step-icon-circle">
+                    <i class="${stateClass === 'completed' ? 'ph ph-check-circle' : s.icon}"></i>
+                </div>
+                <div class="step-content">
+                    <span class="step-title">${s.title}</span>
+                    <span class="step-desc">${s.desc}</span>
+                </div>
+            </div>
+        `;
+
+        // Linha conectora entre etapas
+        if (idx < stages.length - 1) {
+            const lineActiveClass = activeStage > s.num ? 'active' : '';
+            html += `<div class="step-line ${lineActiveClass}"></div>`;
+        }
+    });
+
+    stepperContainer.innerHTML = html;
+}
+
+// Handler para transição de estágios
+window.handleStageTransition = function(targetStage) {
+    const isAPF = authenticatedSector === 'APF';
+    if (!isAPF) return; // Apenas APF pode interagir
+
+    const p = getCurrentProject();
+    if (!p || p.id === 'none' || p.id === 'p_default') return;
+
+    let currentStage = 1;
+    if (p.pendenciaActive) currentStage = 3;
+    else if (p.engAnalysisOpened) currentStage = 2;
+
+    if (currentStage === targetStage) return; // Já está nesta etapa
+
+    const stageNames = {
+        1: 'Documentação Inicial',
+        2: 'Análise CAIXA',
+        3: 'Resolução de Pendências'
+    };
+
+    const confirmMsg = `Deseja alterar a etapa do empreendimento "${p.name}" para "${stageNames[targetStage]}"?`;
+    if (!confirm(confirmMsg)) return;
+
+    // Executar transição
+    if (targetStage === 1) {
+        p.engAnalysisOpened = false;
+        p.engAnalysisStartDate = '';
+        p.pendenciaActive = false;
+        p.pendenciaStartDate = '';
+        addAuditLog('Etapa Alterada', 'O empreendimento retornou para a etapa de <strong>Documentação Inicial</strong>.', 'info');
+    } else if (targetStage === 2) {
+        p.engAnalysisOpened = true;
+        if (!p.engAnalysisStartDate) {
+            p.engAnalysisStartDate = new Date().toISOString().split('T')[0];
+        }
+        p.pendenciaActive = false;
+        p.pendenciaStartDate = '';
+        addAuditLog('Etapa Alterada', 'O empreendimento avançou para a etapa de <strong>Análise CAIXA</strong>.', 'success');
+    } else if (targetStage === 3) {
+        p.engAnalysisOpened = true; // Se está em pendências, a análise da CAIXA foi aberta
+        p.pendenciaActive = true;
+        if (!p.pendenciaStartDate) {
+            p.pendenciaStartDate = new Date().toISOString().split('T')[0];
+        }
+        addAuditLog('Etapa Alterada', 'O empreendimento avançou para a etapa de <strong>Resolução de Pendências</strong>.', 'warning');
+    }
+
+    saveState();
+    updateGlobalDateUI();
+    renderTree();
+    renderTracking();
+};
 
 
 

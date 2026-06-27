@@ -3191,3 +3191,144 @@ hr {
 .light-mode .audit-entry.warning .audit-row-action { color: #d97706; }
 .light-mode .audit-entry.success .audit-row-action { color: #059669; }
 
+/* Stepper de Estágios do Empreendimento */
+.stages-stepper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    gap: 1.5rem;
+    padding: 0.25rem 0;
+}
+
+.step-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+    position: relative;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    transition: all 0.25s ease;
+}
+
+.step-item.clickable-step {
+    cursor: pointer;
+}
+
+.step-item.clickable-step:hover {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    transform: translateY(-1px);
+}
+
+.step-icon-circle {
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1.5px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-muted);
+    flex-shrink: 0;
+    transition: all 0.25s ease;
+}
+
+.step-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.step-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    transition: color 0.25s ease;
+}
+
+.step-desc {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    opacity: 0.7;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Conectores */
+.step-line {
+    height: 2px;
+    background: rgba(255, 255, 255, 0.08);
+    flex-grow: 0.2;
+    max-width: 60px;
+    border-radius: 2px;
+}
+
+/* ESTADOS */
+.step-item.active {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: var(--step-color) !important;
+    box-shadow: 0 0 12px rgba(var(--step-color-rgb), 0.12);
+}
+.step-item.active .step-icon-circle {
+    background: rgba(var(--step-color-rgb), 0.1) !important;
+    border-color: var(--step-color) !important;
+    color: var(--step-color) !important;
+}
+.step-item.active .step-title {
+    color: var(--text-main) !important;
+}
+.step-item.active .step-desc {
+    color: var(--step-color) !important;
+    opacity: 0.95;
+    font-weight: 600;
+}
+
+.step-item.completed {
+    border-color: rgba(16, 185, 129, 0.2) !important;
+}
+.step-item.completed .step-icon-circle {
+    background: rgba(16, 185, 129, 0.08) !important;
+    border-color: var(--accent) !important;
+    color: var(--accent) !important;
+}
+.step-item.completed .step-title {
+    color: var(--text-muted) !important;
+    opacity: 0.9;
+}
+.step-item.completed .step-desc {
+    color: var(--accent) !important;
+    opacity: 0.8;
+}
+
+.step-line.active {
+    background: var(--accent);
+    opacity: 0.5;
+}
+
+/* Light Mode Ajustes */
+.light-mode .step-item {
+    background: rgba(0, 0, 0, 0.01) !important;
+    border: 1px solid rgba(0, 0, 0, 0.04) !important;
+}
+.light-mode .step-item.clickable-step:hover {
+    background: rgba(0, 0, 0, 0.02) !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+}
+.light-mode .step-icon-circle {
+    background: rgba(0, 0, 0, 0.02) !important;
+    border: 1.5px solid rgba(0, 0, 0, 0.06) !important;
+}
+.light-mode .step-line {
+    background: rgba(0, 0, 0, 0.08) !important;
+}
+
