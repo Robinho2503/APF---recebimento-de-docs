@@ -2516,13 +2516,13 @@ function renderPendenciasChecklist(curr) {
         const apontamentos = pendenciasDoSetor.filter(p => p.validationStatus === 'Apontamento').length;
 
         // Definir cor do ícone de pasta do setor com base no status das pendências
-        let iconColor = 'var(--danger)'; // Pendente por padrão
+        let iconColor = 'rgba(239, 68, 68, 0.85)'; // Pendente por padrão
         if (total === validadas) {
-            iconColor = 'var(--accent)'; // Todas validadas
+            iconColor = 'rgba(16, 185, 129, 0.85)'; // Todas validadas
         } else if (total === entregues) {
-            iconColor = 'var(--warning)'; // Todas entregues, mas pendentes de validação
+            iconColor = 'rgba(245, 158, 11, 0.85)'; // Todas entregues, mas pendentes de validação
         } else if (apontamentos > 0) {
-            iconColor = 'var(--danger)'; // Há apontamentos
+            iconColor = 'rgba(239, 68, 68, 0.85)'; // Há apontamentos
         }
         icon.style.color = iconColor;
 
@@ -2616,18 +2616,18 @@ function renderPendenciasChecklist(curr) {
             node.className = 'tree-item pendencia-item';
             
             // Ajustar o visual dos itens filhos (borda colorida conforme o status)
-            let borderCol = 'var(--danger)';
+            let borderCol = 'rgba(239, 68, 68, 0.4)';
             const hasAtt = p.attachments && p.attachments.length > 0;
             if (hasAtt) {
                 if (p.validationStatus === 'Validado' || p.validationStatus === 'APF check') {
-                    borderCol = 'var(--accent)';
+                    borderCol = 'rgba(16, 185, 129, 0.4)';
                 } else if (p.validationStatus === 'Apontamento') {
-                    borderCol = 'var(--danger)';
+                    borderCol = 'rgba(239, 68, 68, 0.4)';
                 } else {
-                    borderCol = 'var(--warning)'; // Em análise
+                    borderCol = 'rgba(245, 158, 11, 0.4)'; // Em análise
                 }
             }
-            node.style.borderLeft = `3px solid ${borderCol}`;
+            node.style.borderLeft = `2px solid ${borderCol}`;
 
             const itemLeft = document.createElement('div');
             itemLeft.className = 'item-left';
@@ -2637,14 +2637,14 @@ function renderPendenciasChecklist(curr) {
             pIcon.className = hasAtt ? 'ph ph-file-text item-icon' : 'ph ph-file-warning item-icon';
             
             // Cor do ícone da pendência
-            let pIconColor = 'var(--danger)';
+            let pIconColor = 'rgba(239, 68, 68, 0.85)';
             if (hasAtt) {
                 if (p.validationStatus === 'Validado' || p.validationStatus === 'APF check') {
-                    pIconColor = 'var(--accent)';
+                    pIconColor = 'rgba(16, 185, 129, 0.85)';
                 } else if (p.validationStatus === 'Apontamento') {
-                    pIconColor = 'var(--danger)';
+                    pIconColor = 'rgba(239, 68, 68, 0.85)';
                 } else {
-                    pIconColor = 'var(--warning)';
+                    pIconColor = 'rgba(245, 158, 11, 0.85)';
                 }
             }
             pIcon.style.color = pIconColor;
@@ -4326,13 +4326,13 @@ function renderPendenciasMgmt() {
         const apontamentos = pendenciasDoSetor.filter(p => p.validationStatus === 'Apontamento').length;
 
         // Definir cor do ícone
-        let iconColor = 'var(--danger)';
+        let iconColor = 'rgba(239, 68, 68, 0.85)';
         if (total === validadas) {
-            iconColor = 'var(--accent)';
+            iconColor = 'rgba(16, 185, 129, 0.85)';
         } else if (total === entregues) {
-            iconColor = 'var(--warning)';
+            iconColor = 'rgba(245, 158, 11, 0.85)';
         } else if (apontamentos > 0) {
-            iconColor = 'var(--danger)';
+            iconColor = 'rgba(239, 68, 68, 0.85)';
         }
         icon.style.color = iconColor;
 
@@ -4413,16 +4413,16 @@ function renderPendenciasMgmt() {
             const hasAtt = p.attachments && p.attachments.length > 0;
             if (hasAtt) {
                 if (p.validationStatus === 'Validado' || p.validationStatus === 'APF check') {
-                    borderCol = 'var(--accent)';
+                    borderCol = 'rgba(16, 185, 129, 0.4)';
                 } else if (p.validationStatus === 'Apontamento') {
-                    borderCol = 'var(--danger)';
+                    borderCol = 'rgba(239, 68, 68, 0.4)';
                 } else {
-                    borderCol = 'var(--warning)';
+                    borderCol = 'rgba(245, 158, 11, 0.4)';
                 }
             } else {
-                borderCol = 'rgba(239, 68, 68, 0.3)'; // Borda vermelha sutil para pendente
+                borderCol = 'rgba(239, 68, 68, 0.2)'; // Borda vermelha sutil para pendente
             }
-            row.style.borderLeft = `3px solid ${borderCol}`;
+            row.style.borderLeft = `2px solid ${borderCol}`;
 
             row.innerHTML = `
                 <div style="display: flex; flex-direction: column; flex: 1; min-width: 0;">
