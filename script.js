@@ -2526,8 +2526,11 @@ function renderPendenciasChecklist(curr) {
         }
         icon.style.color = iconColor;
 
+        const nameWrapper = document.createElement('div');
+        nameWrapper.className = 'name-wrapper';
+
         const nameSpan = document.createElement('span');
-        nameSpan.className = 'item-name root-name';
+        nameSpan.className = 'item-name text-truncate root-name';
         nameSpan.style.display = 'flex';
         nameSpan.style.alignItems = 'center';
         nameSpan.style.gap = '0.5rem';
@@ -2540,7 +2543,8 @@ function renderPendenciasChecklist(curr) {
         const titleText = document.createTextNode(' ' + sectorName);
         nameSpan.appendChild(titleText);
 
-        itemLeft.appendChild(nameSpan);
+        nameWrapper.appendChild(nameSpan);
+        itemLeft.appendChild(nameWrapper);
 
         // Lado Direito do item de setor (Contadores de progresso e indicador de pendência)
         const itemRight = document.createElement('div');
@@ -4332,8 +4336,11 @@ function renderPendenciasMgmt() {
         }
         icon.style.color = iconColor;
 
+        const nameWrapper = document.createElement('div');
+        nameWrapper.className = 'name-wrapper';
+
         const nameSpan = document.createElement('span');
-        nameSpan.className = 'item-name root-name';
+        nameSpan.className = 'item-name text-truncate root-name';
         nameSpan.style.display = 'flex';
         nameSpan.style.alignItems = 'center';
         nameSpan.style.gap = '0.5rem';
@@ -4346,7 +4353,8 @@ function renderPendenciasMgmt() {
         const titleText = document.createTextNode(' ' + sectorName);
         nameSpan.appendChild(titleText);
 
-        itemLeft.appendChild(nameSpan);
+        nameWrapper.appendChild(nameSpan);
+        itemLeft.appendChild(nameWrapper);
 
         // Lado Direito do item de setor (Contadores de progresso e indicador de pendência)
         const itemRight = document.createElement('div');
