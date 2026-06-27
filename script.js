@@ -2644,11 +2644,9 @@ function renderTracking() {
         }
 
         card.innerHTML = `
-            ${badgeText ? `
             <div class="card-left-section">
-                <span class="card-status-badge ${badgeClass}">${badgeText}</span>
+                ${badgeText ? `<span class="card-status-badge ${badgeClass}">${badgeText}</span>` : ''}
             </div>
-            ` : ''}
             <div class="tracking-body">
                 <div class="card-top-row">
                     <h3 class="card-project-title" title="${p.name}">

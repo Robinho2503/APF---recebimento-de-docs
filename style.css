@@ -268,17 +268,14 @@ body {
     border-color: rgba(0, 0, 0, 0.12) !important;
 }
 
-/* Estrutura interna do card */
 .card-left-section {
+    width: 32px;
+    min-width: 32px;
     display: flex;
     align-items: flex-start;
     justify-content: center;
     flex-shrink: 0;
     margin-top: 0.12rem;
-}
-
-.card-left-section:empty {
-    display: none !important;
 }
 
 .sidebar .tracking-card .tracking-body {
