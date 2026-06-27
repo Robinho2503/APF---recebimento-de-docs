@@ -3043,7 +3043,7 @@ function generateOficioWord() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = \`Oficio_Pendencias_${projectName.replace(/\s+/g, '_')}.doc\`;
+    a.download = `Oficio_Pendencias_${projectName.replace(/\s+/g, '_')}.doc`;
     document.body.appendChild(a);
     a.click();
     setTimeout(() => {
