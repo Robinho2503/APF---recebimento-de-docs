@@ -3332,3 +3332,46 @@ hr {
     background: rgba(0, 0, 0, 0.08) !important;
 }
 
+/* Formulário de data interno das etapas do Stepper */
+.step-date-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    margin-top: 0.35rem;
+    padding-top: 0.35rem;
+    border-top: 1px dashed rgba(255, 255, 255, 0.08);
+    width: 100%;
+}
+
+.light-mode .step-date-wrapper {
+    border-top-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+.step-date-label {
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--text-muted);
+    opacity: 0.8;
+}
+
+.step-date-input {
+    background: rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: var(--text-main) !important;
+    font-size: 0.72rem !important;
+    padding: 0.2rem 0.4rem !important;
+    border-radius: 4px !important;
+    width: 100% !important;
+    max-width: 110px !important;
+    outline: none !important;
+    font-family: inherit;
+    cursor: text;
+}
+
+.light-mode .step-date-input {
+    background: rgba(255, 255, 255, 0.8) !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    color: var(--text-main) !important;
+}
+

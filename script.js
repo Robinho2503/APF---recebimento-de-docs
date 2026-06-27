@@ -1206,18 +1206,6 @@ function initEventListeners() {
         });
     }
 
-    if (engAnalysisStartDateInp) {
-        engAnalysisStartDateInp.addEventListener('change', (e) => {
-            const curr = getCurrentProject();
-            if (curr && curr.id !== 'p_default') {
-                curr.engAnalysisStartDate = e.target.value;
-                addAuditLog('Data de Engenharia Alterada', `A data de início da análise de engenharia foi alterada para <strong>${e.target.value}</strong>.`, 'info');
-                saveState();
-                updateGlobalDateUI();
-                renderTracking();
-            }
-        });
-    }
 
     if (btnDeleteProject) {
         btnDeleteProject.addEventListener('click', () => {
@@ -1333,17 +1321,6 @@ function initEventListeners() {
         };
     }
 
-    if (pendenciaStartDateInp) {
-        pendenciaStartDateInp.onchange = (e) => {
-            const curr = getCurrentProject();
-            if (curr) {
-                curr.pendenciaStartDate = e.target.value;
-                addAuditLog('Data de Pendência Alterada', `A data de início da resolução de pendências foi alterada para <strong>${e.target.value}</strong>.`, 'info');
-                saveState();
-                renderTracking();
-            }
-        };
-    }
 
     if (btnAddPendencia) {
         btnAddPendencia.onclick = () => {
@@ -2040,6 +2017,25 @@ function renderProjectStagesStepper(p) {
         // Estilos customizados de variáveis CSS para o estado ativo
         const styleVars = `style="--step-color: ${s.color}; --step-color-rgb: ${s.colorRgb};"`;
 
+        let dateInputHTML = '';
+        if (isAPF && s.num === activeStage) {
+            if (s.num === 2) {
+                dateInputHTML = `
+                    <div class="step-date-wrapper" onclick="event.stopPropagation()">
+                        <label class="step-date-label">Data de Abertura Real</label>
+                        <input type="date" id="eng-analysis-start-date" class="step-date-input" value="${p.engAnalysisStartDate || ''}">
+                    </div>
+                `;
+            } else if (s.num === 3) {
+                dateInputHTML = `
+                    <div class="step-date-wrapper" onclick="event.stopPropagation()">
+                        <label class="step-date-label">Data de Início</label>
+                        <input type="date" id="pendencia-start-date" class="step-date-input" value="${p.pendenciaStartDate || ''}">
+                    </div>
+                `;
+            }
+        }
+
         html += `
             <div class="step-item ${stateClass} ${clickableClass}" ${styleVars} onclick="handleStageTransition(${s.num})">
                 <div class="step-icon-circle">
@@ -2048,6 +2044,7 @@ function renderProjectStagesStepper(p) {
                 <div class="step-content">
                     <span class="step-title">${s.title}</span>
                     <span class="step-desc">${s.desc}</span>
+                    ${dateInputHTML}
                 </div>
             </div>
         `;
@@ -2060,6 +2057,29 @@ function renderProjectStagesStepper(p) {
     });
 
     stepperContainer.innerHTML = html;
+
+    // Adicionar event listeners aos inputs de data injetados dinamicamente
+    const engInp = document.getElementById('eng-analysis-start-date');
+    if (engInp) {
+        engInp.onchange = (e) => {
+            p.engAnalysisStartDate = e.target.value;
+            addAuditLog('Data de Engenharia Alterada', `A data de início da análise de engenharia foi alterada para <strong>${e.target.value}</strong>.`, 'info');
+            saveState();
+            updateGlobalDateUI();
+            renderTracking();
+        };
+    }
+
+    const pendInp = document.getElementById('pendencia-start-date');
+    if (pendInp) {
+        pendInp.onchange = (e) => {
+            p.pendenciaStartDate = e.target.value;
+            addAuditLog('Data de Pendências Alterada', `A data de início da resolução de pendências foi alterada para <strong>${e.target.value}</strong>.`, 'info');
+            saveState();
+            updateGlobalDateUI();
+            renderTracking();
+        };
+    }
 }
 
 // Handler para transição de estágios
