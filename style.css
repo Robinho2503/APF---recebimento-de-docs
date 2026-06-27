@@ -218,86 +218,174 @@ body {
 .light-mode .sidebar-content::-webkit-scrollbar-thumb:hover {
     background: rgba(15, 23, 42, 0.22);
 }
-.sidebar .tracking-card { 
+
+/* Card Minimalista de Fita Lateral (Opção 1) */
+.sidebar .tracking-card {
     position: relative;
-    flex-direction: column; 
-    padding: 0.55rem 0.8rem; 
-    align-items: stretch; 
-    gap: 0.25rem; 
-    margin-bottom: 0.65rem; 
-    cursor: pointer; 
-    border: 1px solid var(--card-border);
+    padding: 0.65rem 0.75rem !important;
+    margin-bottom: 0.6rem;
+    cursor: pointer;
     background: var(--card-bg);
-    border-radius: 0.85rem;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid var(--card-border) !important;
+    border-left: 3px solid var(--indicator-color) !important; /* Fita lateral */
+    border-radius: 0.6rem !important;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
     backdrop-filter: blur(10px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-.sidebar .tracking-card:hover { 
-    background: rgba(255, 255, 255, 0.08); 
-    border-color: rgba(255, 255, 255, 0.2);
-    transform: translateX(6px);
-}
-.sidebar .tracking-card.active { 
-    background: rgba(255, 255, 255, 0.12);
-    border-color: var(--primary);
-    border-left-width: 4px;
-    transform: translateX(10px);
 }
 
-.card-progress-mini {
-    position: absolute;
-    top: 0.6rem;
-    right: 0.7rem;
-    font-size: 0.58rem;
-    font-weight: 800;
-    color: var(--accent);
-    background: rgba(16, 185, 129, 0.08);
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    border: 1px solid rgba(16, 185, 129, 0.2);
+.sidebar .tracking-card:hover {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15) !important;
+}
+
+.sidebar .tracking-card.active {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+    transform: none !important;
+}
+
+/* Ajustes no Light Mode */
+.light-mode .sidebar .tracking-card {
+    background: rgba(255, 255, 255, 0.8) !important;
+    border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+.light-mode .sidebar .tracking-card:hover {
+    background: rgba(0, 0, 0, 0.02) !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+.light-mode .sidebar .tracking-card.active {
+    background: rgba(0, 0, 0, 0.04) !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Estrutura interna do card */
+.card-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.card-project-title {
+    font-size: 0.78rem !important;
+    font-weight: 700 !important;
+    color: var(--text-main) !important;
+    margin: 0;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    flex: 1;
+}
+
+.card-project-title i {
+    font-size: 0.85rem;
+    margin-right: 0.2rem;
+    color: var(--text-muted);
+    vertical-align: middle;
+}
+
+.card-status-badge {
+    font-size: 0.55rem;
+    font-weight: 700;
+    padding: 0.12rem 0.35rem;
+    border-radius: 4px;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
+}
+
+/* Badges translúcidos */
+.badge-doc {
+    background: rgba(161, 161, 170, 0.1) !important;
+    color: var(--text-muted) !important;
+}
+
+.badge-info-transl {
+    background: rgba(96, 165, 250, 0.1) !important;
+    color: var(--info) !important;
+}
+
+.badge-danger-transl {
+    background: rgba(239, 68, 68, 0.1) !important;
+    color: var(--danger) !important;
+}
+
+.card-mid-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.62rem;
+    width: 100%;
+}
+
+.card-location, .card-footer-item {
     display: flex;
     align-items: center;
-    justify-content: center;
-    pointer-events: none;
-    z-index: 2;
-    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
-    transition: all 0.3s ease;
+    gap: 0.2rem;
+    color: var(--text-muted);
 }
 
-.sidebar .tracking-card.active .card-progress-mini {
-    background: rgba(255, 255, 255, 0.15);
-    color: white;
-    border-color: rgba(255, 255, 255, 0.3);
-    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
+.card-location i, .card-footer-item i {
+    font-size: 0.7rem;
 }
 
-.sidebar .tracking-card h3 {
-    font-size: 0.85rem;
-    font-weight: 600;
+.card-footer-item.good {
+    color: var(--accent) !important;
 }
 
-.sidebar .tracking-card.eng-active {
-    border-left-color: var(--info);
-    border-color: rgba(96, 165, 250, 0.2);
+.card-footer-item.warning {
+    color: var(--warning) !important;
 }
 
-.sidebar .tracking-card.eng-active.active {
-    background: rgba(96, 165, 250, 0.05);
+.card-footer-item.danger {
+    color: var(--danger) !important;
 }
 
-.sidebar .tracking-card.eng-active:hover {
-    background: rgba(59, 130, 246, 0.1);
+/* Barra de progresso no rodapé */
+.card-progress-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.1rem;
+    width: 100%;
 }
 
-.sidebar .tracking-card.eng-active h3,
-.sidebar .tracking-card.eng-active h3 i {
-    color: var(--info) !important;
+.card-progress-bar-container {
+    flex: 1;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 2px;
+    overflow: hidden;
 }
 
-.sidebar .tracking-card.eng-active .tk-status {
-    color: var(--info) !important;
+.light-mode .card-progress-bar-container {
+    background: rgba(0, 0, 0, 0.06) !important;
+}
+
+.card-progress-bar {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.card-progress-text {
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: var(--text-muted);
 }
 
 .badge-eng {
@@ -2086,11 +2174,7 @@ hr {
     visibility: hidden !important;
 }
 
-/* Sidebar Pendência Destaque - Roxo */
-.sidebar .tracking-card.pendencia-active {
-    border: none !important;
-    box-shadow: 0 0 15px rgba(var(--purple-rgb), 0.15);
-}
+
 
 /* PendÃƒÂªncia Item Layout - Fixed Right */
 .pendencia-item {

@@ -2486,147 +2486,100 @@ function renderTracking() {
     trackableProjects.forEach((p, i) => {
         const card = document.createElement('div');
         const isActive = p.id === localUI.currentProjectId ? 'active' : '';
-        const isEng = p.engAnalysisOpened ? 'eng-active' : '';
-        const isPendencia = p.pendenciaActive ? 'pendencia-active' : '';
-        card.className = `tracking-card glass-panel ${isActive} ${isEng} ${isPendencia}`;
+        card.className = `tracking-card glass-panel ${isActive}`;
 
-        // Define color for the status indicator pseudo-element
-        let statusColor = 'var(--primary)';
-        if (p.pendenciaActive) statusColor = 'var(--purple)';
-        else if (p.engAnalysisOpened) statusColor = 'var(--info)';
-        card.style.setProperty('--indicator-color', statusColor);
+        // Inicializar e identificar estágio ativo no customStages
+        ensureCustomStages(p);
+        const activeStage = p.customStages.find(s => s.status === 'active') || p.customStages[0];
+
+        let badgeText = activeStage.title;
+        let badgeClass = 'badge-doc';
+        let indicatorColor = 'var(--text-muted)';
+
+        let daysDisplay = 0;
+        if (activeStage.startDate) {
+            const start = new Date(activeStage.startDate);
+            start.setHours(0, 0, 0, 0);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
+            daysDisplay = diff >= 0 ? diff : 0;
+        }
+
+        if (activeStage.type === 'analise_caixa') {
+            badgeText = `${activeStage.title} • ${daysDisplay}d`;
+            badgeClass = 'badge-info-transl';
+            indicatorColor = 'var(--info)';
+        } else if (activeStage.type === 'pendencias') {
+            badgeText = `${activeStage.title.replace('Resolução de ', '')} • ${daysDisplay}d`;
+            badgeClass = 'badge-danger-transl';
+            indicatorColor = 'var(--danger)';
+        }
+
+        card.style.setProperty('--indicator-color', indicatorColor);
 
         card.addEventListener('click', () => {
             selectProject(p.id);
         });
 
-        let prazoText = 'Sem data inicializada';
-        let dClass = 'good';
-        let progressPct = 0;
-        let dateDesc = 'Cadastre no APF';
-        let fillClass = 'good';
+        const progressPct = getProjectProgress(p);
 
+        // Prazo / Vencimento no rodapé
+        let footerInfoHTML = '';
         if (p.dueDate) {
             const diff = calculateDays(p.dueDate);
-            if (diff === 0) { prazoText = 'Entrega Hoje!'; dClass = 'good'; }
-            else if (diff > 0) { prazoText = `Faltam ${diff} dia(s)`; dClass = 'good'; }
-            else { prazoText = `Atrasado ${Math.abs(diff)} dia(s)`; dClass = 'late'; }
-
-            dateDesc = formatDateToPT(p.dueDate);
-            const bizDays = calculateBusinessDays(p.dueDate);
-            const bizDaysHtml = (diff > 0) ? `<div style="font-size: 0.75rem; opacity: 0.7; margin-top: 2px;">${bizDays} dias úteis</div>` : '';
-            prazoText += bizDaysHtml;
-
-            if (p.createdAt) {
-                const tStart = new Date(p.createdAt).getTime();
-                const tEnd = new Date(p.dueDate).getTime();
-                const tNow = new Date().getTime();
-
-                if (tEnd > tStart) {
-                    progressPct = ((tNow - tStart) / (tEnd - tStart)) * 100;
-                    if (progressPct > 100) progressPct = 100;
-                    if (progressPct < 0) progressPct = 0;
-                } else if (tNow >= tEnd) {
-                    progressPct = 100;
-                }
+            let prazoDesc = '';
+            let pColorClass = 'good';
+            if (diff === 0) {
+                prazoDesc = 'Hoje';
+                pColorClass = 'warning';
+            } else if (diff > 0) {
+                prazoDesc = `${diff}d`;
+                pColorClass = 'good';
+            } else {
+                prazoDesc = `${Math.abs(diff)}d atrasado`;
+                pColorClass = 'danger';
             }
-            if (diff < 0) { fillClass = 'late'; }
-            else if (diff >= 0 && diff <= 5 && progressPct > 70) { fillClass = 'warning'; }
-        }
 
-        const fillColors = {
-            'good': 'var(--primary)',
-            'late': 'var(--danger)',
-            'warning': 'var(--warning)'
-        };
-        const barColor = fillColors[fillClass] || 'var(--primary)';
-        const textCol = dClass === 'late' ? 'var(--danger)' : 'var(--accent)';
-        const engStatusIcon = p.engAnalysisOpened ? '<i class="ph ph-file-search text-accent" title="Engenharia Aberta"></i> ' : '';
-
-        let statusText = prazoText;
-        let dateText = p.dueDate ? formatDateToPT(p.dueDate) : '--/--/----';
-        let statusCol = textCol;
-
-        let trackingLine = '';
-        if (p.pendenciaActive) {
-            const start = p.pendenciaStartDate ? new Date(p.pendenciaStartDate) : new Date();
-            start.setHours(0, 0, 0, 0);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const diffDays = Math.floor((today - start) / (1000 * 60 * 60 * 24));
-            const displayDays = diffDays >= 0 ? diffDays : 0;
-
-            trackingLine = `
-                <div class="status-banner status-banner-purple">
-                    <i class="ph ph-warning-diamond" style="font-size: 0.8rem;"></i> Resolução de pendências │ ${displayDays}d
+            footerInfoHTML = `
+                <div class="card-footer-item ${pColorClass}">
+                    <i class="ph ph-calendar-blank"></i>
+                    <span>${formatDateToPT(p.dueDate)} (${prazoDesc})</span>
                 </div>
             `;
-        } else if (p.engAnalysisOpened) {
-            let daysDisplay = 0;
-            if (p.engAnalysisStartDate) {
-                const start = new Date(p.engAnalysisStartDate);
-                start.setHours(0, 0, 0, 0);
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
-                daysDisplay = diff >= 0 ? diff : 0;
-            }
-            trackingLine = `
-                <div class="status-banner status-banner-info">
-                    <i class="ph ph-calendar" style="font-size: 0.8rem;"></i> Análise CAIXA │ ${daysDisplay}d
-                </div>
-            `;
-        } else if (!p.dueDate) {
-            trackingLine = `<span style="color: var(--text-muted); font-weight: 500;">Sem prazo</span>`;
         } else {
-            const barePrazo = statusText.replace(/<div.*/, '');
-            const bizHtml = statusText.includes('<div') ? statusText.match(/<div.*/)[0] : '';
-
-            trackingLine = `
-                <div style="display: flex; align-items: center; width: 100%; font-size: 0.72rem; gap: 0.6rem;">
-                    <span style="color: var(--text-muted); font-weight: 500; display: flex; align-items: center; gap: 0.25rem;"><i class="ph ph-calendar-blank" style="font-size: 0.8rem;"></i> ${dateText}</span>
-                    <div class="divider-v"></div>
-                    <div style="display: flex; flex-direction: column; color: ${statusCol};">
-                        <span style="font-weight: 700; letter-spacing: 0.01em;">${barePrazo}</span>
-                        ${bizHtml ? `<span style="font-size: 0.65rem; opacity: 0.7; font-weight: 500;">${bizHtml.replace(/<div.*?>|<\/div>/g, '')}</span>` : ''}
-                    </div>
+            footerInfoHTML = `
+                <div class="card-footer-item muted">
+                    <i class="ph ph-calendar-blank"></i>
+                    <span>Sem prazo</span>
                 </div>
-`;
+            `;
         }
-
-        // Define colors for the Title and Icon
-        let titleStyle = '';
-        let iconStyle = 'color: var(--primary);';
-        if (p.pendenciaActive) {
-            titleStyle = 'color: var(--purple);';
-            iconStyle = 'color: var(--purple);';
-        } else if (p.engAnalysisOpened) {
-            titleStyle = 'color: var(--info);';
-            iconStyle = 'color: var(--info);';
-        }
-
-        // Contagem de apontamentos de APF (Seguro contra items indefinidos)
-        const projApontamentos = (p.items || []).filter(i => i.validationStatus === 'Apontamento').length;
 
         card.innerHTML = `
-            <div class="tracking-body" style="transition: padding 0.3s ease;">
-                <div class="mb-1 flex-between" style="align-items: flex-start; gap: 0.5rem; margin-bottom: 2px; padding-right: 2.8rem;">
-                    <h3 style="font-weight:700; font-size: 0.85rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: normal; flex: 1; margin: 0; line-height: 1.25; ${titleStyle}" title="${p.name}">
-                        <i class="ph ph-buildings" style="${iconStyle}; font-size: 0.95rem; margin-right: 0.25rem; margin-top: 0.1rem; display: inline-block;"></i>${p.name}
+            <div class="tracking-body">
+                <div class="card-top-row">
+                    <h3 class="card-project-title" title="${p.name}">
+                        <i class="ph ph-buildings"></i>${p.name}
                     </h3>
+                    <span class="card-status-badge ${badgeClass}">${badgeText}</span>
                 </div>
-                ${(p.cidade || p.uf) ? `
-                <div class="tk-location" style="display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.4rem; color: var(--text-muted); font-size: 0.62rem; opacity: 0.7;">
-                    <i class="ph ph-map-pin" style="font-size: 0.75rem; width: 0.95rem; text-align: center;"></i> 
-                    <span>${p.cidade || ''}${p.cidade && p.uf ? ' - ' : ''}${p.uf || ''}</span>
-                </div>` : ''}
-                <div style="width: 100%; margin-top: 0.2rem;">
-                    ${trackingLine}
+
+                <div class="card-mid-row">
+                    ${(p.cidade || p.uf) ? `
+                    <div class="card-location">
+                        <i class="ph ph-map-pin"></i> 
+                        <span>${p.cidade || ''}${p.cidade && p.uf ? ' - ' : ''}${p.uf || ''}</span>
+                    </div>` : ''}
+                    ${footerInfoHTML}
                 </div>
-                ${!p.engAnalysisOpened ? `
-                <div class="card-progress-mini">
-                    ${getProjectProgress(p)}%
-                </div>` : ''}
+
+                <div class="card-progress-row">
+                    <div class="card-progress-bar-container">
+                        <div class="card-progress-bar" style="width: ${progressPct}%; background: ${progressPct === 100 ? 'var(--accent)' : 'var(--primary)'};"></div>
+                    </div>
+                    <span class="card-progress-text">${progressPct}%</span>
+                </div>
             </div>
         `;
         trackingContainer.appendChild(card);
