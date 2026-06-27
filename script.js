@@ -2507,13 +2507,15 @@ function renderTracking() {
         }
 
         if (activeStage.type === 'analise_caixa') {
-            badgeText = `${activeStage.title} • ${daysDisplay}d`;
+            badgeText = `${daysDisplay}d`;
             badgeClass = 'badge-info-transl';
             indicatorColor = 'var(--info)';
         } else if (activeStage.type === 'pendencias') {
-            badgeText = `${activeStage.title.replace('Resolução de ', '')} • ${daysDisplay}d`;
+            badgeText = `${daysDisplay}d`;
             badgeClass = 'badge-danger-transl';
             indicatorColor = 'var(--danger)';
+        } else {
+            badgeText = '';
         }
 
         card.style.setProperty('--indicator-color', indicatorColor);
@@ -2524,36 +2526,38 @@ function renderTracking() {
 
         const progressPct = getProjectProgress(p);
 
-        // Prazo / Vencimento no rodapé
+        // Prazo / Vencimento no rodapé (Apenas exibido se estiver no estágio de Documentação Inicial)
         let footerInfoHTML = '';
-        if (p.dueDate) {
-            const diff = calculateDays(p.dueDate);
-            let prazoDesc = '';
-            let pColorClass = 'good';
-            if (diff === 0) {
-                prazoDesc = 'Hoje';
-                pColorClass = 'warning';
-            } else if (diff > 0) {
-                prazoDesc = `${diff}d`;
-                pColorClass = 'good';
-            } else {
-                prazoDesc = `${Math.abs(diff)}d atrasado`;
-                pColorClass = 'danger';
-            }
+        if (activeStage.type === 'doc_inicial') {
+            if (p.dueDate) {
+                const diff = calculateDays(p.dueDate);
+                let prazoDesc = '';
+                let pColorClass = 'good';
+                if (diff === 0) {
+                    prazoDesc = 'Hoje';
+                    pColorClass = 'warning';
+                } else if (diff > 0) {
+                    prazoDesc = `${diff}d`;
+                    pColorClass = 'good';
+                } else {
+                    prazoDesc = `${Math.abs(diff)}d atrasado`;
+                    pColorClass = 'danger';
+                }
 
-            footerInfoHTML = `
-                <div class="card-footer-item ${pColorClass}">
-                    <i class="ph ph-calendar-blank"></i>
-                    <span>${formatDateToPT(p.dueDate)} (${prazoDesc})</span>
-                </div>
-            `;
-        } else {
-            footerInfoHTML = `
-                <div class="card-footer-item muted">
-                    <i class="ph ph-calendar-blank"></i>
-                    <span>Sem prazo</span>
-                </div>
-            `;
+                footerInfoHTML = `
+                    <div class="card-footer-item ${pColorClass}">
+                        <i class="ph ph-calendar-blank"></i>
+                        <span>${formatDateToPT(p.dueDate)} (${prazoDesc})</span>
+                    </div>
+                `;
+            } else {
+                footerInfoHTML = `
+                    <div class="card-footer-item muted">
+                        <i class="ph ph-calendar-blank"></i>
+                        <span>Sem prazo</span>
+                    </div>
+                `;
+            }
         }
 
         card.innerHTML = `

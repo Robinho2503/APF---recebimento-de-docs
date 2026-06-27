@@ -307,6 +307,10 @@ body {
     flex-shrink: 0;
 }
 
+.card-status-badge:empty {
+    display: none !important;
+}
+
 /* Badges translúcidos */
 .badge-doc {
     background: rgba(161, 161, 170, 0.1) !important;
@@ -330,6 +334,10 @@ body {
     gap: 0.5rem;
     font-size: 0.62rem;
     width: 100%;
+}
+
+.card-mid-row:empty {
+    display: none !important;
 }
 
 .card-location, .card-footer-item {
