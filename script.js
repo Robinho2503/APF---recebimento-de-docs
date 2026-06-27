@@ -60,6 +60,7 @@ let isInitialCloudLoad = true;
 // UI State (Local-only, per device/browser)
 let localUI = {
     expandedIds: new Set(),
+    expandedPendenciasSectors: new Set(),
     showFullChecklistDuringPendencia: false,
     currentProjectId: null,
     sidebarCollapsed: false,
@@ -166,8 +167,9 @@ function loadLocalUI() {
         const saved = localStorage.getItem('apf_local_ui_v1');
         if (saved) {
             localUI = JSON.parse(saved);
-            // Ensure expandedIds is a Set
+            // Ensure expandedIds and expandedPendenciasSectors are Sets
             localUI.expandedIds = new Set(localUI.expandedIds || []);
+            localUI.expandedPendenciasSectors = new Set(localUI.expandedPendenciasSectors || []);
             localUI.showHistorySidebar = !!localUI.showHistorySidebar;
         }
     } catch (e) { console.warn("Erro ao carregar IU local", e); }
@@ -176,6 +178,7 @@ function loadLocalUI() {
 function saveLocalUI() {
     const toSave = {
         expandedIds: Array.from(localUI.expandedIds),
+        expandedPendenciasSectors: Array.from(localUI.expandedPendenciasSectors || []),
         showFullChecklistDuringPendencia: localUI.showFullChecklistDuringPendencia,
         currentProjectId: localUI.currentProjectId,
         sidebarCollapsed: localUI.sidebarCollapsed,
@@ -2446,144 +2449,343 @@ function renderPendenciasChecklist(curr) {
     wrapper.style.flexDirection = 'column';
     wrapper.style.gap = '1rem';
 
-    // Header for Pendências
+    // Header para as Pendências
     const header = document.createElement('div');
     header.style.display = 'flex';
     header.style.alignItems = 'center';
     header.style.gap = '0.5rem';
-    header.style.marginBottom = '1rem';
+    header.style.marginBottom = '1.2rem';
     header.style.color = 'var(--danger)';
-    header.innerHTML = '<i class="ph ph-warning-diamond" style="font-size: 1.5rem;"></i> <strong style="font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.05em;">PENDÊNCIAS CAIXA</strong>';
+    header.innerHTML = '<i class="ph ph-warning-diamond" style="font-size: 1.5rem;"></i> <strong style="font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.05em;">PENDÊNCIAS CAIXA (Agrupadas por Setor)</strong>';
     wrapper.appendChild(header);
 
     const isAPF = authenticatedSector === 'APF';
 
+    // Agrupar pendências por setor
+    const pendenciasPorSetor = {};
     curr.pendencias.forEach(p => {
-        const canEditPend = isAPF || (authenticatedSector || '').trim().toLowerCase() === (p.sector || '').trim().toLowerCase();
-        const pNodeWrapper = document.createElement('div');
-        pNodeWrapper.className = 'tree-node pendencia-node';
+        const sectorName = p.sector || 'Geral';
+        if (!pendenciasPorSetor[sectorName]) {
+            pendenciasPorSetor[sectorName] = [];
+        }
+        pendenciasPorSetor[sectorName].push(p);
+    });
 
-        const node = document.createElement('div');
-        node.className = 'tree-item pendencia-item';
+    // Ordenar setores alfabeticamente
+    const sortedSectors = Object.keys(pendenciasPorSetor).sort();
 
+    if (!localUI.expandedPendenciasSectors) {
+        localUI.expandedPendenciasSectors = new Set();
+    }
+
+    sortedSectors.forEach(sectorName => {
+        const pendenciasDoSetor = pendenciasPorSetor[sectorName];
+        const isExpanded = localUI.expandedPendenciasSectors.has(sectorName);
+
+        const sectorNode = document.createElement('div');
+        sectorNode.className = `tree-node ${isExpanded ? '' : 'collapsed'}`;
+
+        const sectorItem = document.createElement('div');
+        sectorItem.className = 'tree-item';
+        sectorItem.style.cursor = 'pointer';
+
+        // Lado Esquerdo do item de setor (Chevron + Ícone + Nome do Setor)
         const itemLeft = document.createElement('div');
         itemLeft.className = 'item-left';
-        itemLeft.innerHTML = `
-            <i class="ph ph-file-warning item-icon"></i>
-            <div style="display: flex; flex-direction: column;">
-                <span class="item-name" style="font-weight: 700; color: var(--text-main);">${p.docName}</span>
-                <span style="font-size: 0.75rem; color: var(--text-muted);">${p.sector}</span>
-                ${p.specification ? `<div style="margin-top: 0.25rem; font-size: 0.75rem; color: var(--primary); display: flex; align-items: flex-start; gap: 0.3rem; flex-wrap: wrap; line-height: 1.4;"><i class="ph ph-chat-centered-dots" style="margin-top: 0.15rem;"></i> <strong style="flex-shrink: 0;">Especificação:</strong> <span style="flex: 1; min-width: 200px; white-space: normal; word-break: break-word;">${p.specification}</span></div>` : ''}
-            </div>
-        `;
 
+        const chevron = document.createElement('i');
+        chevron.className = 'ph ph-caret-down';
+        chevron.style.marginRight = '0.5rem';
+
+        const icon = document.createElement('i');
+        let iconClass = 'ph-folder';
+        const n = sectorName.toLowerCase();
+        if (n.includes('legaliza')) iconClass = 'ph-scales';
+        else if (n.includes('arquit') || n.includes('urbani')) iconClass = 'ph-compass-tool';
+        else if (n.includes('engenh')) iconClass = 'ph-wrench';
+        else if (n.includes('sustent')) iconClass = 'ph-leaf';
+        icon.className = `ph ${iconClass} item-icon`;
+
+        // Estatísticas do setor de pendências
+        const total = pendenciasDoSetor.length;
+        const entregues = pendenciasDoSetor.filter(p => p.attachments && p.attachments.length > 0).length;
+        const validadas = pendenciasDoSetor.filter(p => p.attachments && p.attachments.length > 0 && (p.validationStatus === 'Validado' || p.validationStatus === 'APF check')).length;
+        const apontamentos = pendenciasDoSetor.filter(p => p.validationStatus === 'Apontamento').length;
+
+        // Definir cor do ícone de pasta do setor com base no status das pendências
+        let iconColor = 'var(--danger)'; // Pendente por padrão
+        if (total === validadas) {
+            iconColor = 'var(--accent)'; // Todas validadas
+        } else if (total === entregues) {
+            iconColor = 'var(--warning)'; // Todas entregues, mas pendentes de validação
+        } else if (apontamentos > 0) {
+            iconColor = 'var(--danger)'; // Há apontamentos
+        }
+        icon.style.color = iconColor;
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'item-name root-name';
+        nameSpan.style.display = 'flex';
+        nameSpan.style.alignItems = 'center';
+        nameSpan.style.gap = '0.5rem';
+        nameSpan.style.fontSize = '1.05rem';
+        nameSpan.style.fontWeight = '700';
+
+        nameSpan.appendChild(chevron);
+        nameSpan.appendChild(icon);
+
+        const titleText = document.createTextNode(' ' + sectorName);
+        nameSpan.appendChild(titleText);
+
+        itemLeft.appendChild(nameSpan);
+
+        // Lado Direito do item de setor (Contadores de progresso e indicador de pendência)
         const itemRight = document.createElement('div');
         itemRight.className = 'item-right';
 
-        const hasAtt = p.attachments && p.attachments.length > 0;
+        // Badge de progresso (ex: "1/3 Entregues")
+        const progBadge = document.createElement('span');
+        progBadge.className = entregues === total ? 'badge badge-validado badge-sm' : 'badge badge-analise badge-sm';
+        progBadge.textContent = `${entregues}/${total} Entregues`;
+        itemRight.appendChild(progBadge);
 
-        // Status Badge
-        const statusBadge = document.createElement('span');
-        statusBadge.className = hasAtt ? 'badge badge-entregue badge-sm' : 'badge badge-pendente badge-sm';
-        statusBadge.textContent = hasAtt ? 'Entregue' : 'Pendente';
+        // Se houver apontamentos, exibir badge de apontamento
+        if (apontamentos > 0) {
+            const apBadge = document.createElement('span');
+            apBadge.className = 'badge badge-apontamento badge-sm';
+            apBadge.textContent = `${apontamentos} Apontamento(s)`;
+            itemRight.appendChild(apBadge);
+        }
 
-        const statusRow = document.createElement('div');
-        statusRow.className = 'item-status-row';
-        statusRow.style.display = 'flex';
-        statusRow.style.gap = '0.3rem';
-        statusRow.style.alignItems = 'center';
-        statusRow.appendChild(statusBadge);
+        // Se houver pendências críticas não entregues, exibir contador vermelho
+        const naoEntregues = total - entregues;
+        if (naoEntregues > 0) {
+            const pendCircle = document.createElement('span');
+            pendCircle.className = 'pending-circle';
+            pendCircle.textContent = naoEntregues;
+            pendCircle.title = `${naoEntregues} pendências sem entrega`;
+            itemRight.appendChild(pendCircle);
+        }
 
-        // Validation badge for pendencies
-        if (hasAtt && p.validationStatus) {
-            const valBadge = document.createElement('span');
-            if (p.validationStatus === 'APF check' || p.validationStatus === 'Validado') {
-                valBadge.className = 'badge badge-validado badge-sm';
-                valBadge.textContent = 'Validado';
+        // Lock icon se o usuário logado não for deste setor nem APF/Olé
+        const isLocked = authenticatedSector && authenticatedSector !== 'APF' && authenticatedSector !== 'Olé' && authenticatedSector.trim().toLowerCase() !== sectorName.trim().toLowerCase();
+        if (isLocked) {
+            const lockIcon = document.createElement('i');
+            lockIcon.className = 'ph ph-lock-simple';
+            lockIcon.style.color = 'var(--text-muted)';
+            lockIcon.style.opacity = '0.6';
+            lockIcon.style.fontSize = '1.1rem';
+            lockIcon.title = 'Acesso Restrito';
+            itemRight.appendChild(lockIcon);
+        }
+
+        sectorItem.appendChild(itemLeft);
+        sectorItem.appendChild(itemRight);
+
+        // Clique no setor para alternar expansão
+        sectorItem.onclick = () => {
+            if (localUI.expandedPendenciasSectors.has(sectorName)) {
+                localUI.expandedPendenciasSectors.delete(sectorName);
+            } else {
+                localUI.expandedPendenciasSectors.add(sectorName);
             }
-            else if (p.validationStatus === 'Apontamento') valBadge.className = 'badge badge-apontamento badge-sm';
-            else valBadge.className = 'badge badge-analise badge-sm';
-            if (p.validationStatus !== 'APF check' && p.validationStatus !== 'Validado') valBadge.textContent = p.validationStatus;
-            statusRow.appendChild(valBadge);
-        }
+            saveLocalUI();
+            renderTree();
+        };
 
-        // Attach Button - Permitido apenas para o setor responsável ou APF
-        if (canEditPend) {
-            const btnAttach = document.createElement('button');
-            btnAttach.className = 'icon-btn attach-icon-btn';
-            btnAttach.title = 'Anexar documento de pendência';
-            btnAttach.innerHTML = '<i class="ph ph-paperclip"></i>';
-            btnAttach.onclick = (e) => {
-                e.stopPropagation();
-                activeUploadItemId = p.id;
-                isUploadPendencia = true;
-                if (globalFileInput) globalFileInput.click();
-            };
-            statusRow.appendChild(btnAttach);
-        }
+        sectorNode.appendChild(sectorItem);
 
-        itemRight.appendChild(statusRow);
+        // Container de filhos para as pendências
+        const childCont = document.createElement('div');
+        childCont.className = 'children-container';
 
-        // Observation Field (Compact and toggleable)
-        const btnObs = document.createElement('button');
-        btnObs.className = 'btn btn-outline btn-sm';
-        btnObs.style.padding = '0.2rem 0.5rem';
-        btnObs.style.fontSize = '0.7rem';
-        btnObs.innerHTML = '<i class="ph ph-note"></i> Obs.';
+        // Renderizar cada pendência do setor
+        pendenciasDoSetor.forEach(p => {
+            const canEditPend = isAPF || (authenticatedSector || '').trim().toLowerCase() === (p.sector || '').trim().toLowerCase();
+            const pNodeWrapper = document.createElement('div');
+            pNodeWrapper.className = 'tree-node pendencia-node';
 
-        const obsBox = document.createElement('div');
-        obsBox.className = 'justification-box';
-        obsBox.style.marginTop = '0.4rem';
-
-        const obsInput = document.createElement('textarea');
-        obsInput.className = 'input-modern';
-        obsInput.style.width = '100%';
-        obsInput.style.height = '60px';
-        obsInput.style.fontSize = '0.75rem';
-        
-        if (canEditPend) {
-            obsInput.placeholder = 'Observação...';
-            obsInput.value = p.observation || '';
-            obsInput.onchange = (e) => {
-                const oldVal = p.observation || '';
-                p.observation = e.target.value;
-                saveState();
-                if (oldVal !== p.observation) {
-                    addAuditLog('Observação Adicionada', `Nova observação em <strong>${p.docName}</strong>: "${p.observation}"`, 'info');
+            const node = document.createElement('div');
+            node.className = 'tree-item pendencia-item';
+            
+            // Ajustar o visual dos itens filhos (borda colorida conforme o status)
+            let borderCol = 'var(--danger)';
+            const hasAtt = p.attachments && p.attachments.length > 0;
+            if (hasAtt) {
+                if (p.validationStatus === 'Validado' || p.validationStatus === 'APF check') {
+                    borderCol = 'var(--accent)';
+                } else if (p.validationStatus === 'Apontamento') {
+                    borderCol = 'var(--danger)';
+                } else {
+                    borderCol = 'var(--warning)'; // Em análise
                 }
-            };
-        } else {
-            obsInput.disabled = true;
-            obsInput.placeholder = 'Apenas o setor responsável pode adicionar observações.';
-            obsInput.value = p.observation || '';
-        }
+            }
+            node.style.borderLeft = `3px solid ${borderCol}`;
 
-        obsBox.appendChild(obsInput);
-        if (p.observation && p.observation.trim() !== '') {
-            btnObs.style.borderColor = 'var(--accent)';
-            btnObs.style.color = 'var(--accent)';
-        }
-        btnObs.onclick = () => obsBox.classList.toggle('open');
+            const itemLeft = document.createElement('div');
+            itemLeft.className = 'item-left';
 
-        itemRight.appendChild(btnObs);
-        itemRight.appendChild(obsBox);
+            // Ícone de status do arquivo da pendência
+            const pIcon = document.createElement('i');
+            pIcon.className = hasAtt ? 'ph ph-file-text item-icon' : 'ph ph-file-warning item-icon';
+            
+            // Cor do ícone da pendência
+            let pIconColor = 'var(--danger)';
+            if (hasAtt) {
+                if (p.validationStatus === 'Validado' || p.validationStatus === 'APF check') {
+                    pIconColor = 'var(--accent)';
+                } else if (p.validationStatus === 'Apontamento') {
+                    pIconColor = 'var(--danger)';
+                } else {
+                    pIconColor = 'var(--warning)';
+                }
+            }
+            pIcon.style.color = pIconColor;
 
-        node.appendChild(itemLeft);
-        node.appendChild(itemRight);
+            itemLeft.appendChild(pIcon);
 
-        // NOVO: Listagem de Anexos Vertical (Agora dentro do quadro do item)
-        if (hasAtt) {
-            const attContainer = document.createElement('div');
-            attContainer.className = 'node-attachments-container';
-            p.attachments.forEach(att => {
-                const badge = createAttachmentBadge(att, p.id, canEditPend, false, true);
-                attContainer.appendChild(badge);
-            });
-            node.appendChild(attContainer);
-        }
+            const pNameWrapper = document.createElement('div');
+            pNameWrapper.style.display = 'flex';
+            pNameWrapper.style.flexDirection = 'column';
 
-        pNodeWrapper.appendChild(node);
-        wrapper.appendChild(pNodeWrapper);
+            const pNameSpan = document.createElement('span');
+            pNameSpan.className = 'item-name';
+            pNameSpan.style.fontWeight = '700';
+            pNameSpan.style.color = 'var(--text-main)';
+            pNameSpan.textContent = p.docName;
+
+            pNameWrapper.appendChild(pNameSpan);
+
+            if (p.specification) {
+                const pSpec = document.createElement('div');
+                pSpec.style.marginTop = '0.25rem';
+                pSpec.style.fontSize = '0.75rem';
+                pSpec.style.color = 'var(--primary)';
+                pSpec.style.display = 'flex';
+                pSpec.style.alignItems = 'flex-start';
+                pSpec.style.gap = '0.3rem';
+                pSpec.style.flexWrap = 'wrap';
+                pSpec.style.lineHeight = '1.4';
+                pSpec.innerHTML = `<i class="ph ph-chat-centered-dots" style="margin-top: 0.15rem;"></i> <strong style="flex-shrink: 0;">Especificação:</strong> <span style="flex: 1; min-width: 200px; white-space: normal; word-break: break-word;">${p.specification}</span>`;
+                pNameWrapper.appendChild(pSpec);
+            }
+
+            itemLeft.appendChild(pNameWrapper);
+
+            const itemRight = document.createElement('div');
+            itemRight.className = 'item-right';
+
+            // Status Badge
+            const statusBadge = document.createElement('span');
+            statusBadge.className = hasAtt ? 'badge badge-entregue badge-sm' : 'badge badge-pendente badge-sm';
+            statusBadge.textContent = hasAtt ? 'Entregue' : 'Pendente';
+
+            const statusRow = document.createElement('div');
+            statusRow.className = 'item-status-row';
+            statusRow.style.display = 'flex';
+            statusRow.style.gap = '0.3rem';
+            statusRow.style.alignItems = 'center';
+            statusRow.appendChild(statusBadge);
+
+            // Validation badge for pendencies
+            if (hasAtt && p.validationStatus) {
+                const valBadge = document.createElement('span');
+                if (p.validationStatus === 'APF check' || p.validationStatus === 'Validado') {
+                    valBadge.className = 'badge badge-validado badge-sm';
+                    valBadge.textContent = 'Validado';
+                }
+                else if (p.validationStatus === 'Apontamento') {
+                    valBadge.className = 'badge badge-apontamento badge-sm';
+                    valBadge.textContent = p.validationStatus;
+                }
+                else {
+                    valBadge.className = 'badge badge-analise badge-sm';
+                    valBadge.textContent = p.validationStatus;
+                }
+                statusRow.appendChild(valBadge);
+            }
+
+            // Attach Button
+            if (canEditPend) {
+                const btnAttach = document.createElement('button');
+                btnAttach.className = 'icon-btn attach-icon-btn';
+                btnAttach.title = 'Anexar documento de pendência';
+                btnAttach.innerHTML = '<i class="ph ph-paperclip"></i>';
+                btnAttach.onclick = (e) => {
+                    e.stopPropagation();
+                    activeUploadItemId = p.id;
+                    isUploadPendencia = true;
+                    if (globalFileInput) globalFileInput.click();
+                };
+                statusRow.appendChild(btnAttach);
+            }
+
+            itemRight.appendChild(statusRow);
+
+            // Observation Field (Compact and toggleable)
+            const btnObs = document.createElement('button');
+            btnObs.className = 'btn btn-outline btn-sm';
+            btnObs.style.padding = '0.2rem 0.5rem';
+            btnObs.style.fontSize = '0.7rem';
+            btnObs.innerHTML = '<i class="ph ph-note"></i> Obs.';
+
+            const obsBox = document.createElement('div');
+            obsBox.className = 'justification-box';
+            obsBox.style.marginTop = '0.4rem';
+
+            const obsInput = document.createElement('textarea');
+            obsInput.className = 'input-modern';
+            obsInput.style.width = '100%';
+            obsInput.style.height = '60px';
+            obsInput.style.fontSize = '0.75rem';
+
+            if (canEditPend) {
+                obsInput.placeholder = 'Observação...';
+                obsInput.value = p.observation || '';
+                obsInput.onchange = (e) => {
+                    const oldVal = p.observation || '';
+                    p.observation = e.target.value;
+                    saveState();
+                    if (oldVal !== p.observation) {
+                        addAuditLog('Observação Adicionada', `Nova observação em <strong>${p.docName}</strong>: "${p.observation}"`, 'info');
+                    }
+                };
+            } else {
+                obsInput.disabled = true;
+                obsInput.placeholder = 'Apenas o setor responsável pode adicionar observações.';
+                obsInput.value = p.observation || '';
+            }
+
+            obsBox.appendChild(obsInput);
+            if (p.observation && p.observation.trim() !== '') {
+                btnObs.style.borderColor = 'var(--accent)';
+                btnObs.style.color = 'var(--accent)';
+            }
+            btnObs.onclick = () => obsBox.classList.toggle('open');
+
+            itemRight.appendChild(btnObs);
+            itemRight.appendChild(obsBox);
+
+            node.appendChild(itemLeft);
+            node.appendChild(itemRight);
+
+            // Anexos da pendência
+            if (hasAtt) {
+                const attContainer = document.createElement('div');
+                attContainer.className = 'node-attachments-container';
+                p.attachments.forEach(att => {
+                    const badge = createAttachmentBadge(att, p.id, canEditPend, false, true);
+                    attContainer.appendChild(badge);
+                });
+                node.appendChild(attContainer);
+            }
+
+            pNodeWrapper.appendChild(node);
+            childCont.appendChild(pNodeWrapper);
+        });
+
+        sectorNode.appendChild(childCont);
+        wrapper.appendChild(sectorNode);
     });
 
     checklistContainer.appendChild(wrapper);
