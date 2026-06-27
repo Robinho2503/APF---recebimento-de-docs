@@ -3175,11 +3175,7 @@ function renderPendenciasChecklist(curr) {
         const itemRight = document.createElement('div');
         itemRight.className = 'item-right';
 
-        // Badge de progresso (ex: "1/3 Entregues")
-        const progBadge = document.createElement('span');
-        progBadge.className = entregues === total ? 'badge badge-validado badge-sm' : 'badge badge-analise badge-sm';
-        progBadge.textContent = `${entregues}/${total} Entregues`;
-        itemRight.appendChild(progBadge);
+        // Badge de progresso removido conforme solicitado
 
         // Se houver apontamentos, exibir badge de apontamento
         if (apontamentos > 0) {
@@ -5041,11 +5037,7 @@ function renderPendenciasMgmt() {
         const itemRight = document.createElement('div');
         itemRight.className = 'item-right';
 
-        // Badge de progresso (ex: "1/3 Entregues")
-        const progBadge = document.createElement('span');
-        progBadge.className = entregues === total ? 'badge badge-validado badge-sm' : 'badge badge-analise badge-sm';
-        progBadge.textContent = `${entregues}/${total} Entregues`;
-        itemRight.appendChild(progBadge);
+        // Badge de progresso removido conforme solicitado
 
         // Se houver apontamentos, exibir badge de apontamento
         if (apontamentos > 0) {
