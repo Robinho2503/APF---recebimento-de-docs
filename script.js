@@ -2045,9 +2045,12 @@ function renderProjectStagesStepper(p) {
         stepperContainer.style.display = 'none';
         return;
     }
-    stepperContainer.style.display = 'flex';
 
     ensureCustomStages(p);
+    stepperContainer.className = 'stages-stepper';
+    stepperContainer.classList.add(`stages-count-${p.customStages.length}`);
+    stepperContainer.style.display = 'flex';
+
     syncLegacyFields(p);
 
     const isAPF = authenticatedSector === 'APF';

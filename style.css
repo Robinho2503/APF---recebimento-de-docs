@@ -3311,7 +3311,162 @@ hr {
     align-items: center;
     width: 100%;
     gap: 0.75rem;
-    padding: 0.25rem 0;
+    padding: 0.8rem 0;
+    margin-top: 0.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    animation: fadeInDown 0.4s ease-out;
+}
+
+.light-mode .stages-stepper {
+    border-top-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Ajustes de escala proporcional no Stepper para caber de acordo com o limite */
+
+/* 4 Etapas: Encolhimento leve */
+.stages-count-4 .step-item {
+    padding: 0.45rem 0.65rem !important;
+    gap: 0.45rem !important;
+    min-width: 110px !important;
+}
+.stages-count-4 .step-icon-circle {
+    width: 1.8rem !important;
+    height: 1.8rem !important;
+    font-size: 0.95rem !important;
+}
+.stages-count-4 .step-title {
+    font-size: 0.72rem !important;
+}
+.stages-count-4 .step-desc {
+    font-size: 0.6rem !important;
+}
+.stages-count-4 .step-date-wrapper {
+    padding: 0.2rem 0.35rem !important;
+}
+.stages-count-4 .step-date-label {
+    font-size: 0.5rem !important;
+}
+.stages-count-4 .step-date-input {
+    font-size: 0.65rem !important;
+    padding: 0.15rem 0.25rem !important;
+}
+.stages-count-4 .step-line {
+    flex: 0.2 !important;
+    min-width: 10px !important;
+}
+
+/* 5 Etapas: Encolhimento moderado */
+.stages-count-5 .step-item {
+    padding: 0.35rem 0.5rem !important;
+    gap: 0.4rem !important;
+    min-width: 100px !important;
+}
+.stages-count-5 .step-icon-circle {
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+    font-size: 0.85rem !important;
+    border-width: 1px !important;
+}
+.stages-count-5 .step-title {
+    font-size: 0.65rem !important;
+}
+.stages-count-5 .step-desc {
+    font-size: 0.55rem !important;
+}
+.stages-count-5 .step-date-wrapper {
+    padding: 0.15rem 0.25rem !important;
+    margin-top: 0.2rem !important;
+}
+.stages-count-5 .step-date-label {
+    font-size: 0.48rem !important;
+}
+.stages-count-5 .step-date-input {
+    font-size: 0.6rem !important;
+    padding: 0.12rem 0.2rem !important;
+}
+.stages-count-5 .step-line {
+    flex: 0.15 !important;
+    min-width: 8px !important;
+}
+.stages-count-5 .step-delete-btn {
+    width: 14px !important;
+    height: 14px !important;
+    font-size: 8px !important;
+    top: -4px !important;
+    right: -4px !important;
+}
+
+/* 6 ou mais Etapas: Encolhimento máximo */
+.stages-count-6 .step-item,
+.stages-count-7 .step-item,
+.stages-count-8 .step-item,
+.stages-count-9 .step-item,
+.stages-count-10 .step-item {
+    padding: 0.3rem 0.4rem !important;
+    gap: 0.35rem !important;
+    min-width: 90px !important;
+}
+.stages-count-6 .step-icon-circle,
+.stages-count-7 .step-icon-circle,
+.stages-count-8 .step-icon-circle,
+.stages-count-9 .step-icon-circle,
+.stages-count-10 .step-icon-circle {
+    width: 1.3rem !important;
+    height: 1.3rem !important;
+    font-size: 0.75rem !important;
+    border-width: 1px !important;
+}
+.stages-count-6 .step-title,
+.stages-count-7 .step-title,
+.stages-count-8 .step-title,
+.stages-count-9 .step-title,
+.stages-count-10 .step-title {
+    font-size: 0.6rem !important;
+}
+.stages-count-6 .step-desc,
+.stages-count-7 .step-desc,
+.stages-count-8 .step-desc,
+.stages-count-9 .step-desc,
+.stages-count-10 .step-desc {
+    font-size: 0.5rem !important;
+}
+.stages-count-6 .step-date-wrapper,
+.stages-count-7 .step-date-wrapper,
+.stages-count-8 .step-date-wrapper,
+.stages-count-9 .step-date-wrapper,
+.stages-count-10 .step-date-wrapper {
+    padding: 0.1rem 0.2rem !important;
+    margin-top: 0.15rem !important;
+}
+.stages-count-6 .step-date-label,
+.stages-count-7 .step-date-label,
+.stages-count-8 .step-date-label,
+.stages-count-9 .step-date-label,
+.stages-count-10 .step-date-label {
+    font-size: 0.45rem !important;
+}
+.stages-count-6 .step-date-input,
+.stages-count-7 .step-date-input,
+.stages-count-8 .step-date-input,
+.stages-count-9 .step-date-input,
+.stages-count-10 .step-date-input {
+    font-size: 0.55rem !important;
+    padding: 0.1rem 0.15rem !important;
+}
+.stages-count-6 .step-line,
+.stages-count-7 .step-line,
+.stages-count-8 .step-line {
+    flex: 0.1 !important;
+    min-width: 5px !important;
+}
+.stages-count-6 .step-delete-btn,
+.stages-count-7 .step-delete-btn,
+.stages-count-8 .step-delete-btn {
+    width: 12px !important;
+    height: 12px !important;
+    font-size: 7px !important;
+    top: -3px !important;
+    right: -3px !important;
 }
 
 .step-item {
