@@ -1932,6 +1932,70 @@ function updateGlobalDateUI() {
     renderProjectStagesStepper(p);
 }
 
+// Garante que o array de etapas dinâmicas esteja inicializado baseado no estado legado do projeto
+function ensureCustomStages(p) {
+    if (!p) return;
+    if (!p.customStages || p.customStages.length === 0) {
+        let activeStageNum = 1;
+        if (p.pendenciaActive) activeStageNum = 3;
+        else if (p.engAnalysisOpened) activeStageNum = 2;
+
+        p.customStages = [
+            {
+                id: 'stage_1',
+                type: 'doc_inicial',
+                title: 'Documentação Inicial',
+                status: activeStageNum === 1 ? 'active' : 'completed',
+                startDate: ''
+            },
+            {
+                id: 'stage_2',
+                type: 'analise_caixa',
+                title: 'Análise CAIXA',
+                status: activeStageNum === 2 ? 'active' : (activeStageNum > 2 ? 'completed' : 'waiting'),
+                startDate: p.engAnalysisStartDate || ''
+            },
+            {
+                id: 'stage_3',
+                type: 'pendencias',
+                title: 'Resolução de Pendências',
+                status: activeStageNum === 3 ? 'active' : 'waiting',
+                startDate: p.pendenciaStartDate || ''
+            }
+        ];
+    }
+}
+
+// Sincroniza campos legados baseando-se no estágio ativo atual do array customStages
+function syncLegacyFields(p) {
+    ensureCustomStages(p);
+    const activeStage = p.customStages.find(s => s.status === 'active');
+    if (!activeStage) {
+        p.engAnalysisOpened = false;
+        p.pendenciaActive = false;
+        return;
+    }
+
+    if (activeStage.type === 'doc_inicial') {
+        p.engAnalysisOpened = false;
+        p.pendenciaActive = false;
+    } else if (activeStage.type === 'analise_caixa') {
+        p.engAnalysisOpened = true;
+        p.pendenciaActive = false;
+        p.engAnalysisStartDate = activeStage.startDate || '';
+    } else if (activeStage.type === 'pendencias') {
+        p.engAnalysisOpened = true;
+        p.pendenciaActive = true;
+        p.pendenciaStartDate = activeStage.startDate || '';
+        
+        // Recuperar última data de início da análise da engenharia para compatibilidade
+        const lastEng = [...p.customStages].reverse().find(s => s.type === 'analise_caixa');
+        if (lastEng) {
+            p.engAnalysisStartDate = lastEng.startDate || '';
+        }
+    }
+}
+
 // Stepper de Estágios do Empreendimento
 function renderProjectStagesStepper(p) {
     const stepperContainer = document.getElementById('project-stages-stepper');
@@ -1943,71 +2007,77 @@ function renderProjectStagesStepper(p) {
     }
     stepperContainer.style.display = 'flex';
 
+    ensureCustomStages(p);
+    syncLegacyFields(p);
+
     const isAPF = authenticatedSector === 'APF';
 
-    // Determinar o estágio atual
-    let activeStage = 1; // 1: Documentação Inicial, 2: Análise CAIXA, 3: Resolução de Pendências
-    if (p.pendenciaActive) {
-        activeStage = 3;
-    } else if (p.engAnalysisOpened) {
-        activeStage = 2;
-    }
-
-    // Calcular dias em cada fase para descrição
-    let engDays = 0;
-    if (p.engAnalysisStartDate) {
-        const start = new Date(p.engAnalysisStartDate);
-        start.setHours(0, 0, 0, 0);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
-        engDays = diff >= 0 ? diff : 0;
-    }
-
-    let pendDays = 0;
-    if (p.pendenciaStartDate) {
-        const start = new Date(p.pendenciaStartDate);
-        start.setHours(0, 0, 0, 0);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
-        pendDays = diff >= 0 ? diff : 0;
-    }
-
-    // Configurações das 3 etapas
-    const stages = [
-        {
-            num: 1,
-            title: 'Documentação Inicial',
-            desc: activeStage === 1 ? 'Em envio / validação' : 'Concluído',
-            icon: 'ph ph-file-arrow-up',
-            color: activeStage === 1 ? 'var(--text-muted)' : 'var(--accent)',
-            colorRgb: activeStage === 1 ? '161, 161, 170' : '16, 185, 129'
-        },
-        {
-            num: 2,
-            title: 'Análise CAIXA',
-            desc: activeStage === 2 ? `Em análise a ${engDays} dias` : (activeStage > 2 ? 'Concluído' : 'Aguardando envio'),
-            icon: activeStage === 2 ? 'ph ph-spinner ph-spin' : 'ph ph-calendar',
-            color: 'var(--info)',
-            colorRgb: '96, 165, 250'
-        },
-        {
-            num: 3,
-            title: 'Resolução de Pendências',
-            desc: activeStage === 3 ? `Em correção a ${pendDays} dias` : 'Aguardando retorno',
-            icon: 'ph ph-warning-diamond',
-            color: 'var(--danger)',
-            colorRgb: '239, 68, 68'
-        }
-    ];
-
     let html = '';
-    stages.forEach((s, idx) => {
+    p.customStages.forEach((s, idx) => {
+        // Calcular dias em cada fase para descrição
+        let daysCount = 0;
+        if (s.startDate) {
+            const start = new Date(s.startDate);
+            start.setHours(0, 0, 0, 0);
+            
+            let end = new Date();
+            if (s.status === 'completed' && idx < p.customStages.length - 1) {
+                const nextStage = p.customStages[idx + 1];
+                if (nextStage && nextStage.startDate) {
+                    end = new Date(nextStage.startDate);
+                }
+            }
+            end.setHours(0, 0, 0, 0);
+            const diff = Math.floor((end - start) / (1000 * 60 * 60 * 24));
+            daysCount = diff >= 0 ? diff : 0;
+        }
+
+        let desc = 'Aguardando início';
+        let icon = 'ph ph-calendar';
+        let color = 'var(--text-muted)';
+        let colorRgb = '161, 161, 170';
+
+        if (s.type === 'doc_inicial') {
+            desc = s.status === 'active' ? 'Em envio / validação' : 'Concluído';
+            icon = 'ph ph-file-arrow-up';
+            color = s.status === 'active' ? 'var(--text-muted)' : 'var(--accent)';
+            colorRgb = s.status === 'active' ? '161, 161, 170' : '16, 185, 129';
+        } else if (s.type === 'analise_caixa') {
+            if (s.status === 'active') {
+                desc = s.startDate ? `Em análise a ${daysCount} dias` : 'Em análise CAIXA';
+                icon = 'ph ph-spinner ph-spin';
+                color = 'var(--info)';
+                colorRgb = '96, 165, 250';
+            } else if (s.status === 'completed') {
+                desc = s.startDate ? `Análise de ${daysCount} dias concluída` : 'Concluído';
+                icon = 'ph ph-calendar';
+                color = 'var(--accent)';
+                colorRgb = '16, 185, 129';
+            } else {
+                desc = 'Aguardando envio';
+                icon = 'ph ph-calendar';
+            }
+        } else if (s.type === 'pendencias') {
+            if (s.status === 'active') {
+                desc = s.startDate ? `Em correção a ${daysCount} dias` : 'Em correção';
+                icon = 'ph ph-warning-diamond';
+                color = 'var(--danger)';
+                colorRgb = '239, 68, 68';
+            } else if (s.status === 'completed') {
+                desc = s.startDate ? `Correções de ${daysCount} dias concluídas` : 'Concluído';
+                icon = 'ph ph-warning-diamond';
+                color = 'var(--accent)';
+                colorRgb = '16, 185, 129';
+            } else {
+                desc = 'Aguardando retorno';
+                icon = 'ph ph-warning-diamond';
+            }
+        }
+
         let stateClass = '';
-        if (s.num === activeStage) {
+        if (s.status === 'active') {
             stateClass = 'active';
-        } else if (s.num < activeStage) {
+        } else if (s.status === 'completed') {
             stateClass = 'completed';
         }
 
@@ -2015,125 +2085,226 @@ function renderProjectStagesStepper(p) {
         const clickableClass = isClickable ? 'clickable-step' : '';
 
         // Estilos customizados de variáveis CSS para o estado ativo
-        const styleVars = `style="--step-color: ${s.color}; --step-color-rgb: ${s.colorRgb};"`;
+        const styleVars = `style="--step-color: ${color}; --step-color-rgb: ${colorRgb};"`;
 
         let dateInputHTML = '';
-        if (isAPF && s.num === activeStage) {
-            if (s.num === 2) {
+        if (isAPF && s.status === 'active') {
+            if (s.type === 'analise_caixa') {
                 dateInputHTML = `
                     <div class="step-date-wrapper" onclick="event.stopPropagation()">
                         <label class="step-date-label">Data de Abertura Real</label>
-                        <input type="date" id="eng-analysis-start-date" class="step-date-input" value="${p.engAnalysisStartDate || ''}">
+                        <input type="date" class="step-date-input custom-stage-date-input" data-stage-id="${s.id}" value="${s.startDate || ''}">
                     </div>
                 `;
-            } else if (s.num === 3) {
+            } else if (s.type === 'pendencias') {
                 dateInputHTML = `
                     <div class="step-date-wrapper" onclick="event.stopPropagation()">
                         <label class="step-date-label">Data de Início</label>
-                        <input type="date" id="pendencia-start-date" class="step-date-input" value="${p.pendenciaStartDate || ''}">
+                        <input type="date" class="step-date-input custom-stage-date-input" data-stage-id="${s.id}" value="${s.startDate || ''}">
                     </div>
                 `;
             }
         }
 
         html += `
-            <div class="step-item ${stateClass} ${clickableClass}" ${styleVars} onclick="handleStageTransition(${s.num})">
+            <div class="step-item ${stateClass} ${clickableClass}" ${styleVars} onclick="handleStageTransition('${s.id}')">
+                ${isAPF && idx > 2 ? `
+                    <button class="step-delete-btn" onclick="event.stopPropagation(); handleDeleteCustomStage('${s.id}')" title="Excluir esta etapa">
+                        <i class="ph ph-x"></i>
+                    </button>
+                ` : ''}
                 <div class="step-icon-circle">
-                    <i class="${stateClass === 'completed' ? 'ph ph-check-circle' : s.icon}"></i>
+                    <i class="${s.status === 'completed' ? 'ph ph-check-circle' : icon}"></i>
                 </div>
                 <div class="step-content">
                     <span class="step-title">${s.title}</span>
-                    <span class="step-desc">${s.desc}</span>
+                    <span class="step-desc">${desc}</span>
                     ${dateInputHTML}
                 </div>
             </div>
         `;
 
         // Linha conectora entre etapas
-        if (idx < stages.length - 1) {
-            const lineActiveClass = activeStage > s.num ? 'active' : '';
+        if (idx < p.customStages.length - 1) {
+            const lineActiveClass = s.status === 'completed' ? 'active' : '';
             html += `<div class="step-line ${lineActiveClass}"></div>`;
         }
     });
 
-    stepperContainer.innerHTML = html;
-
-    // Adicionar event listeners aos inputs de data injetados dinamicamente
-    const engInp = document.getElementById('eng-analysis-start-date');
-    if (engInp) {
-        engInp.onchange = (e) => {
-            p.engAnalysisStartDate = e.target.value;
-            addAuditLog('Data de Engenharia Alterada', `A data de início da análise de engenharia foi alterada para <strong>${e.target.value}</strong>.`, 'info');
-            saveState();
-            updateGlobalDateUI();
-            renderTracking();
-        };
+    // Se o usuário logado for APF, exibe o botão "+" de adicionar etapa customizada
+    if (isAPF) {
+        html += `
+            <div class="add-step-wrapper" onclick="event.stopPropagation()">
+                <button class="add-step-btn" id="btn-add-stepper-stage" title="Adicionar Nova Etapa">
+                    <i class="ph ph-plus"></i>
+                </button>
+                <div class="add-step-dropdown hidden" id="add-stepper-stage-dropdown">
+                    <button onclick="handleAddCustomStage('analise_caixa')">
+                        <i class="ph ph-calendar"></i> Inserir Análise CAIXA
+                    </button>
+                    <button onclick="handleAddCustomStage('pendencias')">
+                        <i class="ph ph-warning-diamond"></i> Inserir Resolução de Pendências
+                    </button>
+                </div>
+            </div>
+        `;
     }
 
-    const pendInp = document.getElementById('pendencia-start-date');
-    if (pendInp) {
-        pendInp.onchange = (e) => {
-            p.pendenciaStartDate = e.target.value;
-            addAuditLog('Data de Pendências Alterada', `A data de início da resolução de pendências foi alterada para <strong>${e.target.value}</strong>.`, 'info');
-            saveState();
-            updateGlobalDateUI();
-            renderTracking();
+    stepperContainer.innerHTML = html;
+
+    // Configurar listeners de data dinâmicos
+    const dateInputs = stepperContainer.querySelectorAll('.custom-stage-date-input');
+    dateInputs.forEach(inp => {
+        inp.onchange = (e) => {
+            const stageId = e.target.getAttribute('data-stage-id');
+            const targetStageObj = p.customStages.find(s => s.id === stageId);
+            if (targetStageObj) {
+                targetStageObj.startDate = e.target.value;
+                syncLegacyFields(p);
+
+                let actionName = targetStageObj.type === 'analise_caixa' ? 'Data de Engenharia Alterada' : 'Data de Pendências Alterada';
+                let actionDesc = targetStageObj.type === 'analise_caixa' 
+                    ? `A data de início da análise de engenharia (${targetStageObj.title}) foi alterada para <strong>${e.target.value}</strong>.`
+                    : `A data de início da resolução de pendências (${targetStageObj.title}) foi alterada para <strong>${e.target.value}</strong>.`;
+
+                addAuditLog(actionName, actionDesc, 'info');
+                saveState();
+                updateGlobalDateUI();
+                renderTracking();
+            }
+        };
+    });
+
+    // Configurar clique para abrir/fechar o dropdown de adicionar etapas
+    const addBtn = document.getElementById('btn-add-stepper-stage');
+    const dropdown = document.getElementById('add-stepper-stage-dropdown');
+    if (addBtn && dropdown) {
+        addBtn.onclick = (e) => {
+            e.stopPropagation();
+            dropdown.classList.toggle('hidden');
         };
     }
 }
 
 // Handler para transição de estágios
-window.handleStageTransition = function(targetStage) {
+window.handleStageTransition = function(targetStageId) {
     const isAPF = authenticatedSector === 'APF';
     if (!isAPF) return; // Apenas APF pode interagir
 
     const p = getCurrentProject();
     if (!p || p.id === 'none' || p.id === 'p_default') return;
 
-    let currentStage = 1;
-    if (p.pendenciaActive) currentStage = 3;
-    else if (p.engAnalysisOpened) currentStage = 2;
+    ensureCustomStages(p);
+    const activeStage = p.customStages.find(s => s.status === 'active');
+    if (activeStage && activeStage.id === targetStageId) return;
 
-    if (currentStage === targetStage) return; // Já está nesta etapa
+    const targetIndex = p.customStages.findIndex(s => s.id === targetStageId);
+    if (targetIndex === -1) return;
 
-    const stageNames = {
-        1: 'Documentação Inicial',
-        2: 'Análise CAIXA',
-        3: 'Resolução de Pendências'
+    const targetStage = p.customStages[targetIndex];
+
+    showConfirm({
+        title: 'Mudar Estágio do Empreendimento',
+        message: `Confirmar transição para o estágio "<strong>${targetStage.title}</strong>"?`,
+        type: 'info',
+        confirmText: 'Confirmar',
+        onConfirm: () => {
+            p.customStages.forEach((s, idx) => {
+                if (idx < targetIndex) {
+                    s.status = 'completed';
+                } else if (idx === targetIndex) {
+                    s.status = 'active';
+                } else {
+                    s.status = 'waiting';
+                }
+            });
+
+            syncLegacyFields(p);
+
+            addAuditLog('Estágio Atualizado', `Estágio do empreendimento alterado para <strong>${targetStage.title}</strong>.`, 'success');
+            saveState();
+            updateGlobalDateUI();
+            renderTracking();
+        }
+    });
+};
+
+// Handler para adicionar etapa customizada
+window.handleAddCustomStage = function(type) {
+    const p = getCurrentProject();
+    if (!p || p.id === 'none' || p.id === 'p_default') return;
+
+    ensureCustomStages(p);
+    const newNum = p.customStages.length + 1;
+    const stageTypeNames = {
+        analise_caixa: 'Análise CAIXA',
+        pendencias: 'Resolução de Pendências'
     };
 
-    const confirmMsg = `Deseja alterar a etapa do empreendimento "${p.name}" para "${stageNames[targetStage]}"?`;
-    if (!confirm(confirmMsg)) return;
+    p.customStages.push({
+        id: `stage_${newNum}_${Date.now()}`,
+        type: type,
+        title: `${stageTypeNames[type]} ${p.customStages.filter(s => s.type === type).length + 1}`,
+        status: 'waiting',
+        startDate: ''
+    });
 
-    // Executar transição
-    if (targetStage === 1) {
-        p.engAnalysisOpened = false;
-        p.engAnalysisStartDate = '';
-        p.pendenciaActive = false;
-        p.pendenciaStartDate = '';
-        addAuditLog('Etapa Alterada', 'O empreendimento retornou para a etapa de <strong>Documentação Inicial</strong>.', 'info');
-    } else if (targetStage === 2) {
-        p.engAnalysisOpened = true;
-        if (!p.engAnalysisStartDate) {
-            p.engAnalysisStartDate = new Date().toISOString().split('T')[0];
-        }
-        p.pendenciaActive = false;
-        p.pendenciaStartDate = '';
-        addAuditLog('Etapa Alterada', 'O empreendimento avançou para a etapa de <strong>Análise CAIXA</strong>.', 'success');
-    } else if (targetStage === 3) {
-        p.engAnalysisOpened = true; // Se está em pendências, a análise da CAIXA foi aberta
-        p.pendenciaActive = true;
-        if (!p.pendenciaStartDate) {
-            p.pendenciaStartDate = new Date().toISOString().split('T')[0];
-        }
-        addAuditLog('Etapa Alterada', 'O empreendimento avançou para a etapa de <strong>Resolução de Pendências</strong>.', 'warning');
-    }
-
+    addAuditLog('Etapa Adicionada', `Nova etapa de <strong>${stageTypeNames[type]}</strong> foi incluída no fluxo do empreendimento.`, 'info');
     saveState();
-    updateGlobalDateUI();
-    renderTree();
-    renderTracking();
+    renderProjectStagesStepper(p);
 };
+
+// Handler para remover etapa customizada
+window.handleDeleteCustomStage = function(stageId) {
+    const p = getCurrentProject();
+    if (!p || p.id === 'none' || p.id === 'p_default') return;
+
+    ensureCustomStages(p);
+    const targetIndex = p.customStages.findIndex(s => s.id === stageId);
+    if (targetIndex === -1) return;
+
+    const targetStageObj = p.customStages[targetIndex];
+
+    showConfirm({
+        title: 'Remover Etapa Customizada',
+        message: `Deseja remover a etapa "<strong>${targetStageObj.title}</strong>"?`,
+        type: 'danger',
+        confirmText: 'Remover',
+        onConfirm: () => {
+            if (targetStageObj.status === 'active') {
+                const prevStage = p.customStages[targetIndex - 1];
+                if (prevStage) {
+                    prevStage.status = 'active';
+                }
+            }
+
+            p.customStages = p.customStages.filter(s => s.id !== stageId);
+
+            // Re-mapear títulos e números sequenciais das etapas customizadas restantes
+            const counts = { analise_caixa: 1, pendencias: 1 };
+            p.customStages.forEach((s, idx) => {
+                if (idx > 2) {
+                    const baseTitle = s.type === 'analise_caixa' ? 'Análise CAIXA' : 'Resolução de Pendências';
+                    counts[s.type]++;
+                    s.title = `${baseTitle} ${counts[s.type]}`;
+                }
+            });
+
+            syncLegacyFields(p);
+
+            addAuditLog('Etapa Removida', `A etapa <strong>${targetStageObj.title}</strong> foi removida do fluxo do empreendimento.`, 'danger');
+            saveState();
+            updateGlobalDateUI();
+            renderTracking();
+        }
+    });
+};
+
+// Fechar o dropdown de adicionar etapas ao clicar fora dele
+document.addEventListener('click', () => {
+    const dropdown = document.getElementById('add-stepper-stage-dropdown');
+    if (dropdown) dropdown.classList.add('hidden');
+});
 
 
 
