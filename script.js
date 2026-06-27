@@ -4448,7 +4448,9 @@ function renderPendenciasMgmt() {
         if (savedSector) sectorSel.value = savedSector;
     }
 
-    pendenciaStartDateInp.value = curr.pendenciaStartDate || '';
+    if (pendenciaStartDateInp) {
+        pendenciaStartDateInp.value = curr.pendenciaStartDate || '';
+    }
     listCont.innerHTML = '';
 
     if (!curr.pendencias || curr.pendencias.length === 0) {
