@@ -514,25 +514,43 @@ async function checkAndRecoverData() {
             let recovered = [];
             let needsUpdate = false;
             
-            projectsSnap.forEach(d => {
-                const data = d.data();
-                if (data.id && data.id !== 'p_default' && data.id !== 'v2_global_state') {
-                    // Sincronizar progressPct se estiver ausente
-                    if (data.progressPct === undefined) {
-                        data.progressPct = getProjectProgress(data);
-                        needsUpdate = true;
+            if (state.projects.length <= 1) {
+                // 1. Recuperação em caso de desastre (lista local vazia/corrompida)
+                console.warn("Recuperando dados da arquitetura fragmentada vazia...");
+                projectsSnap.forEach(d => {
+                    const data = d.data();
+                    if (data.id && data.id !== 'p_default' && data.id !== 'v2_global_state') {
+                        if (data.progressPct === undefined) {
+                            data.progressPct = getProjectProgress(data);
+                        }
+                        recovered.push(data);
                     }
-                    recovered.push(data);
-                }
-            });
-
-            if (state.projects.length <= 1 || needsUpdate) {
-                console.warn("Sincronizando/Recuperando dados e progresso dos empreendimentos...");
+                });
+                
                 const defaultProj = state.projects.find(p => p.id === 'p_default') || state.projects[0];
                 state.projects = [defaultProj, ...recovered];
                 saveState();
                 renderAfterUpdate();
-                console.log("Sincronização de integridade concluída.");
+                console.log("Recuperação por desastre concluída.");
+            } else {
+                // 2. Sincronizar progressPct APENAS de projetos que pertencem à lista ativa
+                projectsSnap.forEach(d => {
+                    const data = d.data();
+                    if (data.id && data.id !== 'p_default' && data.id !== 'v2_global_state') {
+                        const localProj = state.projects.find(p => p.id === data.id);
+                        if (localProj && localProj.progressPct === undefined) {
+                            localProj.progressPct = getProjectProgress(data);
+                            needsUpdate = true;
+                        }
+                    }
+                });
+                
+                if (needsUpdate) {
+                    console.log("Sincronizando percentuais de progresso dos projetos ativos...");
+                    saveState();
+                    renderAfterUpdate();
+                    console.log("Sincronização de progresso concluída.");
+                }
             }
         }
     } catch (e) {
@@ -1231,12 +1249,23 @@ function initEventListeners() {
                 type: 'danger',
                 confirmText: 'Excluir permanentemente',
                 onConfirm: () => {
+                    const projectIdToDelete = localUI.currentProjectId;
                     addAuditLog('Empreendimento Excluído', `O empreendimento <strong>${curr.name}</strong> foi excluído permanentemente.`, 'danger');
-                    const nextProj = state.projects.find(p => p.id !== localUI.currentProjectId) || state.projects[0];
-                    state.projects = state.projects.filter(p => p.id !== localUI.currentProjectId);
+                    const nextProj = state.projects.find(p => p.id !== projectIdToDelete) || state.projects[0];
+                    state.projects = state.projects.filter(p => p.id !== projectIdToDelete);
                     localUI.currentProjectId = nextProj.id;
                     saveLocalUI();
                     saveState();
+
+                    // Excluir fisicamente o documento individual no Firestore
+                    try {
+                        const docRef = doc(db, `projects/${projectIdToDelete}`);
+                        deleteDoc(docRef);
+                        console.log(`Documento individual ${projectIdToDelete} excluído fisicamente.`);
+                    } catch (e) {
+                        console.error("Erro ao deletar documento individual:", e);
+                    }
+
                     updateGlobalDateUI();
                     renderTree();
                     renderTracking();
