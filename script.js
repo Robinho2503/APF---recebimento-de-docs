@@ -1,7 +1,7 @@
 // Firebase Imports
 console.log("APF Script: Iniciando carregamento...");
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc, onSnapshot, getDoc, getDocs, collection, query, where, serverTimestamp, deleteDoc, enableIndexedDbPersistence } from "firebase/firestore";
+import { getFirestore, doc, setDoc, onSnapshot, getDoc, getDocs, collection, query, where, serverTimestamp, deleteDoc, enableIndexedDbPersistence, runTransaction } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject, getMetadata, listAll } from "firebase/storage";
 
 // Firebase Configuration & Initialization
@@ -265,6 +265,12 @@ window.showConfirm = function ({ title, message, confirmText, cancelText, type, 
 
 // Persistence
 const CACHE_KEY = 'apf_global_state_cache_v2';
+let lastKnownRemoteProjects = {};
+
+function cacheRemoteProject(proj) {
+    if (!proj) return;
+    lastKnownRemoteProjects[proj.id] = JSON.stringify(proj);
+}
 
 async function loadState() {
     // 1. First, check if there's local cache for instant load
@@ -419,10 +425,62 @@ function saveState() {
 
                 const projectDocRef = doc(db, `projects/${id}`);
                 try {
-                    await setDoc(projectDocRef, proj);
-                    console.log(`Projeto ${id} individual sincronizado.`);
+                    const mergedProj = await runTransaction(db, async (transaction) => {
+                        const pDoc = await transaction.get(projectDocRef);
+                        if (!pDoc.exists()) {
+                            transaction.set(projectDocRef, proj);
+                            return proj;
+                        }
+                        const remoteProj = pDoc.data();
+                        const lastKnownStr = lastKnownRemoteProjects[id];
+                        let lastKnownProj = lastKnownStr ? JSON.parse(lastKnownStr) : null;
+                        
+                        if (lastKnownProj) {
+                            (proj.items || []).forEach(localItem => {
+                                const knownItem = (lastKnownProj.items || []).find(i => i.id === localItem.id);
+                                if (!knownItem || JSON.stringify(localItem) !== JSON.stringify(knownItem)) {
+                                    const remoteIdx = (remoteProj.items || []).findIndex(i => i.id === localItem.id);
+                                    if (remoteIdx >= 0) remoteProj.items[remoteIdx] = localItem;
+                                    else {
+                                        if(!remoteProj.items) remoteProj.items = [];
+                                        remoteProj.items.push(localItem);
+                                    }
+                                }
+                            });
+                            
+                            (proj.pendencias || []).forEach(localPend => {
+                                const knownPend = (lastKnownProj.pendencias || []).find(i => i.id === localPend.id);
+                                if (!knownPend || JSON.stringify(localPend) !== JSON.stringify(knownPend)) {
+                                    const remoteIdx = (remoteProj.pendencias || []).findIndex(i => i.id === localPend.id);
+                                    if (remoteIdx >= 0) remoteProj.pendencias[remoteIdx] = localPend;
+                                    else {
+                                        if(!remoteProj.pendencias) remoteProj.pendencias = [];
+                                        remoteProj.pendencias.push(localPend);
+                                    }
+                                }
+                            });
+                        } else {
+                            remoteProj.items = proj.items || [];
+                            remoteProj.pendencias = proj.pendencias || [];
+                        }
+                        
+                        remoteProj.storageBytes = proj.storageBytes;
+                        remoteProj.storageFileCount = proj.storageFileCount;
+                        remoteProj.progressPct = getProjectProgress(remoteProj);
+                        if (lastKnownProj && proj.engAnalysisOpened !== lastKnownProj.engAnalysisOpened) {
+                            remoteProj.engAnalysisOpened = proj.engAnalysisOpened;
+                        }
+                        
+                        transaction.set(projectDocRef, remoteProj);
+                        return remoteProj;
+                    });
+                    
+                    if (mergedProj) {
+                        cacheRemoteProject(mergedProj);
+                    }
+                    console.log(`Projeto ${id} individual sincronizado de forma granular.`);
                 } catch (e) {
-                    console.error(`Erro ao salvar projeto individual ${id}:`, e);
+                    console.error(`Erro ao salvar projeto individual ${id} via transação:`, e);
                 }
             }
         }
@@ -475,10 +533,12 @@ async function selectProject(projectId) {
                 project.items = fullData.items || [];
                 // Sincronizar metadados e outros campos do detalhe
                 Object.assign(project, fullData);
+                cacheRemoteProject(project);
             } else if (projectId === 'p_default') {
                 // Fallback para o Modelo Padrão caso não exista no cloud
                 console.log("Modelo no Cloud não encontrado, usando padrão local.");
                 project.items = JSON.parse(JSON.stringify(DEFAULT_ITEMS));
+                cacheRemoteProject(project);
             }
         } catch (e) {
             console.error("Erro ao carregar detalhes do projeto:", e);
@@ -503,6 +563,83 @@ async function selectProject(projectId) {
         saveLocalUI();
         applySidebarState();
     }
+    setupProjectRealtimeListener(projectId);
+}
+
+let activeProjectUnsubscribe = null;
+function setupProjectRealtimeListener(projectId) {
+    if (activeProjectUnsubscribe) {
+        activeProjectUnsubscribe();
+        activeProjectUnsubscribe = null;
+    }
+
+    if (projectId && projectId !== 'none' && projectId !== 'p_default') {
+        const projectDocRef = doc(db, `projects/${projectId}`);
+        activeProjectUnsubscribe = onSnapshot(projectDocRef, (snap) => {
+            if (snap.exists()) {
+                const fullData = snap.data();
+                const lastKnownStr = lastKnownRemoteProjects[projectId];
+                
+                if (lastKnownStr) {
+                    const lastKnown = JSON.parse(lastKnownStr);
+                    const remoteItemsStr = JSON.stringify(fullData.items || []);
+                    const knownItemsStr = JSON.stringify(lastKnown.items || []);
+                    const remotePendsStr = JSON.stringify(fullData.pendencias || []);
+                    const knownPendsStr = JSON.stringify(lastKnown.pendencias || []);
+                    
+                    if (remoteItemsStr !== knownItemsStr || remotePendsStr !== knownPendsStr) {
+                        // Outro usuário ou aba fez modificações!
+                        showUpdateNotification(projectId, fullData);
+                    }
+                }
+            }
+        });
+    }
+}
+
+function showUpdateNotification(projectId, newData) {
+    let toast = document.getElementById('update-notification-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'update-notification-toast';
+        toast.style.position = 'fixed';
+        toast.style.bottom = '30px';
+        toast.style.left = '50%';
+        toast.style.transform = 'translateX(-50%)';
+        toast.style.background = 'var(--accent)';
+        toast.style.color = '#ffffff';
+        toast.style.padding = '12px 24px';
+        toast.style.borderRadius = '30px';
+        toast.style.fontWeight = '700';
+        toast.style.boxShadow = '0 8px 25px rgba(0,0,0,0.3)';
+        toast.style.zIndex = '99999';
+        toast.style.cursor = 'pointer';
+        toast.style.display = 'flex';
+        toast.style.alignItems = 'center';
+        toast.style.gap = '10px';
+        toast.innerHTML = '<i class="ph ph-arrows-clockwise" style="font-size:1.3rem;"></i> <span>Novas alterações detectadas. Clique para atualizar a tela.</span>';
+        document.body.appendChild(toast);
+    }
+    
+    toast.style.display = 'flex';
+    
+    toast.onclick = () => {
+        const project = state.projects.find(p => p.id === projectId);
+        if (project) {
+            // Se houver conflitos não salvos localmente, eles serão sobrescritos pela versão da nuvem 
+            // no momento do clique, mas isso garante que você receba os anexos e status novos.
+            project.items = newData.items || [];
+            project.pendencias = newData.pendencias || [];
+            Object.assign(project, newData);
+            cacheRemoteProject(project);
+            
+            // Remove the project from dirty ids so it doesn't immediately overwrite again
+            dirtyProjectIds.delete(projectId);
+            
+            renderAfterUpdate();
+        }
+        toast.style.display = 'none';
+    };
 }
 
 async function checkAndRecoverData() {
