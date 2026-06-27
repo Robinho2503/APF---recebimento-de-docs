@@ -3448,18 +3448,24 @@ function updateProjectProgressUI(curr) {
         }
     }
 
-    // --- RENDERIZAÇÃO RESUMO DE PROGRESSO ---
+    // --- ESTILO DOS CARTÕES ---
+    const cardStyle = `background: var(--card-bg-subtle); border: 1px solid var(--divider-color); border-radius: 16px; padding: 1.25rem; flex: 1; min-width: 280px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 1rem;`;
+    const cardTitleStyle = `font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.25rem;`;
+
+    // --- CARTÃO 1: PROGRESSO GLOBAL ---
     let progressSectionHTML = '';
     if (isAPF) {
         progressSectionHTML = `
-            <div style="display: flex; align-items: center; gap: 1.25rem;">
-                <div class="circular-progress-container" style="width: 58px; height: 58px;">
-                    <div class="circular-progress" style="--progress: ${generalProgressPct}%; background: conic-gradient(var(--accent) var(--progress), var(--progress-track) 0);"></div>
-                    <span class="progress-text" style="font-size: 1rem; font-weight: 800; color: var(--text-main);">${generalProgressPct}%</span>
-                </div>
-                <div style="display: flex; flex-direction: column;">
-                    <div style="color: var(--accent); font-size: 0.55rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: -2px;">Global</div>
-                    <span style="font-size: 1.1rem; font-weight: 800; color: var(--text-main);">Entrega</span>
+            <div style="${cardStyle}">
+                <div style="${cardTitleStyle}">Progresso Global</div>
+                <div style="display: flex; align-items: center; gap: 1.25rem; margin-top: auto; margin-bottom: auto;">
+                    <div class="circular-progress-container" style="width: 72px; height: 72px;">
+                        <div class="circular-progress" style="--progress: ${generalProgressPct}%; background: conic-gradient(var(--accent) var(--progress), var(--progress-track) 0);"></div>
+                        <span class="progress-text" style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);">${generalProgressPct}%</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column;">
+                        <span style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); line-height: 1.2;">Status Geral<br/>de Entrega</span>
+                    </div>
                 </div>
             </div>
         `;
@@ -3474,57 +3480,116 @@ function updateProjectProgressUI(curr) {
             sPct = Math.round((deliveredSectorCount / sectorLeafItems.length) * 100);
         }
         progressSectionHTML = `
-            <div style="display: flex; align-items: center; gap: 2.5rem;">
-                <div style="display: flex; align-items: center; gap: 1.25rem;">
-                    <div class="circular-progress-container" style="width: 54px; height: 54px;">
-                        <div class="circular-progress" style="--progress: ${sPct}%; background: conic-gradient(var(--accent) var(--progress), var(--progress-track) 0);"></div>
-                        <span class="progress-text" style="font-size: 0.9rem; font-weight: 800; color: var(--text-main);">${sPct}%</span>
+            <div style="${cardStyle}">
+                <div style="${cardTitleStyle}">Progresso do Seu Setor</div>
+                <div style="display: flex; align-items: center; gap: 2rem; margin-top: auto; margin-bottom: auto;">
+                    <div style="display: flex; align-items: center; gap: 1.25rem;">
+                        <div class="circular-progress-container" style="width: 64px; height: 64px;">
+                            <div class="circular-progress" style="--progress: ${sPct}%; background: conic-gradient(var(--accent) var(--progress), var(--progress-track) 0);"></div>
+                            <span class="progress-text" style="font-size: 1rem; font-weight: 800; color: var(--text-main);">${sPct}%</span>
+                        </div>
                     </div>
-                    <div style="display: flex; flex-direction: column;">
-                        <div style="color: var(--accent); font-size: 0.55rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: -2px;">Seu Setor</div>
-                        <span style="font-size: 1.05rem; font-weight: 800; color: var(--text-main);">Progresso</span>
-                    </div>
-                </div>
-                <div style="display: flex; align-items: center; gap: 0.8rem; opacity: 0.8; border-left: 1px solid var(--divider-color); padding-left: 1.5rem;">
-                    <div class="circular-progress-container" style="width: 38px; height: 38px;">
-                        <div class="circular-progress" style="--progress: ${generalProgressPct}%; background: conic-gradient(var(--text-muted) var(--progress), var(--progress-track) 0);"></div>
-                        <span class="progress-text" style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted);">${generalProgressPct}%</span>
-                    </div>
-                    <div style="display: flex; flex-direction: column;">
-                        <div style="font-size: 0.5rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Global</div>
-                        <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Progresso</span>
+                    <div style="display: flex; align-items: center; gap: 0.8rem; opacity: 0.8; border-left: 1px solid var(--divider-color); padding-left: 1.5rem;">
+                        <div class="circular-progress-container" style="width: 44px; height: 44px;">
+                            <div class="circular-progress" style="--progress: ${generalProgressPct}%; background: conic-gradient(var(--text-muted) var(--progress), var(--progress-track) 0);"></div>
+                            <span class="progress-text" style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">${generalProgressPct}%</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column;">
+                            <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Global</span>
+                        </div>
                     </div>
                 </div>
             </div>
         `;
     }
 
-    let pendenciasHTML = '';
+    // --- CARTÃO 2: RESUMO DE DOCUMENTOS ---
+    const totalDocs = validated + inAnalysis + pending + withPoints;
+    
+    // Pequena barra de progresso empilhada
+    const valPct = totalDocs ? (validated / totalDocs) * 100 : 0;
+    const anaPct = totalDocs ? (inAnalysis / totalDocs) * 100 : 0;
+    const pendPct = totalDocs ? (pending / totalDocs) * 100 : 0;
+    const revPct = totalDocs ? (withPoints / totalDocs) * 100 : 0;
 
-    container.innerHTML = `
-            ${progressSectionHTML}
-            <div class="divider-v" style="height: 48px; background: var(--divider-color);"></div>
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.35rem; width: 300px; flex-shrink: 0;">
-                <div class="dashboard-card accent adaptive-card ${treeSearchFilter === 'validado' ? 'active' : ''}" onclick="handleDashboardFilter('validado', ${validated})" style="padding: 0.4rem 0.6rem;">
-                    <span class="card-value" style="font-size: 1rem; line-height: 1;">${validated}</span>
-                    <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7;">Validados</span>
+    const stackedBar = `
+        <div style="display: flex; width: 100%; height: 6px; border-radius: 3px; overflow: hidden; background: var(--card-bg-subtle); margin-bottom: 0.5rem; opacity: 0.8;">
+            <div style="width: ${valPct}%; background: rgba(16, 185, 129, 0.85);" title="Validados"></div>
+            <div style="width: ${anaPct}%; background: rgba(245, 158, 11, 0.85);" title="Em Análise"></div>
+            <div style="width: ${pendPct}%; background: rgba(239, 68, 68, 0.6);" title="Pendentes"></div>
+            <div style="width: ${revPct}%; background: rgba(239, 68, 68, 0.95);" title="Revisar"></div>
+        </div>
+    `;
+
+    const summarySectionHTML = `
+        <div style="${cardStyle}">
+            <div style="${cardTitleStyle}">Resumo de Documentos</div>
+            ${stackedBar}
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;">
+                <div class="dashboard-card accent adaptive-card ${treeSearchFilter === 'validado' ? 'active' : ''}" onclick="handleDashboardFilter('validado', ${validated})" style="padding: 0.5rem; border-radius: 12px; display: flex; align-items: center; gap: 0.5rem;">
+                    <div style="background: rgba(16, 185, 129, 0.15); color: rgba(16, 185, 129, 0.9); border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><i class="ph ph-check-circle" style="font-size: 1.2rem;"></i></div>
+                    <div style="display: flex; flex-direction: column;">
+                        <span class="card-value" style="font-size: 1rem; line-height: 1;">${validated}</span>
+                        <span class="card-label" style="font-size: 0.6rem; text-transform: uppercase; margin-top: 2px;">Validados</span>
+                    </div>
                 </div>
-                <div class="dashboard-card warning adaptive-card ${treeSearchFilter === 'analise' ? 'active' : ''}" onclick="handleDashboardFilter('analise', ${inAnalysis})" style="padding: 0.4rem 0.6rem;">
-                    <span class="card-value" style="font-size: 1rem; line-height: 1;">${inAnalysis}</span>
-                    <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7;">Análise</span>
+                <div class="dashboard-card warning adaptive-card ${treeSearchFilter === 'analise' ? 'active' : ''}" onclick="handleDashboardFilter('analise', ${inAnalysis})" style="padding: 0.5rem; border-radius: 12px; display: flex; align-items: center; gap: 0.5rem;">
+                    <div style="background: rgba(245, 158, 11, 0.15); color: rgba(245, 158, 11, 0.9); border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><i class="ph ph-clock" style="font-size: 1.2rem;"></i></div>
+                    <div style="display: flex; flex-direction: column;">
+                        <span class="card-value" style="font-size: 1rem; line-height: 1;">${inAnalysis}</span>
+                        <span class="card-label" style="font-size: 0.6rem; text-transform: uppercase; margin-top: 2px;">Análise</span>
+                    </div>
                 </div>
-                <div class="dashboard-card danger adaptive-card ${treeSearchFilter === 'pendente' ? 'active' : ''}" onclick="handleDashboardFilter('pendente', ${pending})" style="padding: 0.4rem 0.6rem;">
-                    <span class="card-value" style="font-size: 1rem; line-height: 1;">${pending}</span>
-                    <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7;">Pendentes</span>
+                <div class="dashboard-card danger adaptive-card ${treeSearchFilter === 'pendente' ? 'active' : ''}" onclick="handleDashboardFilter('pendente', ${pending})" style="padding: 0.5rem; border-radius: 12px; display: flex; align-items: center; gap: 0.5rem;">
+                    <div style="background: rgba(239, 68, 68, 0.1); color: rgba(239, 68, 68, 0.7); border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><i class="ph ph-file-dashed" style="font-size: 1.2rem;"></i></div>
+                    <div style="display: flex; flex-direction: column;">
+                        <span class="card-value" style="font-size: 1rem; line-height: 1;">${pending}</span>
+                        <span class="card-label" style="font-size: 0.6rem; text-transform: uppercase; margin-top: 2px;">Pendentes</span>
+                    </div>
                 </div>
-                <div class="dashboard-card danger adaptive-card ${treeSearchFilter === 'apontamento' ? 'active' : ''}" onclick="handleDashboardFilter('apontamento', ${withPoints})" style="padding: 0.4rem 0.6rem;">
-                    <span class="card-value" style="font-size: 1rem; line-height: 1;">${withPoints}</span>
-                    <span class="card-label" style="font-size: 0.55rem; text-transform: uppercase; margin-top: 2px; opacity: 0.7;">REVISAR</span>
+                <div class="dashboard-card danger adaptive-card ${treeSearchFilter === 'apontamento' ? 'active' : ''}" onclick="handleDashboardFilter('apontamento', ${withPoints})" style="padding: 0.5rem; border-radius: 12px; display: flex; align-items: center; gap: 0.5rem;">
+                    <div style="background: rgba(239, 68, 68, 0.2); color: rgba(239, 68, 68, 0.95); border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><i class="ph ph-warning-octagon" style="font-size: 1.2rem;"></i></div>
+                    <div style="display: flex; flex-direction: column;">
+                        <span class="card-value" style="font-size: 1rem; line-height: 1;">${withPoints}</span>
+                        <span class="card-label" style="font-size: 0.6rem; text-transform: uppercase; margin-top: 2px;">Revisar</span>
+                    </div>
                 </div>
             </div>
-            ${analysisSectionHTML}
-            ${pendenciasHTML}
+        </div>
     `;
+
+    // --- CARTÃO 3: DESEMPENHO POR SETOR ---
+    let analysisCardHTML = '';
+    if (isAPF) {
+        analysisCardHTML = `
+            <div style="${cardStyle}">
+                <div style="${cardTitleStyle}">Desempenho por Setor</div>
+                <div style="margin-top: -0.5rem;">
+                    ${analysisSectionHTML}
+                </div>
+            </div>
+        `;
+    } else {
+        analysisCardHTML = `
+            <div style="${cardStyle}">
+                <div style="${cardTitleStyle}">Desempenho do Setor</div>
+                <div style="margin-top: auto; margin-bottom: auto;">
+                    ${analysisSectionHTML}
+                </div>
+            </div>
+        `;
+    }
+
+    // Ajustar o estilo do container principal para o layout em cartões
+    container.style.gap = '1.5rem';
+    container.style.alignItems = 'stretch';
+
+    container.innerHTML = `
+        ${progressSectionHTML}
+        ${summarySectionHTML}
+        ${analysisCardHTML}
+    `;
+
 }
 
 
