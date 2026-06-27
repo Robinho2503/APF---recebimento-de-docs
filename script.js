@@ -506,24 +506,33 @@ async function selectProject(projectId) {
 }
 
 async function checkAndRecoverData() {
-    console.log("Verificando integridade dos dados...");
+    console.log("Verificando integridade dos dados e progresso...");
     const projectsCol = collection(db, "projects");
     try {
         const projectsSnap = await getDocs(query(projectsCol));
-        if (!projectsSnap.empty && state.projects.length <= 1) {
-            console.warn("Recuperando dados da arquitetura fragmentada...");
+        if (!projectsSnap.empty) {
             let recovered = [];
+            let needsUpdate = false;
+            
             projectsSnap.forEach(d => {
                 const data = d.data();
                 if (data.id && data.id !== 'p_default' && data.id !== 'v2_global_state') {
+                    // Sincronizar progressPct se estiver ausente
+                    if (data.progressPct === undefined) {
+                        data.progressPct = getProjectProgress(data);
+                        needsUpdate = true;
+                    }
                     recovered.push(data);
                 }
             });
-            if (recovered.length > 0) {
-                state.projects = [state.projects[0], ...recovered];
+
+            if (state.projects.length <= 1 || needsUpdate) {
+                console.warn("Sincronizando/Recuperando dados e progresso dos empreendimentos...");
+                const defaultProj = state.projects.find(p => p.id === 'p_default') || state.projects[0];
+                state.projects = [defaultProj, ...recovered];
                 saveState();
                 renderAfterUpdate();
-                console.log("Recuperação concluída.");
+                console.log("Sincronização de integridade concluída.");
             }
         }
     } catch (e) {
