@@ -854,7 +854,7 @@ let btnNewProject, btnExportZip, btnExportZipMgmt, btnExportPoints, btnToggleEng
 let checklistContainer, sidebarApf, btnToggleSidebar, managementContainer, trackingContainer, dueDateContainer;
 let tabs, tabContents, btnUnlock, btnBackToMain, inputPassword, passwordError, passwordLock, managementContent;
 let btnSettings, btnSaveSettings, btnResetModel, geminiModelInp, geminiKeyInp, btnToggleKey, apfPassInp;
-let btnTogglePendencias, pendenciasMgmtPanel, btnAddPendencia, pendenciaStartDateInp, modalOverlay, btnCloseModal;
+let btnTogglePendencias, pendenciasMgmtPanel, btnAddPendencia, btnGenerateOficio, pendenciaStartDateInp, modalOverlay, btnCloseModal;
 let engAnalysisMgmtPanel, engAnalysisStartDateInp;
 let btnShowHistory, historyModal, btnCloseHistory;
 let projectDueDateInp, projectGlobalCountdown, headerLocationInfo;
@@ -928,6 +928,7 @@ function initDOMElements() {
     btnTogglePendencias = document.getElementById('btn-toggle-pendencias');
     pendenciasMgmtPanel = document.getElementById('pendencias-mgmt-panel');
     btnAddPendencia = document.getElementById('btn-add-pendencia');
+    btnGenerateOficio = document.getElementById('btn-generate-oficio');
     pendenciaStartDateInp = document.getElementById('pendencia-start-date');
     modalOverlay = document.getElementById('modal-overlay');
     btnCloseModal = document.getElementById('btn-close-modal');
@@ -1538,6 +1539,12 @@ function initEventListeners() {
         };
     }
 
+
+    if (btnGenerateOficio) {
+        btnGenerateOficio.onclick = () => {
+            generateOficioWord();
+        };
+    }
 
     if (btnAddPendencia) {
         btnAddPendencia.onclick = () => {
@@ -2974,6 +2981,75 @@ async function compressImage(file) {
         };
         reader.readAsDataURL(file);
     });
+}
+
+function generateOficioWord() {
+    if (!currentProject || !currentProject.pendencias || currentProject.pendencias.length === 0) {
+        showToast('Não há pendências cadastradas para este empreendimento.');
+        return;
+    }
+
+    const today = new Date();
+    const dateStr = today.toLocaleDateString('pt-BR');
+    const projectName = currentProject.name || 'Empreendimento';
+
+    let tableRows = '';
+    currentProject.pendencias.forEach((p) => {
+        tableRows += `
+            <tr>
+                <td style="border: 1px solid #000; padding: 5px;">${p.name || 'Documento'} - ${p.spec || ''}</td>
+                <td style="border: 1px solid #000; padding: 5px; width: 50%;"></td>
+            </tr>
+        `;
+    });
+
+    const htmlContent = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>Ofício</title>
+            <style>
+                body { font-family: Arial, sans-serif; }
+                table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+                th, td { border: 1px solid #000; padding: 8px; text-align: left; }
+                th { background-color: #f2f2f2; }
+            </style>
+        </head>
+        <body>
+            <div style="text-align: right; margin-bottom: 30px;">
+                <p>Data: ${dateStr}</p>
+            </div>
+            
+            <h1 style="font-size: 18px; text-align: center;">${projectName}</h1>
+            <h2 style="font-size: 16px; text-align: center;">Ofício de atendimento às pendências</h2>
+            
+            <table>
+                <tr>
+                    <th style="width: 50%;">Pendência</th>
+                    <th style="width: 50%;">Observação</th>
+                </tr>
+                ${tableRows}
+            </table>
+            
+            <div style="margin-top: 80px; text-align: center;">
+                <p>___________________________________________________</p>
+                <p>Assinatura do Responsável</p>
+            </div>
+        </body>
+        </html>
+    `;
+
+    const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = \`Oficio_Pendencias_${projectName.replace(/\s+/g, '_')}.doc\`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }, 0);
 }
 
 function renderPendenciasChecklist(curr) {
