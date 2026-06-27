@@ -3363,23 +3363,6 @@ function updateProjectProgressUI(curr) {
     }
 
     let pendenciasHTML = '';
-    if (!isPendenciaMode && curr.pendencias && curr.pendencias.length > 0) {
-        const pends = curr.pendencias;
-        let pPct = pends.length > 0 ? Math.round((pends.filter(p => p.attachments?.length > 0).length / pends.length) * 100) : 0;
-        pendenciasHTML = `
-            <div class="divider-v" style="height: 40px; background: var(--divider-color);"></div>
-            <div style="display: flex; align-items: center; gap: 0.8rem;">
-                <div class="circular-progress-container" style="width: 44px; height: 44px;">
-                    <div class="circular-progress" style="--progress: ${pPct}%; background: conic-gradient(var(--warning) var(--progress), var(--progress-track) 0);"></div>
-                    <span class="progress-text" style="font-size: 0.75rem; font-weight: 700; color: var(--warning);">${pPct}%</span>
-                </div>
-                <div style="display: flex; flex-direction: column;">
-                    <div style="font-size: 0.55rem; color: var(--warning); font-weight: 700; text-transform: uppercase;">Pendências</div>
-                    <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-main);">Caixa (APF)</span>
-                </div>
-            </div>
-        `;
-    }
 
     container.innerHTML = `
             ${progressSectionHTML}
