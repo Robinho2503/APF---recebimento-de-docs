@@ -415,6 +415,7 @@ function saveState() {
                 });
                 proj.storageBytes = projBytes;
                 proj.storageFileCount = projFiles;
+                proj.progressPct = getProjectProgress(proj);
 
                 const projectDocRef = doc(db, `projects/${id}`);
                 try {
@@ -433,6 +434,7 @@ function saveState() {
                 const { items, ...metadata } = p;
                 return {
                     ...metadata,
+                    progressPct: p.id !== 'p_default' ? (p.items ? getProjectProgress(p) : (p.progressPct || 0)) : 0,
                     // Mantemos as estatísticas no índice para o sidebar
                     stats: p.id !== 'p_default' ? calculateProjectStats(p) : { pendente: 0, apontamento: 0 }
                 };
@@ -2524,7 +2526,7 @@ function renderTracking() {
             selectProject(p.id);
         });
 
-        const progressPct = getProjectProgress(p);
+        const progressPct = p.progressPct !== undefined ? p.progressPct : getProjectProgress(p);
 
         // Prazo / Vencimento no rodapé (Apenas exibido se estiver no estágio de Documentação Inicial)
         let footerInfoHTML = '';
