@@ -6596,27 +6596,29 @@ function renderStorageWidget(container, usedBytes, fileCount, isLoading) {
     }
 
     container.innerHTML = `
-        <div class="storage-widget-header flex-between mb-2">
-            <h4 class="storage-title">
-                <i class="ph ph-cloud-arrow-up"></i> Armazenamento: <span class="font-semibold text-main ml-1">${formatBytes(usedBytes)}</span> <span style="font-size:0.75rem; color:var(--text-muted); font-weight:normal; margin-left:0.25rem;">/ ${formatBytes(totalBytes)}</span>
-            </h4>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <div class="storage-badge" style="background: ${statusColor}15; color: ${statusColor}; border: 1px solid ${statusColor}25; font-size: 0.65rem; padding: 0.1rem 0.4rem;">
+        <div class="flex-between mb-1" style="align-items: center;">
+            <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-main); display: flex; align-items: center; gap: 0.3rem;">
+                <i class="ph ph-cloud-arrow-up" style="color: var(--primary); font-size: 0.9rem;"></i>
+                <span>${formatBytes(usedBytes)}</span>
+                <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: normal;">/ ${formatBytes(totalBytes)}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.3rem;">
+                <div style="background: ${statusColor}15; color: ${statusColor}; border: 1px solid ${statusColor}25; font-size: 0.55rem; text-transform: uppercase; padding: 0.1rem 0.3rem; border-radius: 4px; font-weight: 700; letter-spacing: 0.02em;">
                     ${statusText}
                 </div>
-                <button id="btn-refresh-storage" class="storage-refresh-btn-minimal" title="Atualizar" ${isLoading ? 'disabled' : ''}>
-                    <i class="ph ph-arrows-clockwise ${isLoading ? 'ph-spin' : ''}" style="font-size: 0.95rem;"></i>
+                <button id="btn-refresh-storage" class="storage-refresh-btn-minimal" title="Atualizar" style="padding: 0; background: transparent; border: none; cursor: pointer; color: var(--text-muted);" ${isLoading ? 'disabled' : ''}>
+                    <i class="ph ph-arrows-clockwise ${isLoading ? 'ph-spin' : ''}" style="font-size: 0.8rem;"></i>
                 </button>
             </div>
         </div>
 
-        <div class="storage-bar-track mb-2" style="height: 6px;">
-            <div class="storage-bar-fill ${barGradientClass}" style="width: ${usedPercentage}%;"></div>
+        <div class="storage-bar-track mb-1" style="height: 4px; border-radius: 2px; margin-top: 0.4rem; margin-bottom: 0.3rem;">
+            <div class="storage-bar-fill ${barGradientClass}" style="width: ${usedPercentage}%; border-radius: 2px;"></div>
         </div>
 
-        <div class="flex-between" style="font-size: 0.72rem; color: var(--text-muted);">
-            <span>${usedPercentage.toFixed(1)}% utilizado • <b>${fileCount}</b> arquivos</span>
-            <span>${formatBytes(freeBytes)} livres</span>
+        <div class="flex-between" style="font-size: 0.65rem; color: var(--text-muted); line-height: 1;">
+            <span>${usedPercentage.toFixed(1)}% • <b>${fileCount}</b> arq.</span>
+            <span>${formatBytes(freeBytes)} livre</span>
         </div>
     `;
 
