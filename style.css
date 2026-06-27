@@ -232,8 +232,9 @@ body {
     transition: all 0.2s ease-in-out;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 0.6rem;
     backdrop-filter: blur(10px);
 }
 
@@ -268,6 +269,26 @@ body {
 }
 
 /* Estrutura interna do card */
+.card-left-section {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 0.12rem;
+}
+
+.card-left-section:empty {
+    display: none !important;
+}
+
+.sidebar .tracking-card .tracking-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
 .card-top-row {
     display: flex;
     justify-content: space-between;

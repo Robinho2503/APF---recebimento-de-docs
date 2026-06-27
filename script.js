@@ -2561,12 +2561,16 @@ function renderTracking() {
         }
 
         card.innerHTML = `
+            ${badgeText ? `
+            <div class="card-left-section">
+                <span class="card-status-badge ${badgeClass}">${badgeText}</span>
+            </div>
+            ` : ''}
             <div class="tracking-body">
                 <div class="card-top-row">
                     <h3 class="card-project-title" title="${p.name}">
                         <i class="ph ph-buildings"></i>${p.name}
                     </h3>
-                    <span class="card-status-badge ${badgeClass}">${badgeText}</span>
                 </div>
 
                 <div class="card-mid-row">
