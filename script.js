@@ -579,15 +579,87 @@ function calculateProjectStats(project) {
     return { pendente, apontamento };
 }
 
+async function exportProjectZipBlob(curr) {
+    if (!curr || curr.id === 'none') {
+        throw new Error('Selecione um empreendimento primeiro.');
+    }
+    if (typeof JSZip === 'undefined') {
+        throw new Error('Biblioteca de compressão (JSZip) não carregada. Verifique sua conexão.');
+    }
+
+    const items = curr.items || [];
+    const zip = new JSZip();
+    const safeProjectName = curr.name.replace(/[\/\\?%*:|"<>]/g, '-');
+    const rootFolder = zip.folder(safeProjectName);
+
+    async function processItem(item, parentFolder) {
+        const children = items.filter(i => i.parentId === item.id);
+        const attachments = item.attachments || [];
+        const hasDocs = attachments.length > 0;
+        const isFolder = children.length > 0;
+
+        if (!isFolder && !hasDocs) return;
+
+        const safeName = item.name.replace(/[\/\\?%*:|"<>]/g, '-');
+        const currentFolder = parentFolder.folder(safeName);
+
+        if (hasDocs) {
+            await Promise.all(attachments.map(async (att) => {
+                try {
+                    let url = null;
+                    if (att.storagePath) {
+                        try {
+                            const storageRef = ref(storage, att.storagePath);
+                            url = await getDownloadURL(storageRef);
+                        } catch (urlErr) {
+                            console.warn(`Erro Storage para ${att.name}:`, urlErr);
+                        }
+                    }
+                    if (!url) url = att.downloadUrl || att.objectUrl || att.dropboxUrl;
+                    
+                    if (url) {
+                        const response = await fetch(url);
+                        if (response.ok) {
+                            const blob = await response.blob();
+                            const safeFileName = att.name.replace(/[\/\\?%*:|"<>]/g, '-');
+                            currentFolder.file(safeFileName, blob);
+                        }
+                    }
+                } catch (e) {
+                    console.error(`Erro ao processar anexo "${att.name}":`, e);
+                }
+            }));
+        }
+
+        await Promise.all(children.map(child => processItem(child, currentFolder)));
+    }
+
+    const roots = items.filter(i => i.parentId === null);
+    if (roots.length === 0) {
+        throw new Error('Estrutura de pastas não encontrada para exportação.');
+    }
+
+    await Promise.all(roots.map(root => processItem(root, rootFolder)));
+
+    console.log("Gerando arquivo ZIP final...");
+    const content = await zip.generateAsync({ type: 'blob' });
+    
+    const zipUrl = URL.createObjectURL(content);
+    const link = document.body.appendChild(document.createElement('a'));
+    link.href = zipUrl;
+    link.download = `${safeProjectName}_Documentacao.zip`;
+    link.click();
+    
+    setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(zipUrl);
+    }, 1000);
+}
+
 async function handleExportProjectZip(triggerBtn) {
     const curr = getCurrentProject();
     if (!curr || curr.id === 'none') {
         alert('Selecione um empreendimento primeiro.');
-        return;
-    }
-
-    if (typeof JSZip === 'undefined') {
-        alert('Erro: Biblioteca de compressão (JSZip) não carregada. Verifique sua conexão.');
         return;
     }
 
@@ -601,89 +673,11 @@ async function handleExportProjectZip(triggerBtn) {
             triggerBtn.disabled = true;
 
             try {
-                const items = curr.items || [];
-                const zip = new JSZip();
-                
-                // Sanitização de nome de pasta
-                const safeProjectName = curr.name.replace(/[\/\\?%*:|"<>]/g, '-');
-                const rootFolder = zip.folder(safeProjectName);
-
-                async function processItem(item, parentFolder) {
-                    const children = items.filter(i => i.parentId === item.id);
-                    const attachments = item.attachments || [];
-                    const hasDocs = attachments.length > 0;
-                    const isFolder = children.length > 0;
-
-                    if (!isFolder && !hasDocs) return;
-
-                    const safeName = item.name.replace(/[\/\\?%*:|"<>]/g, '-');
-                    const currentFolder = parentFolder.folder(safeName);
-
-                    if (hasDocs) {
-                        // Download paralelo de anexos do item atual
-                        await Promise.all(attachments.map(async (att) => {
-                            try {
-                                let url = null;
-                                if (att.storagePath) {
-                                    try {
-                                        const storageRef = ref(storage, att.storagePath);
-                                        url = await getDownloadURL(storageRef);
-                                    } catch (urlErr) {
-                                        console.warn(`Erro Storage para ${att.name}:`, urlErr);
-                                    }
-                                }
-                                if (!url) url = att.downloadUrl || att.objectUrl || att.dropboxUrl;
-                                
-                                if (url) {
-                                    const response = await fetch(url);
-                                    if (response.ok) {
-                                        const blob = await response.blob();
-                                        const safeFileName = att.name.replace(/[\/\\?%*:|"<>]/g, '-');
-                                        currentFolder.file(safeFileName, blob);
-                                    } else {
-                                        console.warn(`Erro HTTP ${response.status} ao baixar ${att.name}`);
-                                    }
-                                }
-                            } catch (e) {
-                                console.error(`Erro ao processar anexo "${att.name}":`, e);
-                            }
-                        }));
-                    }
-
-                    // Processar filhos (recursão pode ser paralela também para maior velocidade)
-                    await Promise.all(children.map(child => processItem(child, currentFolder)));
-                }
-
-                const roots = items.filter(i => i.parentId === null);
-                if (roots.length === 0) {
-                    alert('Estrutura de pastas não encontrada para exportação.');
-                    triggerBtn.innerHTML = originalBtnContent;
-                    triggerBtn.disabled = false;
-                    return;
-                }
-
-                // Processar pastas raiz em paralelo
-                await Promise.all(roots.map(root => processItem(root, rootFolder)));
-
-                console.log("Gerando arquivo ZIP final...");
-                const content = await zip.generateAsync({ type: 'blob' });
-                
-                const zipUrl = URL.createObjectURL(content);
-                const link = document.body.appendChild(document.createElement('a'));
-                link.href = zipUrl;
-                link.download = `${safeProjectName}_Documentacao.zip`;
-                link.click();
-                
-                // Pequeno delay antes de remover e revogar para garantir o início do download em alguns navegadores
-                setTimeout(() => {
-                    document.body.removeChild(link);
-                    URL.revokeObjectURL(zipUrl);
-                }, 1000);
-
+                await exportProjectZipBlob(curr);
                 showTemporaryMessage("Download iniciado com sucesso!");
             } catch (error) {
                 console.error('Erro crítico na exportação ZIP:', error);
-                alert('Ocorreu um erro ao gerar o arquivo ZIP. Verifique o console para detalhes.');
+                alert(error.message || 'Ocorreu um erro ao gerar o arquivo ZIP. Verifique o console para detalhes.');
             } finally {
                 triggerBtn.innerHTML = originalBtnContent;
                 triggerBtn.disabled = false;
@@ -1245,22 +1239,68 @@ function initEventListeners() {
             }
             showConfirm({
                 title: 'Excluir Empreendimento',
-                message: `Tem certeza que deseja excluir permanentemente o empreendimento "${curr.name}" e todos os seus documentos?`,
+                message: `Tem certeza que deseja excluir permanentemente o empreendimento "${curr.name}" e todos os seus documentos anexos?`,
                 type: 'danger',
-                confirmText: 'Excluir permanentemente',
-                onConfirm: () => {
+                confirmText: 'SIM, E EXPORTAR ARQUIVOS',
+                cancelText: 'NÃO, CANCELAR',
+                onConfirm: async () => {
                     const projectIdToDelete = localUI.currentProjectId;
-                    addAuditLog('Empreendimento Excluído', `O empreendimento <strong>${curr.name}</strong> foi excluído permanentemente.`, 'danger');
+                    const projName = curr.name;
+
+                    // 1. Exportar ZIP antes de deletar
+                    try {
+                        showTemporaryMessage("Gerando ZIP de segurança...");
+                        await exportProjectZipBlob(curr);
+                        showTemporaryMessage("ZIP baixado com sucesso!");
+                    } catch (zipErr) {
+                        console.error("Erro ao exportar ZIP durante exclusão:", zipErr);
+                    }
+
+                    // 2. Excluir fisicamente todos os arquivos de anexos do Firebase Storage
+                    const attachmentsToDelete = [];
+                    const items = curr.items || [];
+                    items.forEach(item => {
+                        const attachments = item.attachments || [];
+                        attachments.forEach(att => {
+                            if (att.storagePath) {
+                                attachmentsToDelete.push(att);
+                            }
+                        });
+                    });
+
+                    const pends = curr.pendencias || [];
+                    pends.forEach(p => {
+                        const attachments = p.attachments || [];
+                        attachments.forEach(att => {
+                            if (att.storagePath) {
+                                attachmentsToDelete.push(att);
+                            }
+                        });
+                    });
+
+                    // Deletar assincronamente todos os anexos no Storage
+                    await Promise.all(attachmentsToDelete.map(async (att) => {
+                        try {
+                            const storageRef = ref(storage, att.storagePath);
+                            await deleteObject(storageRef);
+                            console.log(`Arquivo do Storage ${att.name} excluído com sucesso.`);
+                        } catch (err) {
+                            console.error(`Erro ao deletar arquivo do Storage ${att.name}:`, err);
+                        }
+                    }));
+
+                    // 3. Atualizar Estado Local
+                    addAuditLog('Empreendimento Excluído', `O empreendimento <strong>${projName}</strong> foi excluído permanentemente com exportação de arquivos.`, 'danger');
                     const nextProj = state.projects.find(p => p.id !== projectIdToDelete) || state.projects[0];
                     state.projects = state.projects.filter(p => p.id !== projectIdToDelete);
                     localUI.currentProjectId = nextProj.id;
                     saveLocalUI();
                     saveState();
 
-                    // Excluir fisicamente o documento individual no Firestore
+                    // 4. Excluir fisicamente o documento individual no Firestore
                     try {
                         const docRef = doc(db, `projects/${projectIdToDelete}`);
-                        deleteDoc(docRef);
+                        await deleteDoc(docRef);
                         console.log(`Documento individual ${projectIdToDelete} excluído fisicamente.`);
                     } catch (e) {
                         console.error("Erro ao deletar documento individual:", e);
@@ -1269,7 +1309,7 @@ function initEventListeners() {
                     updateGlobalDateUI();
                     renderTree();
                     renderTracking();
-                    showTemporaryMessage(`Empreendimento removido.`);
+                    showTemporaryMessage(`Empreendimento removido com sucesso.`);
                 }
             });
         });
