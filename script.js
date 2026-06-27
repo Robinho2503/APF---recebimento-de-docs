@@ -4833,6 +4833,9 @@ function renderPendenciasMgmt() {
                 </div>
 
                 <div style="display: flex; gap: 0.3rem; align-items: center;">
+                    <button class="icon-btn attach-icon-btn attach-pend-mgmt" title="Anexar documento de pendência">
+                        <i class="ph ph-paperclip"></i>
+                    </button>
                     <button class="icon-btn edit" title="Editar Pendência">
                         <i class="ph ph-pencil-simple"></i>
                     </button>
@@ -4841,6 +4844,13 @@ function renderPendenciasMgmt() {
                     </button>
                 </div>
             `;
+
+            row.querySelector('.attach-pend-mgmt').onclick = (e) => {
+                e.stopPropagation();
+                activeUploadItemId = p.id;
+                isUploadPendencia = true;
+                if (globalFileInput) globalFileInput.click();
+            };
 
             row.querySelector('.edit').onclick = () => {
                 editingPendenciaId = p.id;
