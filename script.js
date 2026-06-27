@@ -3212,22 +3212,22 @@ function updateProjectProgressUI(curr) {
 
     const isAPF = authenticatedSector === 'APF';
 
-    // --- CÁLCULOS DE PROGRESSO ---
-    let generalProgressPct = 0;
     const items = curr.items || [];
     const leafItems = items.filter(i => {
         const hasChildren = items.some(child => child.parentId === i.id);
         return i.parentId !== null && !hasChildren && !i.isNotApplicable;
     });
 
-    if (leafItems.length > 0) {
-        const deliveredCount = leafItems.filter(i => i.attachments && i.attachments.length > 0 && i.validationStatus !== 'Apontamento').length;
-        generalProgressPct = Math.round((deliveredCount / leafItems.length) * 100);
-    }
-
     // --- CÁLCULOS DE ESTATÍSTICAS (FILTROS) ---
     const isPendenciaMode = curr.pendenciaActive && !isMgmtActive();
     let allStatsItems = isPendenciaMode ? (curr.pendencias || []) : leafItems;
+
+    // --- CÁLCULOS DE PROGRESSO ---
+    let generalProgressPct = 0;
+    if (allStatsItems.length > 0) {
+        const deliveredCount = allStatsItems.filter(i => i.attachments && i.attachments.length > 0 && i.validationStatus !== 'Apontamento').length;
+        generalProgressPct = Math.round((deliveredCount / allStatsItems.length) * 100);
+    }
 
     let filteredStatsItems = allStatsItems;
     if (!isAPF) {
@@ -3260,7 +3260,10 @@ function updateProjectProgressUI(curr) {
         `;
 
         sectors.forEach(s => {
-            const sectorLeafs = leafItems.filter(i => getItemSector(i.id) === s.name);
+            const sectorLeafs = allStatsItems.filter(i => {
+                const iSector = isPendenciaMode ? i.sector : getItemSector(i.id);
+                return (iSector || '').trim().toLowerCase() === s.name.trim().toLowerCase();
+            });
             let sPct = 0;
             if (sectorLeafs.length > 0) {
                 const sDelivered = sectorLeafs.filter(i => i.attachments && i.attachments.length > 0 && i.validationStatus !== 'Apontamento').length;
@@ -3284,7 +3287,10 @@ function updateProjectProgressUI(curr) {
         analysisSectionHTML += `</div>`;
     } else {
         // VIEW SETOR: Única nota (Comportamento Original)
-        const sectorLeafItems = leafItems.filter(i => getItemSector(i.id) === authenticatedSector);
+        const sectorLeafItems = allStatsItems.filter(i => {
+            const iSector = isPendenciaMode ? i.sector : getItemSector(i.id);
+            return (iSector || '').trim().toLowerCase() === (authenticatedSector || '').trim().toLowerCase();
+        });
         if (sectorLeafItems.length > 0) {
             const validatedSectorCount = sectorLeafItems.filter(i => (i.validationStatus === 'Validado' || i.validationStatus === 'APF check') && i.attachments?.length > 0).length;
             const sectorAnalysisPct = Math.round((validatedSectorCount / sectorLeafItems.length) * 100);
@@ -3321,7 +3327,10 @@ function updateProjectProgressUI(curr) {
             </div>
         `;
     } else {
-        const sectorLeafItems = leafItems.filter(i => getItemSector(i.id) === authenticatedSector);
+        const sectorLeafItems = allStatsItems.filter(i => {
+            const iSector = isPendenciaMode ? i.sector : getItemSector(i.id);
+            return (iSector || '').trim().toLowerCase() === (authenticatedSector || '').trim().toLowerCase();
+        });
         let sPct = 0;
         if (sectorLeafItems.length > 0) {
             const deliveredSectorCount = sectorLeafItems.filter(i => i.attachments && i.attachments.length > 0 && i.validationStatus !== 'Apontamento').length;
@@ -3354,8 +3363,8 @@ function updateProjectProgressUI(curr) {
     }
 
     let pendenciasHTML = '';
-    if (curr.pendenciaActive) {
-        const pends = curr.pendencias || [];
+    if (!isPendenciaMode && curr.pendencias && curr.pendencias.length > 0) {
+        const pends = curr.pendencias;
         let pPct = pends.length > 0 ? Math.round((pends.filter(p => p.attachments?.length > 0).length / pends.length) * 100) : 0;
         pendenciasHTML = `
             <div class="divider-v" style="height: 40px; background: var(--divider-color);"></div>
