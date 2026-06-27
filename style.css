@@ -1472,15 +1472,18 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
     color: var(--primary);
 }
 
-/* Status variants */
-.audit-entry.danger { border-left-color: var(--danger); }
-.audit-entry.danger .audit-row-action, .audit-entry.danger .audit-row-desc b { color: var(--danger); }
+/* Status variants - Muted borders and soft color text */
+.audit-entry.danger { border-left-color: rgba(255, 255, 255, 0.15) !important; }
+.audit-entry.danger .audit-row-action { color: rgba(239, 68, 68, 0.85); }
+.audit-entry.danger .audit-row-desc b { color: var(--text-main); }
 
-.audit-entry.warning { border-left-color: var(--warning); }
-.audit-entry.warning .audit-row-action, .audit-entry.warning .audit-row-desc b { color: var(--warning); }
+.audit-entry.warning { border-left-color: rgba(255, 255, 255, 0.15) !important; }
+.audit-entry.warning .audit-row-action { color: rgba(245, 158, 11, 0.85); }
+.audit-entry.warning .audit-row-desc b { color: var(--text-main); }
 
-.audit-entry.success { border-left-color: var(--accent); }
-.audit-entry.success .audit-row-action, .audit-entry.success .audit-row-desc b { color: var(--accent); }
+.audit-entry.success { border-left-color: rgba(255, 255, 255, 0.15) !important; }
+.audit-entry.success .audit-row-action { color: rgba(16, 185, 129, 0.85); }
+.audit-entry.success .audit-row-desc b { color: var(--text-main); }
 
 .audit-time {
     font-size: 0.7rem;
@@ -1563,9 +1566,9 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
     margin-top: 0.2rem;
 }
 
-.audit-entry-compact.danger { border-left-color: var(--danger); }
-.audit-entry-compact.warning { border-left-color: var(--warning); }
-.audit-entry-compact.success { border-left-color: var(--accent); }
+.audit-entry-compact.danger { border-left-color: rgba(255, 255, 255, 0.12) !important; }
+.audit-entry-compact.warning { border-left-color: rgba(255, 255, 255, 0.12) !important; }
+.audit-entry-compact.success { border-left-color: rgba(255, 255, 255, 0.12) !important; }
 
 #panel-project-history::-webkit-scrollbar {
     width: 4px;
@@ -1949,8 +1952,8 @@ hr {
 }
 
 .dashboard-card {
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
+    background: rgba(255, 255, 255, 0.015) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
     border-radius: 0.5rem;
     padding: 0.4rem 0.2rem;
     text-align: center;
@@ -1962,22 +1965,13 @@ hr {
     transition: all 0.2s ease;
     cursor: pointer;
     user-select: none;
+    box-shadow: none !important;
 }
 
 .dashboard-card:hover {
-    transform: translateY(-3px);
-    background: rgba(255, 255, 255, 0.08);
-    border-color: var(--primary);
-}
-
-.dashboard-card.active {
-    background: rgba(var(--primary-rgb, 255, 255, 255), 0.1);
-    border-color: var(--primary);
-    box-shadow: 0 0 15px rgba(var(--primary-rgb, 255, 255, 255), 0.2);
-}
-
-.dashboard-card.active .card-value {
-    color: var(--primary);
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
 }
 
 .card-value {
@@ -1996,27 +1990,35 @@ hr {
     opacity: 0.8;
 }
 
+.dashboard-card.accent .card-value { color: rgba(16, 185, 129, 0.85) !important; }
+.dashboard-card.warning .card-value { color: rgba(245, 158, 11, 0.85) !important; }
+.dashboard-card.danger .card-value { color: rgba(239, 68, 68, 0.85) !important; }
+
 .dashboard-card.active {
-    transform: scale(1.08) translateY(-5px);
-    z-index: 10;
-    box-shadow: var(--panel-shadow);
-    border-color: var(--primary) !important;
-    background: var(--input-bg) !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+    transform: translateY(-2px) !important;
+    z-index: 2;
 }
 
+.dashboard-card.active.accent { border-color: rgba(16, 185, 129, 0.55) !important; box-shadow: 0 0 10px rgba(16, 185, 129, 0.15) !important; }
+.dashboard-card.active.warning { border-color: rgba(245, 158, 11, 0.55) !important; box-shadow: 0 0 10px rgba(245, 158, 11, 0.15) !important; }
+.dashboard-card.active.danger { border-color: rgba(239, 68, 68, 0.55) !important; box-shadow: 0 0 10px rgba(239, 68, 68, 0.15) !important; }
+
+.light-mode .dashboard-card {
+    background: rgba(0, 0, 0, 0.01) !important;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+.light-mode .dashboard-card:hover {
+    background: rgba(0, 0, 0, 0.03) !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
+}
 .light-mode .dashboard-card.active {
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-    border-color: var(--danger) !important;
-    background: rgba(var(--danger-rgb, 220, 38, 38), 0.05) !important;
+    background: rgba(0, 0, 0, 0.04) !important;
 }
+.light-mode .dashboard-card.active.accent { border-color: rgba(5, 150, 105, 0.6) !important; }
+.light-mode .dashboard-card.active.warning { border-color: rgba(217, 119, 6, 0.6) !important; }
+.light-mode .dashboard-card.active.danger { border-color: rgba(220, 38, 38, 0.6) !important; }
 
-.dashboard-card.danger {
-    border-color: var(--danger) !important;
-}
-
-.dashboard-card.danger:hover {
-    background: rgba(239, 68, 68, 0.1) !important;
-}
 /* Additional panel styling */
 .analysis-panel-header h3 {
     font-size: 0.9rem;
@@ -3157,4 +3159,35 @@ hr {
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+/* Paineis de Gestao APF Suavizados */
+#eng-analysis-mgmt-panel {
+    border-left: 3px solid rgba(59, 130, 246, 0.5) !important;
+    background: rgba(255, 255, 255, 0.01) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+#pendencias-mgmt-panel {
+    border-left: 3px solid rgba(239, 68, 68, 0.5) !important;
+    background: rgba(255, 255, 255, 0.01) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.light-mode #eng-analysis-mgmt-panel {
+    border-left-color: rgba(59, 130, 246, 0.6) !important;
+    background: rgba(0, 0, 0, 0.01) !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+}
+.light-mode #pendencias-mgmt-panel {
+    border-left-color: rgba(239, 68, 68, 0.6) !important;
+    background: rgba(0, 0, 0, 0.01) !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Auditoria em Light Mode */
+.light-mode .audit-entry, .light-mode .audit-entry-compact {
+    border-left-color: rgba(15, 23, 42, 0.15) !important;
+}
+.light-mode .audit-entry.danger .audit-row-action { color: #dc2626; }
+.light-mode .audit-entry.warning .audit-row-action { color: #d97706; }
+.light-mode .audit-entry.success .audit-row-action { color: #059669; }
 
