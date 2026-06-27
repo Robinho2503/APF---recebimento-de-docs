@@ -3219,7 +3219,7 @@ function updateProjectProgressUI(curr) {
     });
 
     // --- CÁLCULOS DE ESTATÍSTICAS (FILTROS) ---
-    const isPendenciaMode = curr.pendenciaActive && !isMgmtActive();
+    const isPendenciaMode = curr.pendenciaActive;
     let allStatsItems = isPendenciaMode ? (curr.pendencias || []) : leafItems;
 
     // --- CÁLCULOS DE PROGRESSO ---
