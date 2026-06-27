@@ -2984,6 +2984,7 @@ async function compressImage(file) {
 }
 
 function generateOficioWord() {
+    const currentProject = getCurrentProject();
     if (!currentProject || !currentProject.pendencias || currentProject.pendencias.length === 0) {
         showToast('Não há pendências cadastradas para este empreendimento.');
         return;
