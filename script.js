@@ -2004,8 +2004,8 @@ function renderProjectStagesStepper(p) {
             title: 'Documentação Inicial',
             desc: activeStage === 1 ? 'Em envio / validação' : 'Concluído',
             icon: 'ph ph-file-arrow-up',
-            color: 'var(--accent)',
-            colorRgb: '16, 185, 129'
+            color: activeStage === 1 ? 'var(--text-muted)' : 'var(--accent)',
+            colorRgb: activeStage === 1 ? '161, 161, 170' : '16, 185, 129'
         },
         {
             num: 2,
