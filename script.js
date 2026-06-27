@@ -3449,22 +3449,19 @@ function updateProjectProgressUI(curr) {
     }
 
     // --- ESTILO DOS CARTÕES ---
-    const cardStyle = `background: var(--card-bg-subtle); border: 1px solid var(--divider-color); border-radius: 16px; padding: 1.25rem; flex: 1; min-width: 280px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 1rem;`;
+    const cardStyle = `background: var(--dashboard-card-bg, rgba(255, 255, 255, 0.06)); border: 1px solid var(--divider-color); border-radius: 16px; padding: 1.25rem; box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 1rem;`;
     const cardTitleStyle = `font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.25rem;`;
 
     // --- CARTÃO 1: PROGRESSO GLOBAL ---
     let progressSectionHTML = '';
     if (isAPF) {
         progressSectionHTML = `
-            <div style="${cardStyle}">
-                <div style="${cardTitleStyle}">Progresso Global</div>
-                <div style="display: flex; align-items: center; gap: 1.25rem; margin-top: auto; margin-bottom: auto;">
-                    <div class="circular-progress-container" style="width: 72px; height: 72px;">
+            <div style="${cardStyle} flex: 0 0 auto; min-width: auto; align-items: center;">
+                <div style="${cardTitleStyle} text-align: center;">Progresso Global</div>
+                <div style="display: flex; align-items: center; justify-content: center; margin-top: auto; margin-bottom: auto; padding: 0.5rem;">
+                    <div class="circular-progress-container" style="width: 80px; height: 80px;">
                         <div class="circular-progress" style="--progress: ${generalProgressPct}%; background: conic-gradient(var(--accent) var(--progress), var(--progress-track) 0);"></div>
-                        <span class="progress-text" style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);">${generalProgressPct}%</span>
-                    </div>
-                    <div style="display: flex; flex-direction: column;">
-                        <span style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); line-height: 1.2;">Status Geral<br/>de Entrega</span>
+                        <span class="progress-text" style="font-size: 1.4rem; font-weight: 800; color: var(--text-main);">${generalProgressPct}%</span>
                     </div>
                 </div>
             </div>
@@ -3480,9 +3477,9 @@ function updateProjectProgressUI(curr) {
             sPct = Math.round((deliveredSectorCount / sectorLeafItems.length) * 100);
         }
         progressSectionHTML = `
-            <div style="${cardStyle}">
-                <div style="${cardTitleStyle}">Progresso do Seu Setor</div>
-                <div style="display: flex; align-items: center; gap: 2rem; margin-top: auto; margin-bottom: auto;">
+            <div style="${cardStyle} flex: 0 0 auto; min-width: auto;">
+                <div style="${cardTitleStyle} text-align: center;">Progresso do Seu Setor</div>
+                <div style="display: flex; align-items: center; justify-content: center; gap: 2rem; margin-top: auto; margin-bottom: auto;">
                     <div style="display: flex; align-items: center; gap: 1.25rem;">
                         <div class="circular-progress-container" style="width: 64px; height: 64px;">
                             <div class="circular-progress" style="--progress: ${sPct}%; background: conic-gradient(var(--accent) var(--progress), var(--progress-track) 0);"></div>
