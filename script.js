@@ -3004,8 +3004,8 @@ function generateOficioWord() {
                         <strong>${num}</strong>
                     </td>
                     <td style="border: 1px solid #000; padding: 8px; width: 95%; vertical-align: top; text-align: justify;">
-                        <strong>${p.name || 'Documento'}</strong><br><br>
-                        <span style="color: #555555;">${p.spec || ''}</span>
+                        <strong>${p.docName || 'Documento'}</strong><br><br>
+                        <span style="color: #555555;">${p.specification || ''}</span>
                     </td>
                 </tr>
                 <tr>
