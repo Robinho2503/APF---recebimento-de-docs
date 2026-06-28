@@ -6925,40 +6925,40 @@ async function openHistoricalDashboard() {
 
             if (ms.dataRecebimentoDocs && ms.inicioProcessoAnalise) {
                 const dias = calcDays(ms.dataRecebimentoDocs, ms.inicioProcessoAnalise);
-                ciclosHtml += \`<span style="display:block; font-size: 0.75rem; margin-bottom: 0.2rem;">Receb. -> Análise: <strong>\${dias} dias</strong></span>\`;
+                ciclosHtml += `<span style="display:block; font-size: 0.75rem; margin-bottom: 0.2rem;">Receb. -> Análise: <strong>${dias} dias</strong></span>`;
             }
             if (ms.inicioAnaliseCaixa && ms.inicioResolucaoPendencias) {
                 const dias = calcDays(ms.inicioAnaliseCaixa, ms.inicioResolucaoPendencias);
-                ciclosHtml += \`<span style="display:block; font-size: 0.75rem; margin-bottom: 0.2rem;">CAIXA -> Pendências: <strong>\${dias} dias</strong></span>\`;
+                ciclosHtml += `<span style="display:block; font-size: 0.75rem; margin-bottom: 0.2rem;">CAIXA -> Pendências: <strong>${dias} dias</strong></span>`;
             }
             if (ms.inicioResolucaoPendencias && ms.conclusaoEntregaPendencias) {
                 const dias = calcDays(ms.inicioResolucaoPendencias, ms.conclusaoEntregaPendencias);
-                ciclosHtml += \`<span style="display:block; font-size: 0.75rem; margin-bottom: 0.2rem;">Resolução Pendências: <strong>\${dias} dias</strong></span>\`;
+                ciclosHtml += `<span style="display:block; font-size: 0.75rem; margin-bottom: 0.2rem;">Resolução Pendências: <strong>${dias} dias</strong></span>`;
             }
             if (ms.conclusaoEntregaPendencias && ms.emissaoLae) {
                 const dias = calcDays(ms.conclusaoEntregaPendencias, ms.emissaoLae);
-                ciclosHtml += \`<span style="display:block; font-size: 0.75rem; margin-bottom: 0.2rem;">Fim Pends. -> LAE: <strong>\${dias} dias</strong></span>\`;
+                ciclosHtml += `<span style="display:block; font-size: 0.75rem; margin-bottom: 0.2rem;">Fim Pends. -> LAE: <strong>${dias} dias</strong></span>`;
             }
             
             if (!ciclosHtml) ciclosHtml = '<span style="font-size: 0.75rem; color: var(--text-muted);">Sem dados de ciclo suficientes</span>';
 
-            html += \`
+            html += `
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
                     <td style="padding: 0.75rem; font-size: 0.9rem; font-weight: 500;">
-                        \${data.name} 
-                        \${data.isOle ? '<span style="background:var(--primary); color:#000; font-size:0.6rem; padding: 0.1rem 0.3rem; border-radius:3px; margin-left:0.3rem;">Olé</span>' : ''}
+                        ${data.name} 
+                        ${data.isOle ? '<span style="background:var(--primary); color:#000; font-size:0.6rem; padding: 0.1rem 0.3rem; border-radius:3px; margin-left:0.3rem;">Olé</span>' : ''}
                     </td>
-                    <td style="padding: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">\${data.cidade || '-'} / \${data.uf || '-'}</td>
+                    <td style="padding: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">${data.cidade || '-'} / ${data.uf || '-'}</td>
                     <td style="padding: 0.75rem; font-size: 0.85rem;">
-                        <div style="color: var(--text-muted); font-size: 0.75rem;">Criado: \${data.createdAt ? data.createdAt.split('-').reverse().join('/') : '-'}</div>
-                        <div style="color: #10b981; font-weight: 600;">Concluído: \${data.concludedAt ? data.concludedAt.split('-').reverse().join('/') : '-'}</div>
+                        <div style="color: var(--text-muted); font-size: 0.75rem;">Criado: ${data.createdAt ? data.createdAt.split('-').reverse().join('/') : '-'}</div>
+                        <div style="color: #10b981; font-weight: 600;">Concluído: ${data.concludedAt ? data.concludedAt.split('-').reverse().join('/') : '-'}</div>
                     </td>
-                    <td style="padding: 0.75rem;">\${ciclosHtml}</td>
+                    <td style="padding: 0.75rem;">${ciclosHtml}</td>
                 </tr>
-            \`;
+            `;
         });
 
-        html += \`</tbody></table>\`;
+        html += `</tbody></table>`;
         historicalDashboardContent.innerHTML = html;
 
     } catch (e) {
