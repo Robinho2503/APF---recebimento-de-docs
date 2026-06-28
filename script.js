@@ -2357,19 +2357,35 @@ function renderProjectStagesStepper(p) {
         const styleVars = `style="--step-color: ${color}; --step-color-rgb: ${colorRgb};"`;
 
         let dateInputHTML = '';
-        if (isAPF && s.status === 'active') {
-            if (s.type === 'analise_caixa') {
+        if (isAPF) {
+            if (s.type === 'doc_inicial') {
                 dateInputHTML = `
                     <div class="step-date-wrapper" onclick="event.stopPropagation()">
-                        <label class="step-date-label">Data de Abertura Real</label>
-                        <input type="date" class="step-date-input custom-stage-date-input" data-stage-id="${s.id}" value="${s.startDate || ''}">
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem;">
+                            <div>
+                                <label class="step-date-label">Previsão (Geral)</label>
+                                <input type="date" class="step-date-input" value="${p.dueDate || ''}" disabled title="Preenchido na aba Acesso APF">
+                            </div>
+                            <div>
+                                <label class="step-date-label">Realizada</label>
+                                <input type="date" class="step-date-input custom-stage-end-date" data-stage-id="${s.id}" value="${s.endDate || ''}">
+                            </div>
+                        </div>
                     </div>
                 `;
-            } else if (s.type === 'pendencias') {
+            } else if (s.type === 'analise_caixa' || s.type === 'pendencias') {
                 dateInputHTML = `
                     <div class="step-date-wrapper" onclick="event.stopPropagation()">
-                        <label class="step-date-label">Data de Início</label>
-                        <input type="date" class="step-date-input custom-stage-date-input" data-stage-id="${s.id}" value="${s.startDate || ''}">
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem;">
+                            <div>
+                                <label class="step-date-label">Início</label>
+                                <input type="date" class="step-date-input custom-stage-date-input" data-stage-id="${s.id}" value="${s.startDate || ''}">
+                            </div>
+                            <div>
+                                <label class="step-date-label">Conclusão</label>
+                                <input type="date" class="step-date-input custom-stage-end-date" data-stage-id="${s.id}" value="${s.endDate || ''}">
+                            </div>
+                        </div>
                     </div>
                 `;
             }
@@ -2437,6 +2453,25 @@ function renderProjectStagesStepper(p) {
                     : `A data de início da resolução de pendências (${targetStageObj.title}) foi alterada para <strong>${e.target.value}</strong>.`;
 
                 addAuditLog(actionName, actionDesc, 'info');
+                saveState();
+                updateGlobalDateUI();
+                renderTracking();
+            }
+        };
+    });
+
+    const endDateInputs = stepperContainer.querySelectorAll('.custom-stage-end-date');
+    endDateInputs.forEach(inp => {
+        inp.onchange = (e) => {
+            const stageId = e.target.getAttribute('data-stage-id');
+            const targetStageObj = p.customStages.find(s => s.id === stageId);
+            if (targetStageObj) {
+                targetStageObj.endDate = e.target.value;
+                syncLegacyFields(p);
+
+                let actionDesc = `A data de conclusão da etapa (${targetStageObj.title}) foi alterada para <strong>${e.target.value}</strong>.`;
+                addAuditLog('Data de Conclusão Alterada', actionDesc, 'info');
+                
                 saveState();
                 updateGlobalDateUI();
                 renderTracking();
