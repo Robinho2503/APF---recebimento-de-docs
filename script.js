@@ -4265,6 +4265,7 @@ function createNode(item, level) {
     const nameWrapper = document.createElement('div');
     nameWrapper.className = 'name-wrapper';
     nameWrapper.style.display = 'flex';
+    nameWrapper.style.flexDirection = 'row'; // Força em linha ignorando o CSS
     nameWrapper.style.alignItems = 'center';
     nameWrapper.style.gap = '1rem';
     nameWrapper.style.flexWrap = 'wrap';
@@ -4310,7 +4311,7 @@ function createNode(item, level) {
         }
         
         const lblEnd = document.createElement('span');
-        lblEnd.textContent = isLAE ? 'Emissão:' : 'Término:';
+        lblEnd.textContent = isLAE ? 'Emissão:' : 'Conclusão:';
         lblEnd.style.fontSize = '0.7rem';
         lblEnd.style.color = 'var(--text-muted)';
         dateContainer.appendChild(lblEnd);
