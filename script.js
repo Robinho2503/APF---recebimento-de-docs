@@ -6801,7 +6801,7 @@ function openConcludeProjectModal() {
     const milestones = [
         { key: 'dataRecebimentoDocs', label: 'Data de recebimento da documentação', type: 'date', show: true },
         { key: 'inicioProcessoAnalise', label: 'Início do processo de análise', type: 'date', show: true },
-        { key: 'inicioAnaliseCaixa', label: 'Início da análise CAIXA', type: 'date', show: curr.engAnalysisOpened || !!curr.engAnalysisStartDate },
+        { key: 'conclusaoAnaliseCaixa', label: 'Conclusão da análise CAIXA', type: 'date', show: curr.engAnalysisOpened || !!curr.engAnalysisStartDate },
         { key: 'inicioResolucaoPendencias', label: 'Início da resolução de pendências', type: 'date', show: (curr.pendencias && curr.pendencias.length > 0) || curr.pendenciaActive },
         { key: 'conclusaoEntregaPendencias', label: 'Conclusão da entrega de pendências', type: 'date', show: (curr.pendencias && curr.pendencias.length > 0) || curr.pendenciaActive },
         { key: 'emissaoLae', label: 'Emissão do LAE', type: 'date', show: (curr.items || []).some(i => i.name.toLowerCase().includes('lae')) }
@@ -6825,7 +6825,7 @@ function openConcludeProjectModal() {
         inp.style.width = '100%';
         
         // Auto-fill some dates if available
-        if (m.key === 'inicioAnaliseCaixa' && curr.engAnalysisStartDate) {
+        if (m.key === 'conclusaoAnaliseCaixa' && curr.engAnalysisStartDate) {
             inp.value = curr.engAnalysisStartDate;
         }
         
@@ -6927,8 +6927,8 @@ async function openHistoricalDashboard() {
                 const dias = calcDays(ms.dataRecebimentoDocs, ms.inicioProcessoAnalise);
                 ciclosHtml += `<span style="display:block; font-size: 0.75rem; margin-bottom: 0.2rem;">Receb. -> Análise: <strong>${dias} dias</strong></span>`;
             }
-            if (ms.inicioAnaliseCaixa && ms.inicioResolucaoPendencias) {
-                const dias = calcDays(ms.inicioAnaliseCaixa, ms.inicioResolucaoPendencias);
+            if (ms.conclusaoAnaliseCaixa && ms.inicioResolucaoPendencias) {
+                const dias = calcDays(ms.conclusaoAnaliseCaixa, ms.inicioResolucaoPendencias);
                 ciclosHtml += `<span style="display:block; font-size: 0.75rem; margin-bottom: 0.2rem;">CAIXA -> Pendências: <strong>${dias} dias</strong></span>`;
             }
             if (ms.inicioResolucaoPendencias && ms.conclusaoEntregaPendencias) {
