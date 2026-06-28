@@ -77,6 +77,9 @@
                     <button id="btn-settings" class="icon-btn" title="Configurações">
                         <i class="ph ph-gear"></i>
                     </button>
+                    <button id="btn-show-historical-db" class="icon-btn" title="Histórico de Empreendimentos (Dashboard)">
+                        <i class="ph ph-database"></i>
+                    </button>
                     <button id="btn-show-history" class="icon-btn" title="Histórico de Ações">
                         <i class="ph ph-clock-counter-clockwise"></i>
                     </button>
@@ -172,6 +175,9 @@
 
                             <div class="v-divider"></div>
 
+                            <button id="btn-conclude-project" class="icon-btn-sm" title="Concluir Empreendimento" style="background: rgba(16, 185, 129, 0.08); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.15); width: 34px; height: 34px; border-radius: 0.6rem; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                                <i class="ph ph-check-circle" style="font-size: 1.1rem;"></i>
+                            </button>
                             <button id="btn-rename-project" class="icon-btn-sm" title="Renomear Empreendimento" style="background: rgba(255,255,255,0.05); color: var(--text-main); border: 1px solid rgba(255,255,255,0.1); width: 34px; height: 34px; border-radius: 0.6rem; display: flex; align-items: center; justify-content: center; cursor: pointer;">
                                 <i class="ph ph-pencil-simple" style="font-size: 1.1rem;"></i>
                             </button>
@@ -576,5 +582,45 @@
             </div>
         </div>
     </div>
+    <!-- Conclude Project Modal -->
+    <div id="conclude-project-modal" class="modal-backdrop hidden" style="z-index: 10000;">
+        <div class="modal glass-panel" style="max-width: 500px; padding: 2rem;">
+            <div class="modal-header" style="margin-bottom: 1.5rem;">
+                <h3 id="conclude-project-modal-title"><i class="ph ph-check-circle" style="color: #10b981;"></i> Concluir Empreendimento</h3>
+                <button id="btn-close-conclude-project" class="icon-btn" title="Fechar"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem;">
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                    Revise os prazos das etapas deste empreendimento antes de salvá-lo no histórico. Os campos se adaptam de acordo com as etapas do projeto atual.
+                </p>
+                <div id="conclude-project-dates-container" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <!-- Dates injected via JS based on project items -->
+                </div>
+            </div>
+            <div class="modal-footer" style="margin-top: 2rem;">
+                <button id="btn-confirm-conclude-project" class="btn btn-primary" style="width: 100%; justify-content: center; background-color: #10b981; border-color: #10b981;">
+                    <i class="ph ph-copy"></i> Copiar para o Histórico
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historical Dashboard Modal -->
+    <div id="historical-dashboard-modal" class="modal-backdrop hidden" style="z-index: 10000;">
+        <div class="modal glass-panel" style="max-width: 1100px; width: 95vw; max-height: 90vh; display: flex; flex-direction: column; padding: 0;">
+            <div class="modal-header" style="padding: 1.5rem 1.5rem 1rem;">
+                <h3><i class="ph ph-database text-primary"></i> Dashboard: Histórico de Empreendimentos</h3>
+                <button id="btn-close-historical-dashboard" class="icon-btn"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body" style="padding: 0 1.5rem 1.5rem; overflow-y: auto; flex: 1;">
+                <div id="historical-dashboard-content">
+                    <div style="text-align:center; padding:2rem; color:var(--text-muted);">
+                        <i class="ph ph-spinner ph-spin" style="font-size:2rem;"></i><br>Carregando histórico...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

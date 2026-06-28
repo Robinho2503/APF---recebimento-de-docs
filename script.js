@@ -868,6 +868,8 @@ let editingProjectId = null;
 let uploadToast, uploadToastText, uploadToastSub, uploadToastIcon;
 let confirmModal, confirmModalTitle, confirmModalMessage, confirmModalIconContainer, btnConfirmYes, btnConfirmNo;
 let headerMgmtActions, headerActionsSegment, apfChecklistControls;
+let btnConcludeProject, concludeProjectModal, btnCloseConcludeProject, btnConfirmConcludeProject, concludeProjectDatesContainer;
+let btnShowHistoricalDb, historicalDashboardModal, btnCloseHistoricalDashboard, historicalDashboardContent;
 
 function initDOMElements() {
     // Auth
@@ -897,6 +899,8 @@ function initDOMElements() {
     btnAddRoot = document.getElementById('btn-add-root');
     apfChecklistControls = document.getElementById('apf-checklist-controls');
     btnSettings = document.getElementById('btn-settings');
+    btnConcludeProject = document.getElementById('btn-conclude-project');
+    btnShowHistoricalDb = document.getElementById('btn-show-historical-db');
 
     // Containers
     checklistContainer = document.getElementById('checklist-render-area');
@@ -992,6 +996,15 @@ function initDOMElements() {
     confirmModalIconContainer = document.getElementById('confirm-modal-icon-container');
     btnConfirmYes = document.getElementById('btn-confirm-yes');
     btnConfirmNo = document.getElementById('btn-confirm-no');
+
+    concludeProjectModal = document.getElementById('conclude-project-modal');
+    btnCloseConcludeProject = document.getElementById('btn-close-conclude-project');
+    btnConfirmConcludeProject = document.getElementById('btn-confirm-conclude-project');
+    concludeProjectDatesContainer = document.getElementById('conclude-project-dates-container');
+
+    historicalDashboardModal = document.getElementById('historical-dashboard-modal');
+    btnCloseHistoricalDashboard = document.getElementById('btn-close-historical-dashboard');
+    historicalDashboardContent = document.getElementById('historical-dashboard-content');
 
     // Global optimized elements
     globalFileInput = document.getElementById('global-file-input');
@@ -1444,13 +1457,40 @@ function initEventListeners() {
                         console.error("Erro ao deletar documento individual:", e);
                     }
 
+                    curr.pendenciaActive = false;
+                    addAuditLog('Empreendimento Excluído', `O empreendimento <strong>${projName}</strong> foi excluído do sistema.`, 'danger');
+
+                    state.projects = state.projects.filter(p => p.id !== projectIdToDelete);
+                    localUI.currentProjectId = 'p_default';
+                    localUI.expandedIds.clear();
+
+                    saveState();
+                    saveLocalUI();
                     updateGlobalDateUI();
                     renderTree();
                     renderTracking();
-                    showTemporaryMessage(`Empreendimento removido com sucesso.`);
+                    updateFirebaseStorageUI();
+
+                    showTemporaryMessage(`Empreendimento "${projName}" excluído com sucesso.`);
                 }
             });
         });
+    }
+
+    if (btnConcludeProject) {
+        btnConcludeProject.addEventListener('click', openConcludeProjectModal);
+    }
+    if (btnCloseConcludeProject) {
+        btnCloseConcludeProject.onclick = () => concludeProjectModal.classList.add('hidden');
+    }
+    if (btnConfirmConcludeProject) {
+        btnConfirmConcludeProject.addEventListener('click', confirmConcludeProject);
+    }
+    if (btnShowHistoricalDb) {
+        btnShowHistoricalDb.addEventListener('click', openHistoricalDashboard);
+    }
+    if (btnCloseHistoricalDashboard) {
+        btnCloseHistoricalDashboard.onclick = () => historicalDashboardModal.classList.add('hidden');
     }
 
     if (btnRenameProject) {
@@ -2020,9 +2060,11 @@ function updateGlobalDateUI() {
         if (btnDeleteProject) btnDeleteProject.style.display = 'none';
         if (dueDateContainer) dueDateContainer.style.display = 'none';
         if (projectGlobalCountdown) projectGlobalCountdown.style.display = 'none';
+        if (headerLocationInfo) headerLocationInfo.style.display = 'none';
 
         // Reseta filtro no modelo
         treeSearchFilter = 'all';
+        renderProjectStagesStepper(null);
         return;
     }
 
@@ -6742,5 +6784,185 @@ async function sendTeamsNotification(sector, data) {
         console.log("[Teams Webhook] Envio direto concluído (opaco/no-cors).");
     } catch (e) {
         console.error("[Teams Webhook] Falha definitiva no envio em todas as camadas:", e);
+    }
+}
+
+// --- Historical Dashboard & Conclude Logic ---
+function openConcludeProjectModal() {
+    const curr = getCurrentProject();
+    if (!curr || curr.id === 'none' || curr.id === 'p_default') {
+        alert('Selecione um empreendimento válido primeiro.');
+        return;
+    }
+
+    concludeProjectDatesContainer.innerHTML = '';
+    
+    // Milestones definition
+    const milestones = [
+        { key: 'dataRecebimentoDocs', label: 'Data de recebimento da documentação', type: 'date', show: true },
+        { key: 'inicioProcessoAnalise', label: 'Início do processo de análise', type: 'date', show: true },
+        { key: 'inicioAnaliseCaixa', label: 'Início da análise CAIXA', type: 'date', show: curr.engAnalysisOpened || !!curr.engAnalysisStartDate },
+        { key: 'inicioResolucaoPendencias', label: 'Início da resolução de pendências', type: 'date', show: (curr.pendencias && curr.pendencias.length > 0) || curr.pendenciaActive },
+        { key: 'conclusaoEntregaPendencias', label: 'Conclusão da entrega de pendências', type: 'date', show: (curr.pendencias && curr.pendencias.length > 0) || curr.pendenciaActive },
+        { key: 'emissaoLae', label: 'Emissão do LAE', type: 'date', show: (curr.items || []).some(i => i.name.toLowerCase().includes('lae')) }
+    ];
+
+    // Build the dynamic form based on what is applicable for this project
+    milestones.filter(m => m.show).forEach(m => {
+        const wrap = document.createElement('div');
+        wrap.style.display = 'flex';
+        wrap.style.flexDirection = 'column';
+        wrap.style.gap = '0.3rem';
+        
+        const lbl = document.createElement('label');
+        lbl.className = 'label-modern';
+        lbl.textContent = m.label;
+        
+        const inp = document.createElement('input');
+        inp.type = m.type;
+        inp.className = 'input-modern';
+        inp.id = `conclude-${m.key}`;
+        inp.style.width = '100%';
+        
+        // Auto-fill some dates if available
+        if (m.key === 'inicioAnaliseCaixa' && curr.engAnalysisStartDate) {
+            inp.value = curr.engAnalysisStartDate;
+        }
+        
+        wrap.appendChild(lbl);
+        wrap.appendChild(inp);
+        concludeProjectDatesContainer.appendChild(wrap);
+    });
+
+    concludeProjectModal.classList.remove('hidden');
+}
+
+async function confirmConcludeProject() {
+    const curr = getCurrentProject();
+    if (!curr) return;
+
+    btnConfirmConcludeProject.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Copiando...';
+    btnConfirmConcludeProject.disabled = true;
+
+    try {
+        const historicoData = {
+            originalId: curr.id,
+            name: curr.name,
+            uf: curr.uf || '',
+            cidade: curr.cidade || '',
+            createdAt: curr.createdAt,
+            dueDate: curr.dueDate || '',
+            concludedAt: new Date().toISOString().split('T')[0],
+            isOle: curr.isOle || false,
+            milestones: {}
+        };
+
+        // Capture milestones from inputs
+        const inputs = concludeProjectDatesContainer.querySelectorAll('input');
+        inputs.forEach(inp => {
+            const key = inp.id.replace('conclude-', '');
+            historicoData.milestones[key] = inp.value;
+        });
+
+        // Save to Firebase 'historico_empreendimentos'
+        const histCol = collection(db, 'historico_empreendimentos');
+        const newDocRef = doc(histCol); // Auto ID
+        await setDoc(newDocRef, historicoData);
+
+        addAuditLog('Empreendimento Concluído', `Empreendimento <strong>${curr.name}</strong> foi copiado para o histórico com sucesso.`, 'success');
+        showTemporaryMessage(`Empreendimento copiado para o histórico!`);
+        
+        concludeProjectModal.classList.add('hidden');
+    } catch (e) {
+        console.error("Erro ao copiar para histórico:", e);
+        alert("Ocorreu um erro ao salvar o histórico. Tente novamente.");
+    } finally {
+        btnConfirmConcludeProject.innerHTML = '<i class="ph ph-copy"></i> Copiar para o Histórico';
+        btnConfirmConcludeProject.disabled = false;
+    }
+}
+
+async function openHistoricalDashboard() {
+    historicalDashboardModal.classList.remove('hidden');
+    historicalDashboardContent.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--text-muted);"><i class="ph ph-spinner ph-spin" style="font-size:2rem;"></i><br>Carregando histórico...</div>';
+
+    try {
+        const histCol = collection(db, 'historico_empreendimentos');
+        const snap = await getDocs(query(histCol));
+        
+        if (snap.empty) {
+            historicalDashboardContent.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--text-muted);">Nenhum empreendimento concluído no histórico ainda.</div>';
+            return;
+        }
+
+        let html = `
+            <table style="width: 100%; border-collapse: collapse; margin-top: 1rem; color: var(--text-main);">
+                <thead>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2);">
+                        <th style="padding: 0.75rem; text-align: left; font-size: 0.85rem; color: var(--text-muted);">Empreendimento</th>
+                        <th style="padding: 0.75rem; text-align: left; font-size: 0.85rem; color: var(--text-muted);">Local</th>
+                        <th style="padding: 0.75rem; text-align: left; font-size: 0.85rem; color: var(--text-muted);">Criação / Conclusão</th>
+                        <th style="padding: 0.75rem; text-align: left; font-size: 0.85rem; color: var(--text-muted);">Ciclos & Prazos</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        snap.forEach(docSnap => {
+            const data = docSnap.data();
+            
+            // Calculate durations (Dias) se houverem duas datas úteis
+            const ms = data.milestones || {};
+            let ciclosHtml = '';
+            
+            const calcDays = (d1, d2) => {
+                if (!d1 || !d2) return null;
+                const date1 = new Date(d1);
+                const date2 = new Date(d2);
+                const diffTime = Math.abs(date2 - date1);
+                return Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+            };
+
+            if (ms.dataRecebimentoDocs && ms.inicioProcessoAnalise) {
+                const dias = calcDays(ms.dataRecebimentoDocs, ms.inicioProcessoAnalise);
+                ciclosHtml += \`<span style="display:block; font-size: 0.75rem; margin-bottom: 0.2rem;">Receb. -> Análise: <strong>\${dias} dias</strong></span>\`;
+            }
+            if (ms.inicioAnaliseCaixa && ms.inicioResolucaoPendencias) {
+                const dias = calcDays(ms.inicioAnaliseCaixa, ms.inicioResolucaoPendencias);
+                ciclosHtml += \`<span style="display:block; font-size: 0.75rem; margin-bottom: 0.2rem;">CAIXA -> Pendências: <strong>\${dias} dias</strong></span>\`;
+            }
+            if (ms.inicioResolucaoPendencias && ms.conclusaoEntregaPendencias) {
+                const dias = calcDays(ms.inicioResolucaoPendencias, ms.conclusaoEntregaPendencias);
+                ciclosHtml += \`<span style="display:block; font-size: 0.75rem; margin-bottom: 0.2rem;">Resolução Pendências: <strong>\${dias} dias</strong></span>\`;
+            }
+            if (ms.conclusaoEntregaPendencias && ms.emissaoLae) {
+                const dias = calcDays(ms.conclusaoEntregaPendencias, ms.emissaoLae);
+                ciclosHtml += \`<span style="display:block; font-size: 0.75rem; margin-bottom: 0.2rem;">Fim Pends. -> LAE: <strong>\${dias} dias</strong></span>\`;
+            }
+            
+            if (!ciclosHtml) ciclosHtml = '<span style="font-size: 0.75rem; color: var(--text-muted);">Sem dados de ciclo suficientes</span>';
+
+            html += \`
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <td style="padding: 0.75rem; font-size: 0.9rem; font-weight: 500;">
+                        \${data.name} 
+                        \${data.isOle ? '<span style="background:var(--primary); color:#000; font-size:0.6rem; padding: 0.1rem 0.3rem; border-radius:3px; margin-left:0.3rem;">Olé</span>' : ''}
+                    </td>
+                    <td style="padding: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">\${data.cidade || '-'} / \${data.uf || '-'}</td>
+                    <td style="padding: 0.75rem; font-size: 0.85rem;">
+                        <div style="color: var(--text-muted); font-size: 0.75rem;">Criado: \${data.createdAt ? data.createdAt.split('-').reverse().join('/') : '-'}</div>
+                        <div style="color: #10b981; font-weight: 600;">Concluído: \${data.concludedAt ? data.concludedAt.split('-').reverse().join('/') : '-'}</div>
+                    </td>
+                    <td style="padding: 0.75rem;">\${ciclosHtml}</td>
+                </tr>
+            \`;
+        });
+
+        html += \`</tbody></table>\`;
+        historicalDashboardContent.innerHTML = html;
+
+    } catch (e) {
+        console.error("Erro ao carregar histórico:", e);
+        historicalDashboardContent.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--danger);">Erro ao carregar os dados.</div>';
     }
 }
