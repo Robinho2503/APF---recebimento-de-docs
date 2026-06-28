@@ -2361,14 +2361,14 @@ function renderProjectStagesStepper(p) {
             if (s.type === 'doc_inicial') {
                 dateInputHTML = `
                     <div class="step-date-wrapper" onclick="event.stopPropagation()">
-                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem;">
-                            <div>
-                                <label class="step-date-label">Previsão (Geral)</label>
-                                <input type="date" class="step-date-input" value="${p.dueDate || ''}" disabled title="Preenchido na aba Acesso APF">
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.5rem; width: 100%;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
+                                <label class="step-date-label" style="margin: 0; text-transform: uppercase; font-size: 0.65rem;">Previsão (Geral)</label>
+                                <input type="date" class="step-date-input" value="${p.dueDate || ''}" disabled title="Preenchido na aba Acesso APF" style="padding: 0.1rem 0.2rem; font-size: 0.75rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: var(--text-main); height: 22px; width: 110px;">
                             </div>
-                            <div>
-                                <label class="step-date-label">Realizada</label>
-                                <input type="date" class="step-date-input custom-stage-end-date" data-stage-id="${s.id}" value="${s.endDate || ''}">
+                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
+                                <label class="step-date-label" style="margin: 0; text-transform: uppercase; font-size: 0.65rem;">Realizada</label>
+                                <input type="date" class="step-date-input custom-stage-end-date" data-stage-id="${s.id}" value="${s.endDate || ''}" style="padding: 0.1rem 0.2rem; font-size: 0.75rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: var(--text-main); height: 22px; width: 110px;">
                             </div>
                         </div>
                     </div>
@@ -2376,14 +2376,14 @@ function renderProjectStagesStepper(p) {
             } else if (s.type === 'analise_caixa' || s.type === 'pendencias') {
                 dateInputHTML = `
                     <div class="step-date-wrapper" onclick="event.stopPropagation()">
-                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem;">
-                            <div>
-                                <label class="step-date-label">Início</label>
-                                <input type="date" class="step-date-input custom-stage-date-input" data-stage-id="${s.id}" value="${s.startDate || ''}">
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.5rem; width: 100%;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
+                                <label class="step-date-label" style="margin: 0; text-transform: uppercase; font-size: 0.65rem;">Início</label>
+                                <input type="date" class="step-date-input custom-stage-date-input" data-stage-id="${s.id}" value="${s.startDate || ''}" style="padding: 0.1rem 0.2rem; font-size: 0.75rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: var(--text-main); height: 22px; width: 110px;">
                             </div>
-                            <div>
-                                <label class="step-date-label">Conclusão</label>
-                                <input type="date" class="step-date-input custom-stage-end-date" data-stage-id="${s.id}" value="${s.endDate || ''}">
+                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
+                                <label class="step-date-label" style="margin: 0; text-transform: uppercase; font-size: 0.65rem;">Conclusão</label>
+                                <input type="date" class="step-date-input custom-stage-end-date" data-stage-id="${s.id}" value="${s.endDate || ''}" style="padding: 0.1rem 0.2rem; font-size: 0.75rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: var(--text-main); height: 22px; width: 110px;">
                             </div>
                         </div>
                     </div>
@@ -7007,6 +7007,17 @@ async function confirmConcludeProject() {
     }
 }
 
+window.deleteHistoricalProject = async (docId) => {
+    if (!confirm("Tem certeza que deseja excluir permanentemente este projeto do histórico?")) return;
+    try {
+        await deleteDoc(doc(db, 'historico_empreendimentos', docId));
+        openHistoricalDashboard(); // Refresh the modal
+    } catch (e) {
+        console.error("Erro ao excluir do histórico:", e);
+        alert("Ocorreu um erro ao excluir o histórico.");
+    }
+};
+
 async function openHistoricalDashboard() {
     historicalDashboardModal.classList.remove('hidden');
     historicalDashboardContent.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--text-muted);"><i class="ph ph-spinner ph-spin" style="font-size:2rem;"></i><br>Carregando histórico...</div>';
@@ -7024,6 +7035,7 @@ async function openHistoricalDashboard() {
 
         snap.forEach(docSnap => {
             const data = docSnap.data();
+            const docId = docSnap.id;
             
             const calcDays = (d1, d2) => {
                 if (!d1 || !d2) return null;
@@ -7045,6 +7057,13 @@ async function openHistoricalDashboard() {
                 const color = diff > 0 ? 'var(--danger)' : 'var(--accent)';
                 const txt = diff > 0 ? `Atrasado ${diff} dias` : `No prazo (Adiantado ${Math.abs(diff)} dias)`;
                 delaysHtml += `<div style="font-size: 0.75rem; margin-top: 0.5rem;">Doc Inicial: <strong style="color: ${color}">${txt}</strong></div>`;
+            }
+
+            // Total Duration
+            let totalDurationHtml = '';
+            if (data.createdAt && data.concludedAt) {
+                const durDays = calcDays(data.createdAt, data.concludedAt);
+                totalDurationHtml = `<div style="font-size: 0.8rem; font-weight: bold; color: var(--accent); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.3rem;"><i class="ph ph-clock"></i> Duração Total: ${durDays} dias</div>`;
             }
 
             // Stages HTML
@@ -7088,15 +7107,19 @@ async function openHistoricalDashboard() {
             }
 
             html += `
-                <div style="background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 8px; padding: 1.25rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-                        <h4 style="margin: 0; font-size: 1rem; color: var(--text-main); font-weight: 600;">${data.name}</h4>
-                        ${data.isOle ? '<span class="badge" style="background:var(--primary); color:#000;">Olé</span>' : ''}
+                <div style="background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 8px; padding: 1.25rem; position: relative;">
+                    <button onclick="deleteHistoricalProject('${docId}')" style="position: absolute; top: 0.75rem; right: 0.75rem; background: transparent; border: none; color: var(--text-muted); cursor: pointer; transition: 0.2s;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--text-muted)'" title="Excluir do Histórico"><i class="ph ph-trash" style="font-size: 1.2rem;"></i></button>
+                    
+                    <div style="display: flex; justify-content: flex-start; align-items: flex-start; margin-bottom: 0.5rem; padding-right: 2rem;">
+                        <h4 style="margin: 0; font-size: 1rem; color: var(--text-main); font-weight: 600; line-height: 1.2;">${data.name}</h4>
+                        ${data.isOle ? '<span class="badge" style="background:var(--primary); color:#000; margin-left: 0.5rem;">Olé</span>' : ''}
                     </div>
                     <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
                         <i class="ph ph-map-pin"></i> ${data.cidade || '-'} / ${data.uf || '-'}
                     </div>
                     
+                    ${totalDurationHtml}
+
                     <div style="display:flex; justify-content:space-between; background:rgba(0,0,0,0.2); padding:0.5rem; border-radius:6px; margin-bottom: 1rem;">
                         <div style="text-align:center;">
                             <div style="font-size:0.65rem; color:var(--text-muted); text-transform:uppercase;">Criado em</div>
@@ -7118,7 +7141,7 @@ async function openHistoricalDashboard() {
             `;
         });
 
-        html += `</tbody></table>`;
+        html += `</div>`;
         historicalDashboardContent.innerHTML = html;
 
     } catch (e) {
