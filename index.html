@@ -194,6 +194,60 @@
                 <div id="unified-top-dashboard" style="display: flex; gap: 2rem; align-items: center; width: 100%; justify-content: flex-start; padding-top: 1.25rem; border-top: 1px solid rgba(255,255,255,0.06);">
                     <!-- JS Injected Dashboard Components (Sector & Global Progress) -->
                 </div>
+
+                <!-- Painel de Cronograma Global do Projeto -->
+                <div id="project-timeline-panel" style="display: none; width: 100%; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px dashed rgba(255,255,255,0.1);">
+                    <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem;">Cronograma Global</div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                        
+                        <!-- Doc Inicial -->
+                        <div class="timeline-box" style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                            <div style="font-size: 0.8rem; font-weight: 500; margin-bottom: 0.5rem; color: #fff;"><i class="ph ph-files"></i> Doc. Inicial</div>
+                            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                <div>
+                                    <label style="font-size: 0.7rem; color: var(--text-muted); display: block;">Previsão (Prazo Geral)</label>
+                                    <input type="date" id="timeline-doc-prev" class="input-modern" style="width: 100%; font-size: 0.8rem; padding: 0.3rem;" disabled>
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.7rem; color: var(--text-muted); display: block;">Realizada</label>
+                                    <input type="date" id="timeline-doc-real" class="input-modern" style="width: 100%; font-size: 0.8rem; padding: 0.3rem;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Análise CAIXA -->
+                        <div class="timeline-box" style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                            <div style="font-size: 0.8rem; font-weight: 500; margin-bottom: 0.5rem; color: #fff;"><i class="ph ph-bank"></i> Análise CAIXA</div>
+                            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                <div>
+                                    <label style="font-size: 0.7rem; color: var(--text-muted); display: block;">Início</label>
+                                    <input type="date" id="timeline-caixa-inicio" class="input-modern" style="width: 100%; font-size: 0.8rem; padding: 0.3rem;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.7rem; color: var(--text-muted); display: block;">Término</label>
+                                    <input type="date" id="timeline-caixa-fim" class="input-modern" style="width: 100%; font-size: 0.8rem; padding: 0.3rem;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pendências -->
+                        <div class="timeline-box" style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                            <div style="font-size: 0.8rem; font-weight: 500; margin-bottom: 0.5rem; color: #fff;"><i class="ph ph-warning-circle"></i> Pendências</div>
+                            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                <div>
+                                    <label style="font-size: 0.7rem; color: var(--text-muted); display: block;">Início</label>
+                                    <input type="date" id="timeline-pend-inicio" class="input-modern" style="width: 100%; font-size: 0.8rem; padding: 0.3rem;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.7rem; color: var(--text-muted); display: block;">Término</label>
+                                    <input type="date" id="timeline-pend-fim" class="input-modern" style="width: 100%; font-size: 0.8rem; padding: 0.3rem;">
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
             </div>
 
             <!-- Checklist - Always Visible -->

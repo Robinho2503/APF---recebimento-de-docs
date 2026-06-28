@@ -3934,6 +3934,42 @@ function renderTree() {
     updateProjectProgressUI(currProj);
     updateGlobalDateUI();
     renderAnalysisPanels();
+    
+    // Novo: Preencher os campos do Cronograma Global se estiver visível
+    const timelinePanel = document.getElementById('project-timeline-panel');
+    if (timelinePanel) {
+        if (!mgmt && currProj.id !== 'none' && currProj.id !== 'p_default') {
+            timelinePanel.style.display = 'block';
+            
+            const dp = document.getElementById('timeline-doc-prev');
+            const dr = document.getElementById('timeline-doc-real');
+            const ci = document.getElementById('timeline-caixa-inicio');
+            const cf = document.getElementById('timeline-caixa-fim');
+            const pi = document.getElementById('timeline-pend-inicio');
+            const pf = document.getElementById('timeline-pend-fim');
+
+            if (dp) dp.value = currProj.dueDate || '';
+            if (dr) dr.value = currProj.docRecebimentoDate || '';
+            if (ci) ci.value = currProj.caixaStartDate || '';
+            if (cf) cf.value = currProj.caixaEndDate || '';
+            if (pi) pi.value = currProj.pendenciaStartDate || '';
+            if (pf) pf.value = currProj.pendenciaEndDate || '';
+
+            const saveGlobalDate = (field, val) => {
+                currProj[field] = val;
+                saveState();
+            };
+
+            if (dr) dr.onchange = (e) => saveGlobalDate('docRecebimentoDate', e.target.value);
+            if (ci) ci.onchange = (e) => saveGlobalDate('caixaStartDate', e.target.value);
+            if (cf) cf.onchange = (e) => saveGlobalDate('caixaEndDate', e.target.value);
+            if (pi) pi.onchange = (e) => saveGlobalDate('pendenciaStartDate', e.target.value);
+            if (pf) pf.onchange = (e) => saveGlobalDate('pendenciaEndDate', e.target.value);
+
+        } else {
+            timelinePanel.style.display = 'none';
+        }
+    }
 
     // Novo: Ajuste dinâmico de fonte para nomes longos
     setTimeout(adjustTreeFontSize, 0);
@@ -4228,13 +4264,82 @@ function createNode(item, level) {
 
     const nameWrapper = document.createElement('div');
     nameWrapper.className = 'name-wrapper';
-    nameWrapper.appendChild(nameSpan);
+    nameWrapper.style.display = 'flex';
+    nameWrapper.style.alignItems = 'center';
+    nameWrapper.style.gap = '1rem';
+    nameWrapper.style.flexWrap = 'wrap';
+
+    const nameTextContainer = document.createElement('div');
+    nameTextContainer.appendChild(nameSpan);
+    nameWrapper.appendChild(nameTextContainer);
+
+    // ADICIONAR CAMPOS DE DATA INLINE PARA PASTAS RAIZ
+    if (isRootFolder && currProj.id !== 'p_default' && !isMgmt) {
+        const isLAE = item.name.toLowerCase().includes('lae');
+        
+        const dateContainer = document.createElement('div');
+        dateContainer.style.display = 'flex';
+        dateContainer.style.gap = '0.5rem';
+        dateContainer.style.alignItems = 'center';
+        
+        if (!isLAE) {
+            const lblStart = document.createElement('span');
+            lblStart.textContent = 'Início:';
+            lblStart.style.fontSize = '0.7rem';
+            lblStart.style.color = 'var(--text-muted)';
+            dateContainer.appendChild(lblStart);
+
+            const startInput = document.createElement('input');
+            startInput.type = 'date';
+            startInput.className = 'input-modern';
+            startInput.style.padding = '0.1rem 0.3rem';
+            startInput.style.fontSize = '0.75rem';
+            startInput.title = 'Início da Etapa';
+            startInput.value = item.startDate || '';
+            startInput.onclick = (e) => e.stopPropagation();
+            startInput.onchange = (e) => {
+                item.startDate = e.target.value;
+                saveState();
+            };
+            dateContainer.appendChild(startInput);
+            
+            const separator = document.createElement('span');
+            separator.textContent = '|';
+            separator.style.color = 'rgba(255,255,255,0.1)';
+            dateContainer.appendChild(separator);
+        }
+        
+        const lblEnd = document.createElement('span');
+        lblEnd.textContent = isLAE ? 'Emissão:' : 'Término:';
+        lblEnd.style.fontSize = '0.7rem';
+        lblEnd.style.color = 'var(--text-muted)';
+        dateContainer.appendChild(lblEnd);
+
+        const endInput = document.createElement('input');
+        endInput.type = 'date';
+        endInput.className = 'input-modern';
+        endInput.style.padding = '0.1rem 0.3rem';
+        endInput.style.fontSize = '0.75rem';
+        endInput.title = isLAE ? 'Data de Emissão' : 'Encerramento da Etapa';
+        endInput.value = item.endDate || '';
+        endInput.onclick = (e) => e.stopPropagation();
+        endInput.onchange = (e) => {
+            item.endDate = e.target.value;
+            saveState();
+        };
+        dateContainer.appendChild(endInput);
+        
+        nameWrapper.appendChild(dateContainer);
+    }
+
     itemLeft.appendChild(nameWrapper);
 
     // Container para informações extras abaixo do nome (Justificativa, etc)
     const itemMeta = document.createElement('div');
     itemMeta.className = 'item-meta';
+    itemMeta.style.width = '100%'; // Garante que quebra linha
     nameWrapper.appendChild(itemMeta);
+    
     const itemRight = document.createElement('div');
     itemRight.className = 'item-right';
 
@@ -6795,44 +6900,16 @@ function openConcludeProjectModal() {
         return;
     }
 
-    concludeProjectDatesContainer.innerHTML = '';
-    
-    // Milestones definition
-    const milestones = [
-        { key: 'dataRecebimentoDocs', label: 'Data de recebimento da documentação', type: 'date', show: true },
-        { key: 'inicioProcessoAnalise', label: 'Início do processo de análise', type: 'date', show: true },
-        { key: 'conclusaoAnaliseCaixa', label: 'Conclusão da análise CAIXA', type: 'date', show: curr.engAnalysisOpened || !!curr.engAnalysisStartDate },
-        { key: 'inicioResolucaoPendencias', label: 'Início da resolução de pendências', type: 'date', show: (curr.pendencias && curr.pendencias.length > 0) || curr.pendenciaActive },
-        { key: 'conclusaoEntregaPendencias', label: 'Conclusão da entrega de pendências', type: 'date', show: (curr.pendencias && curr.pendencias.length > 0) || curr.pendenciaActive },
-        { key: 'emissaoLae', label: 'Emissão do LAE', type: 'date', show: (curr.items || []).some(i => i.name.toLowerCase().includes('lae')) }
-    ];
-
-    // Build the dynamic form based on what is applicable for this project
-    milestones.filter(m => m.show).forEach(m => {
-        const wrap = document.createElement('div');
-        wrap.style.display = 'flex';
-        wrap.style.flexDirection = 'column';
-        wrap.style.gap = '0.3rem';
-        
-        const lbl = document.createElement('label');
-        lbl.className = 'label-modern';
-        lbl.textContent = m.label;
-        
-        const inp = document.createElement('input');
-        inp.type = m.type;
-        inp.className = 'input-modern';
-        inp.id = `conclude-${m.key}`;
-        inp.style.width = '100%';
-        
-        // Auto-fill some dates if available
-        if (m.key === 'conclusaoAnaliseCaixa' && curr.engAnalysisStartDate) {
-            inp.value = curr.engAnalysisStartDate;
-        }
-        
-        wrap.appendChild(lbl);
-        wrap.appendChild(inp);
-        concludeProjectDatesContainer.appendChild(wrap);
-    });
+    concludeProjectDatesContainer.innerHTML = `
+        <div style="text-align:center; padding:1rem; border: 1px dashed rgba(255,255,255,0.1); border-radius: 8px;">
+            <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:0.5rem;">
+                O sistema irá empacotar todas as datas de Início e Término já preenchidas na interface do projeto e salvar no Histórico de forma irreversível.
+            </p>
+            <p style="color:var(--accent); font-weight:600; font-size: 1rem;">
+                Deseja confirmar a conclusão do projeto?
+            </p>
+        </div>
+    `;
 
     concludeProjectModal.classList.remove('hidden');
 }
@@ -6845,6 +6922,18 @@ async function confirmConcludeProject() {
     btnConfirmConcludeProject.disabled = true;
 
     try {
+        const itemDates = [];
+        if (curr.items) {
+            const rootItems = curr.items.filter(i => i.parentId === null);
+            rootItems.forEach(ri => {
+                itemDates.push({
+                    name: ri.name,
+                    startDate: ri.startDate || '',
+                    endDate: ri.endDate || ''
+                });
+            });
+        }
+
         const historicoData = {
             originalId: curr.id,
             name: curr.name,
@@ -6854,15 +6943,15 @@ async function confirmConcludeProject() {
             dueDate: curr.dueDate || '',
             concludedAt: new Date().toISOString().split('T')[0],
             isOle: curr.isOle || false,
-            milestones: {}
+            
+            docRecebimentoDate: curr.docRecebimentoDate || '',
+            caixaStartDate: curr.caixaStartDate || '',
+            caixaEndDate: curr.caixaEndDate || '',
+            pendenciaStartDate: curr.pendenciaStartDate || '',
+            pendenciaEndDate: curr.pendenciaEndDate || '',
+            
+            stages: itemDates
         };
-
-        // Capture milestones from inputs
-        const inputs = concludeProjectDatesContainer.querySelectorAll('input');
-        inputs.forEach(inp => {
-            const key = inp.id.replace('conclude-', '');
-            historicoData.milestones[key] = inp.value;
-        });
 
         // Save to Firebase 'historico_empreendimentos'
         const histCol = collection(db, 'historico_empreendimentos');
@@ -6895,25 +6984,10 @@ async function openHistoricalDashboard() {
             return;
         }
 
-        let html = `
-            <table style="width: 100%; border-collapse: collapse; margin-top: 1rem; color: var(--text-main);">
-                <thead>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2);">
-                        <th style="padding: 0.75rem; text-align: left; font-size: 0.85rem; color: var(--text-muted);">Empreendimento</th>
-                        <th style="padding: 0.75rem; text-align: left; font-size: 0.85rem; color: var(--text-muted);">Local</th>
-                        <th style="padding: 0.75rem; text-align: left; font-size: 0.85rem; color: var(--text-muted);">Criação / Conclusão</th>
-                        <th style="padding: 0.75rem; text-align: left; font-size: 0.85rem; color: var(--text-muted);">Ciclos & Prazos</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
+        let html = '<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; margin-top: 1rem;">';
 
         snap.forEach(docSnap => {
             const data = docSnap.data();
-            
-            // Calculate durations (Dias) se houverem duas datas úteis
-            const ms = data.milestones || {};
-            let ciclosHtml = '';
             
             const calcDays = (d1, d2) => {
                 if (!d1 || !d2) return null;
@@ -6923,38 +6997,88 @@ async function openHistoricalDashboard() {
                 return Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
             };
 
-            if (ms.dataRecebimentoDocs && ms.inicioProcessoAnalise) {
-                const dias = calcDays(ms.dataRecebimentoDocs, ms.inicioProcessoAnalise);
-                ciclosHtml += `<span style="display:block; font-size: 0.75rem; margin-bottom: 0.2rem;">Receb. -> Análise: <strong>${dias} dias</strong></span>`;
-            }
-            if (ms.conclusaoAnaliseCaixa && ms.inicioResolucaoPendencias) {
-                const dias = calcDays(ms.conclusaoAnaliseCaixa, ms.inicioResolucaoPendencias);
-                ciclosHtml += `<span style="display:block; font-size: 0.75rem; margin-bottom: 0.2rem;">CAIXA -> Pendências: <strong>${dias} dias</strong></span>`;
-            }
-            if (ms.inicioResolucaoPendencias && ms.conclusaoEntregaPendencias) {
-                const dias = calcDays(ms.inicioResolucaoPendencias, ms.conclusaoEntregaPendencias);
-                ciclosHtml += `<span style="display:block; font-size: 0.75rem; margin-bottom: 0.2rem;">Resolução Pendências: <strong>${dias} dias</strong></span>`;
-            }
-            if (ms.conclusaoEntregaPendencias && ms.emissaoLae) {
-                const dias = calcDays(ms.conclusaoEntregaPendencias, ms.emissaoLae);
-                ciclosHtml += `<span style="display:block; font-size: 0.75rem; margin-bottom: 0.2rem;">Fim Pends. -> LAE: <strong>${dias} dias</strong></span>`;
-            }
+            const formatDate = (ds) => ds ? ds.split('-').reverse().join('/') : '-';
+
+            let delaysHtml = '';
             
-            if (!ciclosHtml) ciclosHtml = '<span style="font-size: 0.75rem; color: var(--text-muted);">Sem dados de ciclo suficientes</span>';
+            // Global dates comparison
+            if (data.dueDate && data.docRecebimentoDate) {
+                const limit = new Date(data.dueDate);
+                const real = new Date(data.docRecebimentoDate);
+                const diff = Math.ceil((real - limit) / (1000 * 60 * 60 * 24));
+                const color = diff > 0 ? 'var(--danger)' : 'var(--accent)';
+                const txt = diff > 0 ? `Atrasado ${diff} dias` : `No prazo (Adiantado ${Math.abs(diff)} dias)`;
+                delaysHtml += `<div style="font-size: 0.75rem; margin-top: 0.5rem;">Doc Inicial: <strong style="color: ${color}">${txt}</strong></div>`;
+            }
+
+            // Stages HTML
+            let stagesHtml = '';
+            const stages = data.stages || [];
+            
+            // Render specific global stages
+            if (data.caixaStartDate && data.caixaEndDate) {
+                const d = calcDays(data.caixaStartDate, data.caixaEndDate);
+                stagesHtml += `<div style="display:flex; justify-content:space-between; font-size:0.75rem; border-bottom:1px solid rgba(255,255,255,0.05); padding:0.3rem 0;">
+                    <span>Análise CAIXA</span>
+                    <strong>${d} dias</strong>
+                </div>`;
+            }
+            if (data.pendenciaStartDate && data.pendenciaEndDate) {
+                const d = calcDays(data.pendenciaStartDate, data.pendenciaEndDate);
+                stagesHtml += `<div style="display:flex; justify-content:space-between; font-size:0.75rem; border-bottom:1px solid rgba(255,255,255,0.05); padding:0.3rem 0;">
+                    <span>Pendências</span>
+                    <strong>${d} dias</strong>
+                </div>`;
+            }
+
+            // Render root stages
+            stages.forEach(s => {
+                if (s.startDate && s.endDate) {
+                    const d = calcDays(s.startDate, s.endDate);
+                    stagesHtml += `<div style="display:flex; justify-content:space-between; font-size:0.75rem; border-bottom:1px solid rgba(255,255,255,0.05); padding:0.3rem 0;">
+                        <span>${s.name}</span>
+                        <strong>${d} dias</strong>
+                    </div>`;
+                } else if (s.name.toLowerCase().includes('lae') && s.endDate) {
+                    stagesHtml += `<div style="display:flex; justify-content:space-between; font-size:0.75rem; border-bottom:1px solid rgba(255,255,255,0.05); padding:0.3rem 0;">
+                        <span>${s.name} (Emissão)</span>
+                        <strong>${formatDate(s.endDate)}</strong>
+                    </div>`;
+                }
+            });
+
+            if (!stagesHtml && !delaysHtml) {
+                stagesHtml = '<div style="font-size: 0.75rem; color: var(--text-muted);">Sem dados de cronograma registrados.</div>';
+            }
 
             html += `
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                    <td style="padding: 0.75rem; font-size: 0.9rem; font-weight: 500;">
-                        ${data.name} 
-                        ${data.isOle ? '<span style="background:var(--primary); color:#000; font-size:0.6rem; padding: 0.1rem 0.3rem; border-radius:3px; margin-left:0.3rem;">Olé</span>' : ''}
-                    </td>
-                    <td style="padding: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">${data.cidade || '-'} / ${data.uf || '-'}</td>
-                    <td style="padding: 0.75rem; font-size: 0.85rem;">
-                        <div style="color: var(--text-muted); font-size: 0.75rem;">Criado: ${data.createdAt ? data.createdAt.split('-').reverse().join('/') : '-'}</div>
-                        <div style="color: #10b981; font-weight: 600;">Concluído: ${data.concludedAt ? data.concludedAt.split('-').reverse().join('/') : '-'}</div>
-                    </td>
-                    <td style="padding: 0.75rem;">${ciclosHtml}</td>
-                </tr>
+                <div style="background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 8px; padding: 1.25rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                        <h4 style="margin: 0; font-size: 1rem; color: var(--text-main); font-weight: 600;">${data.name}</h4>
+                        ${data.isOle ? '<span class="badge" style="background:var(--primary); color:#000;">Olé</span>' : ''}
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
+                        <i class="ph ph-map-pin"></i> ${data.cidade || '-'} / ${data.uf || '-'}
+                    </div>
+                    
+                    <div style="display:flex; justify-content:space-between; background:rgba(0,0,0,0.2); padding:0.5rem; border-radius:6px; margin-bottom: 1rem;">
+                        <div style="text-align:center;">
+                            <div style="font-size:0.65rem; color:var(--text-muted); text-transform:uppercase;">Criado em</div>
+                            <div style="font-size:0.8rem; font-weight:500;">${formatDate(data.createdAt)}</div>
+                        </div>
+                        <div style="text-align:center;">
+                            <div style="font-size:0.65rem; color:var(--accent); text-transform:uppercase;">Concluído em</div>
+                            <div style="font-size:0.8rem; font-weight:500; color:var(--accent);">${formatDate(data.concludedAt)}</div>
+                        </div>
+                    </div>
+
+                    ${delaysHtml}
+
+                    <div style="margin-top: 1rem;">
+                        <div style="font-size:0.75rem; font-weight:600; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.5rem;">Ciclos e Prazos</div>
+                        ${stagesHtml}
+                    </div>
+                </div>
             `;
         });
 
