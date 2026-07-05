@@ -4858,6 +4858,15 @@ function createNode(item, level) {
 
             if (!isOpen) {
                 dropdown.classList.remove('hidden');
+                dropdown.classList.remove('dropdown-up'); // reseta a classe
+                
+                // Checa se o menu está vazando pela parte de baixo da tela
+                const rect = dropdown.getBoundingClientRect();
+                const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+                if (rect.bottom > viewportHeight - 20) {
+                    dropdown.classList.add('dropdown-up');
+                }
+
                 itemDiv.classList.add('menu-open');
                 
                 // Fechar ao clicar fora (Apenas uma vez ao abrir)

@@ -3834,3 +3834,12 @@ hr {
     cursor: help;
 }
 
+
+/* Menu de edicao aberto para cima quando perto do fim da tela */
+.edit-actions-dropdown.dropdown-up {
+    top: auto;
+    bottom: 100%;
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+}
+
