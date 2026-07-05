@@ -4517,7 +4517,7 @@ function createNode(item, level) {
 
             const btnAttach = document.createElement('button');
             btnAttach.className = 'icon-btn attach-icon-btn';
-            btnAttach.title = 'Anexar documento';
+            btnAttach.title = 'Anexar documento à pasta';
             btnAttach.innerHTML = '<i class="ph ph-paperclip"></i>';
             btnAttach.onclick = (e) => {
                 e.stopPropagation();
@@ -5041,6 +5041,13 @@ function createNode(item, level) {
             const childNode = createNode(c, level + 1);
             if (childNode) childCont.appendChild(childNode);
         });
+        nodeWrapper.appendChild(childCont);
+    } else if (!hasChildren && (!item.attachments || item.attachments.length === 0)) {
+        // Empty State: Pasta completamente vazia
+        const childCont = document.createElement('div');
+        childCont.className = 'children-container empty-state-hint';
+        childCont.style.padding = '0.5rem 1.5rem';
+        childCont.innerHTML = `<span style="font-size: 0.75rem; color: var(--text-muted); font-style: italic; opacity: 0.7; display: flex; align-items: center; gap: 0.3rem;"><i class="ph ph-info"></i> Pasta vazia. Habilite a edição (lápis) para criar pastas ou clipes para anexar documentos.</span>`;
         nodeWrapper.appendChild(childCont);
     }
 

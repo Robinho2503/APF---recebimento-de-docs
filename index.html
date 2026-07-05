@@ -120,10 +120,10 @@
                         <span style="display: flex; align-items: center; gap: 0.35rem;"><i class="ph ph-plus"></i> Novo Empreendimento</span> <i class="ph ph-caret-down" style="font-size: 0.75rem;"></i>
                     </button>
                     <div id="new-project-menu" class="edit-actions-dropdown hidden" style="bottom: 100%; top: auto; left: 0; right: 0; min-width: 100%; margin-bottom: 0.5rem;">
-                        <button id="btn-new-project" class="dropdown-item">
+                        <button id="btn-new-project" class="dropdown-item" title="Cadastrar uma nova obra/projeto no sistema">
                             <i class="ph ph-plus-circle" style="color: var(--primary);"></i> Criar Empreendimento
                         </button>
-                        <button id="btn-open-template" class="dropdown-item">
+                        <button id="btn-open-template" class="dropdown-item" title="Editar as pastas padrão que todo novo projeto recebe">
                             <i class="ph ph-layout" style="color: var(--accent);"></i> Modelo de Checklist
                         </button>
                     </div>
@@ -183,6 +183,15 @@
                             
                             <button id="btn-toggle-pendencias" class="btn btn-outline btn-sm" title="Iniciar resolução de PENDÊNCIAS CAIXA" style="display: none !important; padding: 0.4rem 0.8rem; font-size: 0.75rem; border-radius: 0.6rem;">
                                 <i class="ph ph-warning-diamond"></i> Resolução de pendências
+                            </button>
+                            <button class="segment-btn active" data-target="tab-checklist" title="Ver estrutura de pastas e documentos anexados">
+                                <i class="ph ph-list-checks"></i> Documentação Geral
+                            </button>
+                            <button class="segment-btn" data-target="tab-analise-caixa" title="Acompanhar progresso e status da Análise da Caixa">
+                                <i class="ph ph-bank"></i> Análise Caixa
+                            </button>
+                            <button class="segment-btn" data-target="tab-pendencias" title="Visualizar e responder pendências do projeto">
+                                <i class="ph ph-warning-circle"></i> Pendências
                             </button>
 
                             <div class="v-divider"></div>
