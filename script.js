@@ -2152,11 +2152,19 @@ function updateGlobalDateUI() {
 
     // Controles acima do checklist (Novo Setor, Relatórios, etc)
     const apfChecklistControls = document.getElementById('apf-checklist-controls');
-    if (apfChecklistControls) apfChecklistControls.style.display = isAPF ? 'flex' : 'none';
+    if (apfChecklistControls) apfChecklistControls.style.display = 'flex'; // Visível para todos
+
+    const btnExportPointsLocal = document.getElementById('btn-export-points');
+    if (btnExportPointsLocal) btnExportPointsLocal.style.display = isAPF ? 'inline-flex' : 'none';
+    
+    if (btnToggleEng) btnToggleEng.style.display = isAPF ? 'inline-flex' : 'none';
 
     if (btnRenameProject) btnRenameProject.style.display = isAPF ? 'inline-flex' : 'none';
     if (btnDeleteProject) btnDeleteProject.style.display = isAPF ? 'inline-flex' : 'none';
-    if (btnAddRoot) btnAddRoot.style.display = isAPF ? 'inline-flex' : 'none';
+    if (btnAddRoot) {
+        btnAddRoot.style.display = 'inline-flex';
+        btnAddRoot.innerHTML = isAPF ? '<i class="ph ph-folder-plus"></i> Novo setor' : '<i class="ph ph-folder-plus"></i> Criar pasta';
+    }
     if (dueDateContainer) dueDateContainer.style.display = 'none';
     if (projectDueDateInp) { projectDueDateInp.disabled = !isAPF; projectDueDateInp.value = p.dueDate || ''; }
 
@@ -4345,8 +4353,14 @@ function createNode(item, level) {
     const titleText = document.createTextNode(' ' + item.name);
     nameSpan.appendChild(titleText);
 
-
-
+    // NOVO: Renderizar indicador se a pasta foi criada por outro setor
+    if (item.createdBy && item.createdBy !== 'APF') {
+        const badge = document.createElement('span');
+        badge.className = 'external-folder-badge';
+        badge.title = `Criado por: ${item.createdBy}`;
+        badge.innerHTML = `<i class="ph ph-user"></i> ${item.createdBy}`;
+        nameSpan.appendChild(badge);
+    }
 
     // Espaçador sutil para manter o alinhamento sem os indicadores
     if (isRootFolder && localUI.currentProjectId !== 'p_default') {
@@ -4924,35 +4938,47 @@ function createNode(item, level) {
 
 // Logic implementations
 function handleAddFolder(parentId) {
-    // Permission Check
+    let finalParentId = parentId;
+    
+    // Permission Check & Routing for non-APF
     if (authenticatedSector !== 'APF') {
-        if (parentId === null) {
-            showTemporaryMessage("Apenas APF pode criar novos setores raízes.");
-            return;
-        }
-        const targetSector = getItemSector(parentId);
-        if (targetSector !== authenticatedSector) {
-            showTemporaryMessage(`Acesso negado. Você só pode adicionar itens ao setor "${authenticatedSector}".`);
-            return;
+        if (finalParentId === null) {
+            // Option A: Force creation inside their own sector root
+            const items = getItems();
+            const sectorRoot = items.find(i => i.parentId === null && (i.name || '').trim().toLowerCase() === (authenticatedSector || '').trim().toLowerCase());
+            
+            if (sectorRoot) {
+                finalParentId = sectorRoot.id;
+            } else {
+                showTemporaryMessage("Seu setor ainda não possui uma pasta raiz neste projeto.");
+                return;
+            }
+        } else {
+            const targetSector = getItemSector(finalParentId);
+            if (targetSector !== authenticatedSector) {
+                showTemporaryMessage(`Acesso negado. Você só pode adicionar itens ao setor "${authenticatedSector}".`);
+                return;
+            }
         }
     }
 
-    const parentItem = parentId ? getItems().find(i => i.id === parentId) : null;
+    const parentItem = finalParentId ? getItems().find(i => i.id === finalParentId) : null;
     const name = prompt('Nome da nova pasta/item:');
     if (name && name.trim()) {
         const item = {
             id: generateId(),
             name: name.trim(),
-            parentId: parentId,
+            parentId: finalParentId,
             protected: false,
             expanded: false,
             attachments: [],
             validationStatus: 'Em Análise de APF',
-            observation: ''
+            observation: '',
+            createdBy: authenticatedSector // Identifica quem criou a pasta
         };
 
-        // NEW: If creating a root folder (Sector), ask for password
-        if (parentId === null) {
+        // NEW: If creating a root folder (Sector), ask for password (Only APF can do this now since non-APF are routed)
+        if (finalParentId === null && authenticatedSector === 'APF') {
             const pass = prompt(`Defina uma senha para o novo setor "${name.trim()}":`, '1234');
             if (!state.settings) state.settings = {};
             if (!state.settings.sectorPasswords) state.settings.sectorPasswords = {};
