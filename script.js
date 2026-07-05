@@ -4311,64 +4311,7 @@ function createNode(item, level) {
     nameTextContainer.appendChild(nameSpan);
     nameWrapper.appendChild(nameTextContainer);
 
-    // ADICIONAR CAMPOS DE DATA INLINE PARA PASTAS RAIZ
-    if (isRootFolder && currProj.id !== 'p_default' && !isMgmt) {
-        const isLAE = item.name.toLowerCase().includes('lae');
-        
-        const dateContainer = document.createElement('div');
-        dateContainer.style.display = 'flex';
-        dateContainer.style.gap = '0.5rem';
-        dateContainer.style.alignItems = 'center';
-        
-        if (!isLAE) {
-            const lblStart = document.createElement('span');
-            lblStart.textContent = 'Início:';
-            lblStart.style.fontSize = '0.7rem';
-            lblStart.style.color = 'var(--text-muted)';
-            dateContainer.appendChild(lblStart);
-
-            const startInput = document.createElement('input');
-            startInput.type = 'date';
-            startInput.className = 'input-modern';
-            startInput.style.padding = '0.1rem 0.3rem';
-            startInput.style.fontSize = '0.75rem';
-            startInput.title = 'Início da Etapa';
-            startInput.value = item.startDate || '';
-            startInput.onclick = (e) => e.stopPropagation();
-            startInput.onchange = (e) => {
-                item.startDate = e.target.value;
-                saveState();
-            };
-            dateContainer.appendChild(startInput);
-            
-            const separator = document.createElement('span');
-            separator.textContent = '|';
-            separator.style.color = 'rgba(255,255,255,0.1)';
-            dateContainer.appendChild(separator);
-        }
-        
-        const lblEnd = document.createElement('span');
-        lblEnd.textContent = isLAE ? 'Emissão:' : 'Conclusão:';
-        lblEnd.style.fontSize = '0.7rem';
-        lblEnd.style.color = 'var(--text-muted)';
-        dateContainer.appendChild(lblEnd);
-
-        const endInput = document.createElement('input');
-        endInput.type = 'date';
-        endInput.className = 'input-modern';
-        endInput.style.padding = '0.1rem 0.3rem';
-        endInput.style.fontSize = '0.75rem';
-        endInput.title = isLAE ? 'Data de Emissão' : 'Encerramento da Etapa';
-        endInput.value = item.endDate || '';
-        endInput.onclick = (e) => e.stopPropagation();
-        endInput.onchange = (e) => {
-            item.endDate = e.target.value;
-            saveState();
-        };
-        dateContainer.appendChild(endInput);
-        
-        nameWrapper.appendChild(dateContainer);
-    }
+    // ADICIONAR CAMPOS DE DATA INLINE PARA PASTAS RAIZ - Removido a pedido do usuário
 
     itemLeft.appendChild(nameWrapper);
 
