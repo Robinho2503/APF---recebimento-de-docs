@@ -4160,7 +4160,59 @@ function createAttachmentBadge(att, itemId, canEdit, isMgmt = false, isPendencia
         attBadge.appendChild(aiStatusIcon);
     }
 
+    const btnDownload = document.createElement('button');
+    btnDownload.className = 'icon-btn download-link';
+    btnDownload.title = 'Baixar Arquivo (' + att.name + ')';
+    btnDownload.innerHTML = '<i class="ph ph-download-simple"></i>';
+    btnDownload.style.cursor = url ? 'pointer' : 'not-allowed';
+    btnDownload.onclick = async (e) => {
+        e.stopPropagation();
+        if (!url) {
+            alert("URL do arquivo não disponível.");
+            return;
+        }
+        try {
+            const originalHtml = btnDownload.innerHTML;
+            btnDownload.innerHTML = '<i class="ph ph-spinner ph-spin"></i>';
+            btnDownload.style.opacity = '0.5';
+            
+            const response = await fetch(url);
+            if (!response.ok) throw new Error("Falha no fetch");
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = blobUrl;
+            a.download = att.name; 
+            document.body.appendChild(a);
+            a.click();
+            
+            setTimeout(() => {
+                window.URL.revokeObjectURL(blobUrl);
+                document.body.removeChild(a);
+            }, 1000);
+            
+            btnDownload.innerHTML = originalHtml;
+            btnDownload.style.opacity = '1';
+        } catch (error) {
+            console.error("Erro no download (possível bloqueio de CORS):", error);
+            // Fallback clássico caso o fetch falhe
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = att.name;
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            btnDownload.innerHTML = '<i class="ph ph-download-simple"></i>';
+            btnDownload.style.opacity = '1';
+        }
+    };
+
     attBadge.appendChild(btnView);
+    attBadge.appendChild(btnDownload);
 
     const btnDel = document.createElement('button');
     btnDel.className = 'icon-btn delete';
