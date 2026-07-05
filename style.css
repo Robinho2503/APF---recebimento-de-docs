@@ -2452,7 +2452,7 @@ hr {
 }
 
 .login-input::placeholder {
-    color: rgba(var(--primary-rgb), 0.05);
+    color: rgba(255, 255, 255, 0.5); /* Aumentado a opacidade para ficar legível */
 }
 
 .light-mode .login-input::placeholder {
@@ -2460,7 +2460,7 @@ hr {
 }
 
 #login-sector {
-    color: rgba(var(--primary-rgb), 0.05) !important;
+    color: #ffffff !important; /* Branco para legibilidade no fundo escuro */
 }
 
 .light-mode #login-sector {
