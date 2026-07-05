@@ -824,7 +824,7 @@ async function exportProjectZipBlob(curr) {
     const zipUrl = URL.createObjectURL(content);
     const link = document.body.appendChild(document.createElement('a'));
     link.href = zipUrl;
-    link.download = `${safeProjectName}_Documentacao.zip`;
+    link.download = `${safeProjectName}_Portal_Entregas.zip`;
     link.click();
     
     setTimeout(() => {
