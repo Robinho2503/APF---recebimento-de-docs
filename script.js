@@ -4857,19 +4857,29 @@ function createNode(item, level) {
             document.querySelectorAll('.tree-item').forEach(ti => ti.classList.remove('menu-open'));
 
             if (!isOpen) {
-                dropdown.classList.remove('hidden');
-                dropdown.classList.remove('dropdown-up'); // reseta a classe
+                // Move o dropdown para o body para não ser cortado por containers
+                document.body.appendChild(dropdown);
                 
-                // Checa se o menu está vazando pela parte de baixo da tela
-                const rect = dropdown.getBoundingClientRect();
-                const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-                if (rect.bottom > viewportHeight - 20) {
-                    dropdown.classList.add('dropdown-up');
-                }
-
+                dropdown.classList.remove('hidden');
                 itemDiv.classList.add('menu-open');
                 
-                // Fechar ao clicar fora (Apenas uma vez ao abrir)
+                const btnRect = btnEditToggle.getBoundingClientRect();
+                
+                // Posição inicial (abaixo do botão)
+                let topPos = btnRect.bottom + 5;
+                let leftPos = btnRect.right - 180; // largura aprox do dropdown
+                
+                // Checa se vaza por baixo
+                const dropdownRect = dropdown.getBoundingClientRect();
+                const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+                
+                if (topPos + dropdownRect.height > viewportHeight - 10) {
+                    topPos = btnRect.top - dropdownRect.height - 5; // Abre para cima
+                }
+                
+                dropdown.style.top = `${topPos}px`;
+                dropdown.style.left = `${leftPos}px`;
+                
                 const closeHandler = () => {
                     dropdown.classList.add('hidden');
                     itemDiv.classList.remove('menu-open');

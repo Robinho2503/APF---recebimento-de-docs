@@ -1315,17 +1315,14 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
 }
 
 .edit-actions-dropdown {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    z-index: 9999;
+    position: fixed !important;
+    z-index: 999999 !important;
     background: var(--panel-bg);
     border: 1px solid var(--panel-border);
     border-radius: 0.5rem;
     box-shadow: 0 10px 25px rgba(0,0,0,0.5);
     min-width: 180px;
     padding: 0.5rem;
-    margin-top: 0.5rem;
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
