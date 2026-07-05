@@ -3972,8 +3972,10 @@ function renderTree() {
     
     // Novo: Preencher os campos do Cronograma Global se estiver visível
     const timelinePanel = document.getElementById('project-timeline-panel');
+    const isAPF = authenticatedSector === 'APF';
+    
     if (timelinePanel) {
-        if (!mgmt && currProj.id !== 'none' && currProj.id !== 'p_default') {
+        if (!mgmt && currProj.id !== 'none' && currProj.id !== 'p_default' && isAPF) {
             timelinePanel.style.display = 'block';
             
             const dp = document.getElementById('timeline-doc-prev');
