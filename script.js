@@ -778,6 +778,46 @@ async function exportProjectZipBlob(curr) {
 
     await Promise.all(roots.map(root => processItem(root, rootFolder)));
 
+    // NOVO: Adicionar documentos de pendências no ZIP
+    const pendencias = curr.pendencias || [];
+    if (pendencias.length > 0) {
+        const pendenciasFolder = rootFolder.folder("Pendencias");
+        await Promise.all(pendencias.map(async (pend) => {
+            const atts = pend.attachments || [];
+            if (atts.length > 0) {
+                const sectorName = (pend.sector || 'Sem_Setor').replace(/[\/\\?%*:|"<>]/g, '-');
+                const pendName = (pend.docName || 'Documento').replace(/[\/\\?%*:|"<>]/g, '-');
+                const pFolder = pendenciasFolder.folder(sectorName).folder(pendName);
+                
+                await Promise.all(atts.map(async (att) => {
+                    try {
+                        let url = null;
+                        if (att.storagePath) {
+                            try {
+                                const storageRef = ref(storage, att.storagePath);
+                                url = await getDownloadURL(storageRef);
+                            } catch (urlErr) {
+                                console.warn(`Erro Storage para ${att.name}:`, urlErr);
+                            }
+                        }
+                        if (!url) url = att.downloadUrl || att.objectUrl || att.dropboxUrl;
+                        
+                        if (url) {
+                            const response = await fetch(url);
+                            if (response.ok) {
+                                const blob = await response.blob();
+                                const safeFileName = att.name.replace(/[\/\\?%*:|"<>]/g, '-');
+                                pFolder.file(safeFileName, blob);
+                            }
+                        }
+                    } catch (e) {
+                        console.error(`Erro ao processar anexo de pendência "${att.name}":`, e);
+                    }
+                }));
+            }
+        }));
+    }
+
     console.log("Gerando arquivo ZIP final...");
     const content = await zip.generateAsync({ type: 'blob' });
     
