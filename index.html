@@ -32,12 +32,23 @@
             <p class="login-subtitle">Selecione seu setor e digite a senha para continuar</p>
             
             <div class="login-form-container">
-                <select id="login-sector" class="input-modern login-input" style="appearance: auto;">
-                    <option value="">Selecione seu setor...</option>
-                    <option value="APF">APF (Administrativo)</option>
-                    <!-- Dynamically populated -->
-                </select>
-                <input type="password" id="global-password-input" class="input-modern login-input text-center" placeholder="Senha" />
+                <div class="input-with-icon">
+                    <i class="ph ph-buildings input-icon-left"></i>
+                    <select id="login-sector" class="input-modern login-input" style="appearance: auto;">
+                        <option value="">Selecione seu setor...</option>
+                        <option value="APF">APF (Administrativo)</option>
+                        <!-- Dynamically populated -->
+                    </select>
+                </div>
+                
+                <div class="input-with-icon">
+                    <i class="ph ph-lock-key input-icon-left"></i>
+                    <input type="password" id="global-password-input" class="input-modern login-input" placeholder="Senha" />
+                    <button type="button" id="btn-toggle-password" class="password-toggle-btn" title="Mostrar/Ocultar Senha">
+                        <i class="ph ph-eye"></i>
+                    </button>
+                </div>
+
                 <button id="btn-unlock" class="btn btn-primary login-btn">
                     <i class="ph ph-key"></i> Entrar
                 </button>

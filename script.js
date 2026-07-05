@@ -1068,42 +1068,99 @@ function initEventListeners() {
     }
 
     // Authenticate events
+    const btnTogglePassword = document.getElementById('btn-toggle-password');
+    if (btnTogglePassword) {
+        btnTogglePassword.addEventListener('click', () => {
+            if (inputPassword.type === 'password') {
+                inputPassword.type = 'text';
+                btnTogglePassword.innerHTML = '<i class="ph ph-eye-slash"></i>';
+            } else {
+                inputPassword.type = 'password';
+                btnTogglePassword.innerHTML = '<i class="ph ph-eye"></i>';
+            }
+        });
+    }
+
+    const loginSectorEl = document.getElementById('login-sector');
+    if (loginSectorEl) {
+        loginSectorEl.addEventListener('change', () => {
+            if (loginSectorEl.value && inputPassword) {
+                inputPassword.focus();
+            }
+        });
+    }
+
+    // Authenticate events
     if (btnUnlock) {
         btnUnlock.addEventListener('click', () => {
-            const sector = loginSector.value;
-            const password = inputPassword.value;
+            const sector = loginSectorEl ? loginSectorEl.value : '';
+            const password = inputPassword ? inputPassword.value : '';
 
-            if (!sector) {
-                alert("Por favor, selecione um setor.");
+            if (!sector || !password) {
+                const card = document.getElementById('password-lock');
+                if (card) {
+                    card.classList.remove('shake');
+                    void card.offsetWidth; // trigger reflow
+                    card.classList.add('shake');
+                }
+                
+                if (!sector && loginSectorEl) loginSectorEl.classList.add('input-error');
+                if (!password && inputPassword) inputPassword.classList.add('input-error');
+                
+                setTimeout(() => {
+                    if (loginSectorEl) loginSectorEl.classList.remove('input-error');
+                    if (inputPassword) inputPassword.classList.remove('input-error');
+                }, 1000);
+                
+                if (!sector) {
+                    // Mantém o alerta original
+                    alert("Por favor, selecione um setor.");
+                }
                 return;
             }
 
             const storedPasswords = state.settings?.sectorPasswords || {};
-            const correctPassword = storedPasswords[sector] || "1234"; // Default fallback to 1234
+            const correctPassword = storedPasswords[sector] || "1234";
 
-            if (password === correctPassword) {
-                isAuthenticated = true;
-                authenticatedSector = sector;
-                inputPassword.value = '';
-                passwordError.style.display = 'none';
+            // Feedback visual no botão
+            const originalBtnContent = btnUnlock.innerHTML;
+            btnUnlock.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Entrando...';
+            btnUnlock.style.pointerEvents = 'none';
 
-                // Resetar seleção ao fazer login para exigir escolha manual (Conforme solicitado)
-                localUI.currentProjectId = null;
-                saveLocalUI();
+            setTimeout(() => {
+                btnUnlock.innerHTML = originalBtnContent;
+                btnUnlock.style.pointerEvents = 'auto';
 
-                // Salvar sessão temporária no sessionStorage
-                sessionStorage.setItem('apf_session_sector', sector);
+                if (password === correctPassword) {
+                    isAuthenticated = true;
+                    authenticatedSector = sector;
+                    inputPassword.value = '';
+                    if (passwordError) passwordError.style.display = 'none';
 
-                applyAuthState(true);
-                renderAfterUpdate();
-                populateLoginSectors(); // Update if needed
-            } else {
-                passwordError.style.display = 'block';
-                inputPassword.style.borderColor = 'var(--danger)';
-                setTimeout(() => {
-                    inputPassword.style.borderColor = '';
-                }, 1000);
-            }
+                    localUI.currentProjectId = null;
+                    saveLocalUI();
+
+                    sessionStorage.setItem('apf_session_sector', sector);
+
+                    applyAuthState(true);
+                    renderAfterUpdate();
+                    populateLoginSectors();
+                } else {
+                    if (passwordError) passwordError.style.display = 'block';
+                    
+                    const card = document.getElementById('password-lock');
+                    if (card) {
+                        card.classList.remove('shake');
+                        void card.offsetWidth;
+                        card.classList.add('shake');
+                    }
+                    if (inputPassword) inputPassword.classList.add('input-error');
+                    
+                    setTimeout(() => {
+                        if (inputPassword) inputPassword.classList.remove('input-error');
+                    }, 1000);
+                }
+            }, 400); // 400ms de animação para feedback
         });
     }
 
