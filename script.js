@@ -1,4 +1,4 @@
-// Firebase Imports
+﻿// Firebase Imports
 console.log("APF Script: Iniciando carregamento...");
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, onSnapshot, getDoc, getDocs, collection, query, where, serverTimestamp, deleteDoc, enableIndexedDbPersistence, runTransaction } from "firebase/firestore";
@@ -467,9 +467,22 @@ function saveState() {
                         remoteProj.storageBytes = proj.storageBytes;
                         remoteProj.storageFileCount = proj.storageFileCount;
                         remoteProj.progressPct = getProjectProgress(remoteProj);
-                        if (lastKnownProj && proj.engAnalysisOpened !== lastKnownProj.engAnalysisOpened) {
-                            remoteProj.engAnalysisOpened = proj.engAnalysisOpened;
-                        }
+                        
+                        // Sincronizar todos os metadados do projeto local com o documento do Firestore
+                        remoteProj.name = proj.name;
+                        remoteProj.uf = proj.uf;
+                        remoteProj.cidade = proj.cidade;
+                        remoteProj.dueDate = proj.dueDate || '';
+                        remoteProj.isOle = proj.isOle || false;
+                        remoteProj.engAnalysisOpened = proj.engAnalysisOpened || false;
+                        remoteProj.engAnalysisStartDate = proj.engAnalysisStartDate || '';
+                        remoteProj.pendenciaActive = proj.pendenciaActive || false;
+                        remoteProj.pendenciaStartDate = proj.pendenciaStartDate || '';
+                        remoteProj.pendenciaEndDate = proj.pendenciaEndDate || '';
+                        remoteProj.customStages = proj.customStages || [];
+                        remoteProj.docRecebimentoDate = proj.docRecebimentoDate || '';
+                        remoteProj.caixaStartDate = proj.caixaStartDate || '';
+                        remoteProj.caixaEndDate = proj.caixaEndDate || '';
                         
                         transaction.set(projectDocRef, remoteProj);
                         return remoteProj;
@@ -2634,6 +2647,7 @@ window.handleStageTransition = function(targetStageId) {
             saveState();
             updateGlobalDateUI();
             renderTracking();
+            renderTree();
         }
     });
 };
@@ -2705,6 +2719,7 @@ window.handleDeleteCustomStage = function(stageId) {
             saveState();
             updateGlobalDateUI();
             renderTracking();
+            renderTree();
         }
     });
 };
