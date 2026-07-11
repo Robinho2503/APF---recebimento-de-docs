@@ -1,4 +1,4 @@
-﻿// Firebase Imports
+// Firebase Imports
 console.log("APF Script: Iniciando carregamento...");
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, onSnapshot, getDoc, getDocs, collection, query, where, serverTimestamp, deleteDoc, enableIndexedDbPersistence, runTransaction } from "firebase/firestore";
@@ -2866,39 +2866,98 @@ function renderTracking() {
         trackableProjects = trackableProjects.filter(p => p.isOle !== true);
     }
 
-    trackableProjects.sort((a, b) => {
-        // 1. Resolução de Pendências ATIVA (Topo da lista)
-        // Priorizar o que está há MAIS tempo (data mais antiga)
+    function parseProjectName(fullName) {
+        if (!fullName) return { baseName: 'Sem Nome', moduleName: 'Global', hasModule: false };
+        const regex = /(.+?)(?:\s*-\s*|\s+)(módulo\s*\d+|mod\s*\d+)(.*)/i;
+        const match = fullName.match(regex);
+        if (match) {
+            return {
+                baseName: match[1].trim(),
+                moduleName: (match[2] + match[3]).trim(),
+                hasModule: true
+            };
+        }
+        return {
+            baseName: fullName.trim(),
+            moduleName: 'Global',
+            hasModule: false
+        };
+    }
+
+    // Agrupar projetos por baseName
+    const groupedProjectsMap = {};
+    trackableProjects.forEach(p => {
+        const parsed = parseProjectName(p.name);
+        if (!groupedProjectsMap[parsed.baseName]) {
+            groupedProjectsMap[parsed.baseName] = {
+                baseName: parsed.baseName,
+                projects: [],
+                cidade: p.cidade,
+                uf: p.uf,
+                dueDate: p.dueDate,
+                pendenciaActive: false,
+                engAnalysisOpened: true, // Será false se houver pelo menos um falso
+                pendenciaStartDate: '9999-12-31',
+                isActiveGroup: false,
+                avgProgress: 0
+            };
+        }
+        const group = groupedProjectsMap[parsed.baseName];
+        group.projects.push({ project: p, parsed: parsed });
+        
+        // Agregar propriedades para ordenação do grupo
+        if (p.pendenciaActive) {
+            group.pendenciaActive = true;
+            if (p.pendenciaStartDate && p.pendenciaStartDate < group.pendenciaStartDate) {
+                group.pendenciaStartDate = p.pendenciaStartDate;
+            }
+        }
+        if (!p.engAnalysisOpened) {
+            group.engAnalysisOpened = false;
+        }
+        if (p.id === localUI.currentProjectId) {
+            group.isActiveGroup = true;
+        }
+    });
+
+    const groupedArray = Object.values(groupedProjectsMap);
+
+    // Calcular progresso médio do grupo
+    groupedArray.forEach(group => {
+        let totalPct = 0;
+        group.projects.forEach(item => {
+            const pct = item.project.progressPct !== undefined ? item.project.progressPct : getProjectProgress(item.project);
+            totalPct += pct;
+            item.pct = pct; // save for later
+        });
+        group.avgProgress = Math.round(totalPct / group.projects.length);
+    });
+
+    // Ordenar os grupos
+    groupedArray.sort((a, b) => {
         if (a.pendenciaActive && b.pendenciaActive) {
-            const dateA = a.pendenciaStartDate ? new Date(a.pendenciaStartDate) : new Date('9999-12-31');
-            const dateB = b.pendenciaStartDate ? new Date(b.pendenciaStartDate) : new Date('9999-12-31');
-            if (dateA < dateB) return -1;
-            if (dateA > dateB) return 1;
+            if (a.pendenciaStartDate < b.pendenciaStartDate) return -1;
+            if (a.pendenciaStartDate > b.pendenciaStartDate) return 1;
         }
         if (a.pendenciaActive && !b.pendenciaActive) return -1;
         if (!a.pendenciaActive && b.pendenciaActive) return 1;
 
-        // 2. Engenharia Aberta sempre no final da fila
         if (a.engAnalysisOpened && !b.engAnalysisOpened) return 1;
         if (!a.engAnalysisOpened && b.engAnalysisOpened) return -1;
 
-        // 3. Prioridade por Data (Mais vencidos ou mais próximos primeiro)
         const hasDateA = !!a.dueDate;
         const hasDateB = !!b.dueDate;
-
         if (hasDateA && !hasDateB) return -1;
         if (!hasDateA && hasDateB) return 1;
-
         if (hasDateA && hasDateB) {
             const daysA = calculateDays(a.dueDate);
             const daysB = calculateDays(b.dueDate);
             if (daysA !== daysB) return daysA - daysB;
         }
-
         return 0;
     });
 
-    if (trackableProjects.length === 0) {
+    if (groupedArray.length === 0) {
         if (isInitialCloudLoad) {
             trackingContainer.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--text-muted);"><i class="ph ph-spinner ph-spin" style="font-size:1.5rem; margin-bottom:0.5rem; display:block;"></i> Sincronizando empreendimentos...</div>';
         } else {
@@ -2907,19 +2966,33 @@ function renderTracking() {
         return;
     }
 
-    trackableProjects.forEach((p, i) => {
+    // Fechar popovers clicando fora
+    if (!window.popoverBackdropListener) {
+        document.body.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modules-popover-backdrop')) {
+                const backdrops = document.querySelectorAll('.modules-popover-backdrop');
+                backdrops.forEach(b => b.remove());
+                const popovers = document.querySelectorAll('.modules-popover');
+                popovers.forEach(p => p.remove());
+            }
+        });
+        window.popoverBackdropListener = true;
+    }
+
+    groupedArray.forEach((group, i) => {
         const card = document.createElement('div');
-        const isActive = p.id === localUI.currentProjectId ? 'active' : '';
+        const isActive = group.isActiveGroup ? 'active' : '';
         card.className = `tracking-card glass-panel ${isActive}`;
 
-        // Inicializar e identificar estágio ativo no customStages
-        ensureCustomStages(p);
-        const activeStage = p.customStages.find(s => s.status === 'active') || p.customStages[0];
+        // Para badge, pegar o status do primeiro projeto (simplificação para o grupo)
+        const firstProj = group.projects[0].project;
+        ensureCustomStages(firstProj);
+        const activeStage = firstProj.customStages.find(s => s.status === 'active') || firstProj.customStages[0];
 
         let badgeText = activeStage.title;
         let badgeClass = 'badge-doc';
         let indicatorColor = 'var(--text-muted)';
-
+        
         let daysDisplay = 0;
         if (activeStage.startDate) {
             const start = new Date(activeStage.startDate);
@@ -2941,79 +3014,119 @@ function renderTracking() {
         } else {
             badgeText = '';
         }
+        
+        let moduleCountBadge = group.projects.length > 1 ? `<span class="card-status-badge" style="background: rgba(var(--primary-rgb),0.1); color: var(--text-main); margin-left: 5px;">${group.projects.length} Módulos</span>` : '';
 
         card.style.setProperty('--indicator-color', indicatorColor);
 
-        card.addEventListener('click', () => {
-            selectProject(p.id);
+        // Click handler to open the modules popover
+        card.addEventListener('click', (e) => {
+            const prevBackdrops = document.querySelectorAll('.modules-popover-backdrop');
+            prevBackdrops.forEach(b => b.remove());
+            const prevPopovers = document.querySelectorAll('.modules-popover');
+            prevPopovers.forEach(p => p.remove());
+
+            const backdrop = document.createElement('div');
+            backdrop.className = 'modules-popover-backdrop';
+            document.body.appendChild(backdrop);
+
+            const popover = document.createElement('div');
+            popover.className = 'modules-popover';
+            
+            const rect = card.getBoundingClientRect();
+            // Position to the right of the card
+            popover.style.top = \`\${rect.top}px\`;
+            popover.style.left = \`\${rect.right + 10}px\`;
+
+            group.projects.forEach((item, index) => {
+                const isItemActive = item.project.id === localUI.currentProjectId;
+                const activeClass = isItemActive ? 'active-module' : '';
+                const balloon = document.createElement('div');
+                balloon.className = \`module-balloon-card \${activeClass}\`;
+                balloon.style.animationDelay = \`\${index * 50}ms\`;
+                
+                balloon.innerHTML = \`
+                    <i class="ph ph-cube module-icon"></i>
+                    <span class="module-title">\${item.parsed.moduleName}</span>
+                    <span class="card-progress-text" style="margin-left:auto;">\${item.pct}%</span>
+                \`;
+                
+                balloon.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    backdrop.remove();
+                    popover.remove();
+                    selectProject(item.project.id);
+                });
+                
+                popover.appendChild(balloon);
+            });
+            
+            document.body.appendChild(popover);
         });
 
-        const progressPct = p.progressPct !== undefined ? p.progressPct : getProjectProgress(p);
+        const progressPct = group.avgProgress;
         const isCaixaAnalysis = activeStage && activeStage.type === 'analise_caixa';
 
-        // Prazo / Vencimento no rodapé (Apenas exibido se estiver no estágio de Documentação Inicial)
         let footerInfoHTML = '';
         if (activeStage.type === 'doc_inicial') {
-            if (p.dueDate) {
-                const diff = calculateDays(p.dueDate);
+            if (group.dueDate) {
+                const diff = calculateDays(group.dueDate);
                 let prazoDesc = '';
                 let pColorClass = 'good';
                 if (diff === 0) {
                     prazoDesc = 'Hoje';
                     pColorClass = 'warning';
                 } else if (diff > 0) {
-                    prazoDesc = `${diff}d`;
+                    prazoDesc = \`\${diff}d\`;
                     pColorClass = 'good';
                 } else {
-                    prazoDesc = `${Math.abs(diff)}d atrasado`;
+                    prazoDesc = \`\${Math.abs(diff)}d atrasado\`;
                     pColorClass = 'danger';
                 }
-
-                footerInfoHTML = `
-                    <div class="card-footer-item ${pColorClass}">
+                footerInfoHTML = \`
+                    <div class="card-footer-item \${pColorClass}">
                         <i class="ph ph-calendar-blank"></i>
-                        <span>${formatDateToPT(p.dueDate)} (${prazoDesc})</span>
+                        <span>\${formatDateToPT(group.dueDate)} (\${prazoDesc})</span>
                     </div>
-                `;
+                \`;
             } else {
-                footerInfoHTML = `
+                footerInfoHTML = \`
                     <div class="card-footer-item muted">
                         <i class="ph ph-calendar-blank"></i>
                         <span>Sem prazo</span>
                     </div>
-                `;
+                \`;
             }
         }
 
-        card.innerHTML = `
+        card.innerHTML = \`
             <div class="card-left-section">
-                ${badgeText ? `<span class="card-status-badge ${badgeClass}">${badgeText}</span>` : ''}
+                \${badgeText ? \`<span class="card-status-badge \${badgeClass}">\${badgeText}</span>\` : ''}
             </div>
             <div class="tracking-body">
                 <div class="card-top-row">
-                    <h3 class="card-project-title" title="${p.name}">
-                        <i class="ph ph-buildings"></i>${p.name}
+                    <h3 class="card-project-title" title="\${group.baseName}">
+                        <i class="ph ph-buildings"></i>\${group.baseName}
                     </h3>
+                    \${moduleCountBadge}
                 </div>
-
                 <div class="card-mid-row">
-                    ${(p.cidade || p.uf) ? `
+                    \${(group.cidade || group.uf) ? \`
                     <div class="card-location">
                         <i class="ph ph-map-pin"></i> 
-                        <span>${p.cidade || ''}${p.cidade && p.uf ? ' - ' : ''}${p.uf || ''}</span>
-                    </div>` : ''}
-                    ${footerInfoHTML}
+                        <span>\${group.cidade || ''}\${group.cidade && group.uf ? ' - ' : ''}\${group.uf || ''}</span>
+                    </div>\` : ''}
+                    \${footerInfoHTML}
                 </div>
-
-                ${!isCaixaAnalysis ? `
+                \${!isCaixaAnalysis ? \`
                 <div class="card-progress-row">
                     <div class="card-progress-bar-container">
-                        <div class="card-progress-bar" style="width: ${progressPct}%; background: ${progressPct === 100 ? 'var(--accent)' : 'var(--primary)'};"></div>
+                        <div class="card-progress-bar" style="width: \${progressPct}%; background: \${progressPct === 100 ? 'var(--accent)' : 'var(--primary)'};"></div>
                     </div>
-                    <span class="card-progress-text">${progressPct}%</span>
-                </div>` : ''}
+                    <span class="card-progress-text">\${progressPct}%</span>
+                </div>\` : ''}
             </div>
-        `;
+        \`;
         trackingContainer.appendChild(card);
     });
 
