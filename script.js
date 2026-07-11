@@ -1429,29 +1429,43 @@ function initEventListeners() {
                     pendenciaActive: false,
                     pendencias: [],
                     isOle: isOle,
-                    items: duplicatedItems
+                    items: duplicatedItems,
+                    customStages: []
                 };
 
+                if (!Array.isArray(state.projects)) state.projects = [];
                 state.projects.push(newProj);
                 localUI.currentProjectId = newProj.id;
-                localUI.expandedIds.clear();
+                if (localUI.expandedIds && typeof localUI.expandedIds.clear === 'function') {
+                    localUI.expandedIds.clear();
+                }
                 addAuditLog('Empreendimento Criado', `O empreendimento <strong>${name}</strong> foi criado com sucesso.`, 'success');
                 showTemporaryMessage(`Empreendimento "${name}" criado com sucesso!`);
             }
 
             newProjectModal.classList.add('hidden');
 
-            saveLocalUI();
-            saveState();
-            updateGlobalDateUI();
-            renderTree();
-            renderTracking();
+            try {
+                saveLocalUI();
+                saveState();
+                updateGlobalDateUI();
+                renderTree();
+                renderTracking();
+            } catch (err) {
+                console.error("Erro após criar projeto:", err);
+            }
 
-            tabs.forEach(t => t.classList.remove('active'));
-            tabContents.forEach(c => c.classList.remove('active'));
-            document.querySelector('[data-tab="management"]').classList.add('active');
-            document.getElementById('tab-management').classList.add('active');
-            applyAuthState();
+            try {
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                const mTab = document.querySelector('[data-tab="management"]');
+                const mCont = document.getElementById('tab-management');
+                if (mTab) mTab.classList.add('active');
+                if (mCont) mCont.classList.add('active');
+                applyAuthState();
+            } catch (err) {
+                console.error("Erro na navegação das abas:", err);
+            }
         });
     }
 
@@ -2973,7 +2987,7 @@ function renderTracking() {
     // Fechar popovers clicando fora
     if (!window.popoverBackdropListener) {
         document.body.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modules-popover-backdrop')) {
+            if (e.target && e.target.classList && e.target.classList.contains('modules-popover-backdrop')) {
                 const backdrops = document.querySelectorAll('.modules-popover-backdrop');
                 backdrops.forEach(b => b.remove());
                 const popovers = document.querySelectorAll('.modules-popover');
