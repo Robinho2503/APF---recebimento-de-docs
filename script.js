@@ -1407,13 +1407,16 @@ function initEventListeners() {
             } else {
                 // Modo Criação
                 const baseProj = state.projects.find(p => p.id === 'p_default') || state.projects[0];
-                const duplicatedItems = JSON.parse(JSON.stringify(baseProj.items)).map(item => {
-                    item.attachments = [];
-                    item.validationStatus = 'Em Análise';
-                    item.observation = '';
-                    item.expanded = false;
-                    return item;
-                });
+                let duplicatedItems = [];
+                if (baseProj && baseProj.items) {
+                    duplicatedItems = JSON.parse(JSON.stringify(baseProj.items)).map(item => {
+                        item.attachments = [];
+                        item.validationStatus = 'Em Análise';
+                        item.observation = '';
+                        item.expanded = false;
+                        return item;
+                    });
+                }
 
                 const newProj = {
                     id: 'p_' + generateId(),
@@ -2963,6 +2966,7 @@ function renderTracking() {
         } else {
             trackingContainer.innerHTML = '<p style="color:var(--text-muted); padding: 1rem; border: 1px dashed var(--divider-color); border-radius:0.5rem;"><i class="ph ph-warning"></i> Nenhum empreendimento ativo criado ainda. Primeiramente, crie no Acesso APF.</p>';
         }
+        renderAnalysisPanels();
         return;
     }
 
