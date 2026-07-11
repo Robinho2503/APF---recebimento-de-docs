@@ -3035,21 +3035,21 @@ function renderTracking() {
             
             const rect = card.getBoundingClientRect();
             // Position to the right of the card
-            popover.style.top = \`\${rect.top}px\`;
-            popover.style.left = \`\${rect.right + 10}px\`;
+            popover.style.top = `${rect.top}px`;
+            popover.style.left = `${rect.right + 10}px`;
 
             group.projects.forEach((item, index) => {
                 const isItemActive = item.project.id === localUI.currentProjectId;
                 const activeClass = isItemActive ? 'active-module' : '';
                 const balloon = document.createElement('div');
-                balloon.className = \`module-balloon-card \${activeClass}\`;
-                balloon.style.animationDelay = \`\${index * 50}ms\`;
+                balloon.className = `module-balloon-card ${activeClass}`;
+                balloon.style.animationDelay = `${index * 50}ms`;
                 
-                balloon.innerHTML = \`
+                balloon.innerHTML = `
                     <i class="ph ph-cube module-icon"></i>
-                    <span class="module-title">\${item.parsed.moduleName}</span>
-                    <span class="card-progress-text" style="margin-left:auto;">\${item.pct}%</span>
-                \`;
+                    <span class="module-title">${item.parsed.moduleName}</span>
+                    <span class="card-progress-text" style="margin-left:auto;">${item.pct}%</span>
+                `;
                 
                 balloon.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -3077,56 +3077,56 @@ function renderTracking() {
                     prazoDesc = 'Hoje';
                     pColorClass = 'warning';
                 } else if (diff > 0) {
-                    prazoDesc = \`\${diff}d\`;
+                    prazoDesc = `${diff}d`;
                     pColorClass = 'good';
                 } else {
-                    prazoDesc = \`\${Math.abs(diff)}d atrasado\`;
+                    prazoDesc = `${Math.abs(diff)}d atrasado`;
                     pColorClass = 'danger';
                 }
-                footerInfoHTML = \`
-                    <div class="card-footer-item \${pColorClass}">
+                footerInfoHTML = `
+                    <div class="card-footer-item ${pColorClass}">
                         <i class="ph ph-calendar-blank"></i>
-                        <span>\${formatDateToPT(group.dueDate)} (\${prazoDesc})</span>
+                        <span>${formatDateToPT(group.dueDate)} (${prazoDesc})</span>
                     </div>
-                \`;
+                `;
             } else {
-                footerInfoHTML = \`
+                footerInfoHTML = `
                     <div class="card-footer-item muted">
                         <i class="ph ph-calendar-blank"></i>
                         <span>Sem prazo</span>
                     </div>
-                \`;
+                `;
             }
         }
 
-        card.innerHTML = \`
+        card.innerHTML = `
             <div class="card-left-section">
-                \${badgeText ? \`<span class="card-status-badge \${badgeClass}">\${badgeText}</span>\` : ''}
+                ${badgeText ? `<span class="card-status-badge ${badgeClass}">${badgeText}</span>` : ''}
             </div>
             <div class="tracking-body">
                 <div class="card-top-row">
-                    <h3 class="card-project-title" title="\${group.baseName}">
-                        <i class="ph ph-buildings"></i>\${group.baseName}
+                    <h3 class="card-project-title" title="${group.baseName}">
+                        <i class="ph ph-buildings"></i>${group.baseName}
                     </h3>
-                    \${moduleCountBadge}
+                    ${moduleCountBadge}
                 </div>
                 <div class="card-mid-row">
-                    \${(group.cidade || group.uf) ? \`
+                    ${(group.cidade || group.uf) ? `
                     <div class="card-location">
                         <i class="ph ph-map-pin"></i> 
-                        <span>\${group.cidade || ''}\${group.cidade && group.uf ? ' - ' : ''}\${group.uf || ''}</span>
-                    </div>\` : ''}
-                    \${footerInfoHTML}
+                        <span>${group.cidade || ''}${group.cidade && group.uf ? ' - ' : ''}${group.uf || ''}</span>
+                    </div>` : ''}
+                    ${footerInfoHTML}
                 </div>
-                \${!isCaixaAnalysis ? \`
+                ${!isCaixaAnalysis ? `
                 <div class="card-progress-row">
                     <div class="card-progress-bar-container">
-                        <div class="card-progress-bar" style="width: \${progressPct}%; background: \${progressPct === 100 ? 'var(--accent)' : 'var(--primary)'};"></div>
+                        <div class="card-progress-bar" style="width: ${progressPct}%; background: ${progressPct === 100 ? 'var(--accent)' : 'var(--primary)'};"></div>
                     </div>
-                    <span class="card-progress-text">\${progressPct}%</span>
-                </div>\` : ''}
+                    <span class="card-progress-text">${progressPct}%</span>
+                </div>` : ''}
             </div>
-        \`;
+        `;
         trackingContainer.appendChild(card);
     });
 
