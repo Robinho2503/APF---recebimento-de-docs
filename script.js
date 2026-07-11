@@ -1360,7 +1360,10 @@ function initEventListeners() {
             const baseProj = state.projects.find(p => p.id === baseProjId);
             if (!baseProj) return;
 
+            const parsedBase = parseProjectName(baseProj.name);
             let finalName = rawName.toLowerCase().startsWith('módulo') ? rawName : `Módulo ${rawName}`;
+            // Herdar o nome do projeto pai
+            finalName = `${parsedBase.baseName} - ${finalName}`;
 
             let duplicatedItems = [];
             const templateProj = state.projects.find(p => p.id === 'p_default') || state.projects[0];
@@ -2955,6 +2958,25 @@ function triggerPanelAnimation() {
     }, 10);
 }
 
+// Global Helper for extracting base name and module
+function parseProjectName(fullName) {
+    if (!fullName) return { baseName: 'Sem Nome', moduleName: 'Global', hasModule: false };
+    const regex = /(.+?)(?:\s*-\s*|\s+)(módulo\s*\d+|mod\s*\d+)(.*)/i;
+    const match = fullName.match(regex);
+    if (match) {
+        return {
+            baseName: match[1].trim(),
+            moduleName: (match[2] + match[3]).trim(),
+            hasModule: true
+        };
+    }
+    return {
+        baseName: fullName.trim(),
+        moduleName: 'Global',
+        hasModule: false
+    };
+}
+
 // Tracker Render
 function renderTracking() {
     if (!trackingContainer) return;
@@ -2977,24 +2999,6 @@ function renderTracking() {
         trackableProjects = trackableProjects.filter(p => p.isOle !== true);
     }
 
-    function parseProjectName(fullName) {
-        if (!fullName) return { baseName: 'Sem Nome', moduleName: 'Global', hasModule: false };
-        const regex = /(.+?)(?:\s*-\s*|\s+)(módulo\s*\d+|mod\s*\d+)(.*)/i;
-        const match = fullName.match(regex);
-        if (match) {
-            return {
-                baseName: match[1].trim(),
-                moduleName: (match[2] + match[3]).trim(),
-                hasModule: true
-            };
-        }
-        return {
-            baseName: fullName.trim(),
-            moduleName: 'Global',
-            hasModule: false
-        };
-    }
-
     // Agrupar projetos por baseName
     const groupedProjectsMap = {};
     trackableProjects.forEach(p => {
@@ -3002,8 +3006,12 @@ function renderTracking() {
         
         if (p.parentProjectId) {
             const parent = trackableProjects.find(x => x.id === p.parentProjectId) || state.projects.find(x => x.id === p.parentProjectId);
-            baseName = parent ? parent.name : p.name;
-            moduleName = p.name;
+            // IMPORTANTE: parent pode ser um projeto legado ("Projeto X - Módulo 1"). 
+            // Precisamos do parseProjectName para garantir que baseName agrupe corretamente com os cartões antigos!
+            baseName = parent ? parseProjectName(parent.name).baseName : parseProjectName(p.name).baseName;
+            // Para o moduleName, se o projeto foi criado agora, seu nome é "Projeto X - Módulo 2", 
+            // então também usamos o parseProjectName para mostrar no balão só o "Módulo 2".
+            moduleName = parseProjectName(p.name).moduleName;
         } else {
             // Se não tem parentProjectId, verificamos se ele já FOI um módulo pelo nome antigo (fallback)
             // Mas, projetos que são PAI, também caem aqui (ex: 'Residencial XPTO').
