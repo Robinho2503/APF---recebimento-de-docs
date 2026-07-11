@@ -917,6 +917,7 @@ let sidebarBackdrop;
 let btnForgotPassword, forgotPasswordModal, btnCloseForgot;
 let newProjectModal, btnCloseNewProject, btnConfirmNewProject, newProjNameInp, newProjUfInp, newProjCityInp, newProjDueDateInp, newProjIsOleInp;
 let newProjectModalTitle, btnConfirmNewProjectText, newProjectModalInfo;
+let newModuleModal, btnCloseNewModule, btnConfirmNewModule, newModuleNameInp;
 let editingProjectId = null;
 let uploadToast, uploadToastText, uploadToastSub, uploadToastIcon;
 let confirmModal, confirmModalTitle, confirmModalMessage, confirmModalIconContainer, btnConfirmYes, btnConfirmNo;
@@ -1025,16 +1026,21 @@ function initDOMElements() {
 
     // New Project Modal
     newProjectModal = document.getElementById('new-project-modal');
+    newProjectModalTitle = document.getElementById('new-project-modal-title');
+    newProjectModalInfo = document.getElementById('new-project-modal-info');
     btnCloseNewProject = document.getElementById('btn-close-new-project');
     btnConfirmNewProject = document.getElementById('btn-confirm-new-project');
+    btnConfirmNewProjectText = document.getElementById('btn-confirm-new-project-text');
     newProjNameInp = document.getElementById('new-proj-name');
     newProjUfInp = document.getElementById('new-proj-uf');
-    newProjCityInp = document.getElementById('new-proj-city');
+    newProjCityInp = document.getElementById('new-proj-cidade');
     newProjDueDateInp = document.getElementById('new-proj-due-date');
     newProjIsOleInp = document.getElementById('new-proj-is-ole');
-    newProjectModalTitle = document.getElementById('new-project-modal-title');
-    btnConfirmNewProjectText = document.getElementById('btn-confirm-new-project-text');
-    newProjectModalInfo = document.getElementById('new-project-modal-info');
+
+    newModuleModal = document.getElementById('new-module-modal');
+    btnCloseNewModule = document.getElementById('btn-close-new-module');
+    btnConfirmNewModule = document.getElementById('btn-confirm-new-module');
+    newModuleNameInp = document.getElementById('new-module-name-inp');
 
     // Upload Toast
     uploadToast = document.getElementById('upload-toast');
@@ -1330,6 +1336,94 @@ function initEventListeners() {
 
     if (newProjectModal) {
         newProjectModal.onclick = (e) => { if (e.target === newProjectModal) newProjectModal.classList.add('hidden'); };
+    }
+
+    if (btnCloseNewModule) {
+        btnCloseNewModule.onclick = () => newModuleModal.classList.add('hidden');
+    }
+
+    if (newModuleModal) {
+        newModuleModal.onclick = (e) => { if (e.target === newModuleModal) newModuleModal.classList.add('hidden'); };
+    }
+
+    if (btnConfirmNewModule) {
+        btnConfirmNewModule.addEventListener('click', () => {
+            const rawName = (newModuleNameInp.value || '').trim();
+            if (!rawName) {
+                showTemporaryMessage('Por favor, informe o número ou nome do módulo.');
+                return;
+            }
+
+            const baseProjId = window.currentBaseProjectIdForModule;
+            if (!baseProjId) return;
+
+            const baseProj = state.projects.find(p => p.id === baseProjId);
+            if (!baseProj) return;
+
+            let finalName = rawName.toLowerCase().startsWith('módulo') ? rawName : `Módulo ${rawName}`;
+
+            let duplicatedItems = [];
+            const templateProj = state.projects.find(p => p.id === 'p_default') || state.projects[0];
+            if (templateProj && templateProj.items) {
+                duplicatedItems = JSON.parse(JSON.stringify(templateProj.items)).map(item => {
+                    item.id = 'item_' + generateId();
+                    item.validationStatus = 'Em Análise';
+                    item.observation = '';
+                    item.attachments = [];
+                    item.isNotApplicable = false;
+                    return item;
+                });
+            }
+
+            const newProj = {
+                id: 'p_' + generateId(),
+                name: finalName,
+                uf: baseProj.uf,
+                cidade: baseProj.cidade,
+                dueDate: baseProj.dueDate,
+                engAnalysisOpened: false,
+                createdAt: new Date().toISOString().split('T')[0],
+                pendenciaActive: false,
+                pendencias: [],
+                isOle: baseProj.isOle,
+                items: duplicatedItems,
+                customStages: [],
+                parentProjectId: baseProj.id
+            };
+
+            if (!Array.isArray(state.projects)) state.projects = [];
+            state.projects.push(newProj);
+            localUI.currentProjectId = newProj.id;
+            if (localUI.expandedIds && typeof localUI.expandedIds.clear === 'function') {
+                localUI.expandedIds.clear();
+            }
+            
+            newModuleModal.classList.add('hidden');
+            addAuditLog('Módulo Criado', `O módulo <strong>${finalName}</strong> foi criado com sucesso no empreendimento.`, 'success');
+            showTemporaryMessage(`Módulo criado com sucesso!`);
+
+            try {
+                saveLocalUI();
+                saveState();
+                updateGlobalDateUI();
+                renderTree();
+                renderTracking();
+            } catch (err) {
+                console.error("Erro após criar módulo:", err);
+            }
+
+            try {
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                const mTab = document.querySelector('[data-tab="management"]');
+                const mCont = document.getElementById('tab-management');
+                if (mTab) mTab.classList.add('active');
+                if (mCont) mCont.classList.add('active');
+                applyAuthState();
+            } catch (err) {
+                console.error("Erro na navegação das abas após módulo:", err);
+            }
+        });
     }
 
     if (btnNewProject) {
@@ -2904,10 +2998,24 @@ function renderTracking() {
     // Agrupar projetos por baseName
     const groupedProjectsMap = {};
     trackableProjects.forEach(p => {
-        const parsed = parseProjectName(p.name);
-        if (!groupedProjectsMap[parsed.baseName]) {
-            groupedProjectsMap[parsed.baseName] = {
-                baseName: parsed.baseName,
+        let baseName, moduleName;
+        
+        if (p.parentProjectId) {
+            const parent = trackableProjects.find(x => x.id === p.parentProjectId) || state.projects.find(x => x.id === p.parentProjectId);
+            baseName = parent ? parent.name : p.name;
+            moduleName = p.name;
+        } else {
+            // Se não tem parentProjectId, verificamos se ele já FOI um módulo pelo nome antigo (fallback)
+            // Mas, projetos que são PAI, também caem aqui (ex: 'Residencial XPTO').
+            const parsed = parseProjectName(p.name);
+            baseName = parsed.baseName;
+            moduleName = parsed.moduleName;
+        }
+
+        if (!groupedProjectsMap[baseName]) {
+            groupedProjectsMap[baseName] = {
+                baseName: baseName,
+                baseProjectId: p.parentProjectId ? p.parentProjectId : (parseProjectName(p.name).hasModule ? p.id : p.id), // We'll try to refine this below
                 projects: [],
                 cidade: p.cidade,
                 uf: p.uf,
@@ -2919,8 +3027,14 @@ function renderTracking() {
                 avgProgress: 0
             };
         }
-        const group = groupedProjectsMap[parsed.baseName];
-        group.projects.push({ project: p, parsed: parsed });
+        const group = groupedProjectsMap[baseName];
+        
+        // Ensure we capture the true baseProjectId if we encounter the root project itself
+        if (!p.parentProjectId && p.name === baseName) {
+            group.baseProjectId = p.id;
+        }
+
+        group.projects.push({ project: p, parsed: { baseName, moduleName } });
         
         // Agregar propriedades para ordenação do grupo
         if (p.pendenciaActive) {
@@ -3078,6 +3192,34 @@ function renderTracking() {
                 
                 popover.appendChild(balloon);
             });
+            
+            // Botão "+" Adicionar Módulo
+            const addBalloon = document.createElement('div');
+            addBalloon.className = `module-balloon-card`;
+            addBalloon.style.animationDelay = `${group.projects.length * 50}ms`;
+            addBalloon.style.justifyContent = 'center';
+            addBalloon.style.border = '1px dashed var(--primary)';
+            addBalloon.style.background = 'rgba(var(--primary-rgb), 0.05)';
+            addBalloon.style.color = 'var(--primary)';
+            
+            addBalloon.innerHTML = `
+                <i class="ph ph-plus" style="font-size: 1.1rem;"></i>
+                <span style="font-size: 0.8rem; font-weight: 600;">Adicionar Módulo</span>
+            `;
+            
+            addBalloon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                backdrop.remove();
+                popover.remove();
+                
+                // Set the base ID for module creation
+                window.currentBaseProjectIdForModule = group.baseProjectId;
+                
+                if (newModuleNameInp) newModuleNameInp.value = '';
+                if (newModuleModal) newModuleModal.classList.remove('hidden');
+                if (newModuleNameInp) setTimeout(() => newModuleNameInp.focus(), 100);
+            });
+            popover.appendChild(addBalloon);
             
             document.body.appendChild(popover);
         });

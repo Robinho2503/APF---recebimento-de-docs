@@ -595,6 +595,27 @@
         </div>
     </div>
 
+    <!-- New Module Modal -->
+    <div id="new-module-modal" class="modal-backdrop hidden" style="z-index: 10000;">
+        <div class="modal glass-panel" style="max-width: 400px; padding: 2rem;">
+            <div class="modal-header" style="margin-bottom: 1.5rem;">
+                <h3 id="new-module-modal-title"><i class="ph ph-plus"></i> Adicionar Módulo</h3>
+                <button id="btn-close-new-module" class="icon-btn" title="Fechar"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 1.25rem; align-items: flex-start;">
+                <div style="width: 100%;">
+                    <label class="label-modern">Número ou Nome do Módulo</label>
+                    <input type="text" id="new-module-name-inp" class="input-modern" placeholder="Ex: 2, 3, Bloco B..." style="width: 100%; max-width: none;">
+                </div>
+            </div>
+            <div class="modal-footer" style="margin-top: 2rem;">
+                <button id="btn-confirm-new-module" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                    <i class="ph ph-check"></i> <span>Confirmar</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Change Password Modal -->
     <div id="change-password-modal" class="modal-backdrop hidden" style="z-index: 10000;">
         <div class="modal glass-panel" style="max-width: 400px; padding: 2rem;">
