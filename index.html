@@ -616,6 +616,19 @@
         </div>
     </div>
 
+    <!-- Empreendimento Modules Modal -->
+    <div id="modules-modal" class="modal-backdrop hidden" style="z-index: 9999; backdrop-filter: blur(10px);">
+        <div class="modal glass-panel" style="max-width: 800px; width: 90%; padding: 2rem; max-height: 85vh; overflow-y: auto;">
+            <div class="modal-header" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--divider-color); padding-bottom: 1rem;">
+                <h3 id="modules-modal-title" style="font-size: 1.5rem; font-weight: 600; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem;"><i class="ph ph-buildings"></i> Módulos do Empreendimento</h3>
+                <button id="btn-close-modules-modal" class="icon-btn" title="Fechar"><i class="ph ph-x"></i></button>
+            </div>
+            <div id="modules-modal-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                <!-- Module cards will be injected here dynamically -->
+            </div>
+        </div>
+    </div>
+
     <!-- Change Password Modal -->
     <div id="change-password-modal" class="modal-backdrop hidden" style="z-index: 10000;">
         <div class="modal glass-panel" style="max-width: 400px; padding: 2rem;">

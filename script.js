@@ -918,6 +918,7 @@ let btnForgotPassword, forgotPasswordModal, btnCloseForgot;
 let newProjectModal, btnCloseNewProject, btnConfirmNewProject, newProjNameInp, newProjUfInp, newProjCityInp, newProjDueDateInp, newProjIsOleInp;
 let newProjectModalTitle, btnConfirmNewProjectText, newProjectModalInfo;
 let newModuleModal, btnCloseNewModule, btnConfirmNewModule, newModuleNameInp;
+let modulesModal, modulesModalTitle, modulesModalGrid, btnCloseModulesModal;
 let editingProjectId = null;
 let uploadToast, uploadToastText, uploadToastSub, uploadToastIcon;
 let confirmModal, confirmModalTitle, confirmModalMessage, confirmModalIconContainer, btnConfirmYes, btnConfirmNo;
@@ -1041,6 +1042,11 @@ function initDOMElements() {
     btnCloseNewModule = document.getElementById('btn-close-new-module');
     btnConfirmNewModule = document.getElementById('btn-confirm-new-module');
     newModuleNameInp = document.getElementById('new-module-name-inp');
+
+    modulesModal = document.getElementById('modules-modal');
+    modulesModalTitle = document.getElementById('modules-modal-title');
+    modulesModalGrid = document.getElementById('modules-modal-grid');
+    btnCloseModulesModal = document.getElementById('btn-close-modules-modal');
 
     // Upload Toast
     uploadToast = document.getElementById('upload-toast');
@@ -1344,6 +1350,14 @@ function initEventListeners() {
 
     if (newModuleModal) {
         newModuleModal.onclick = (e) => { if (e.target === newModuleModal) newModuleModal.classList.add('hidden'); };
+    }
+
+    if (btnCloseModulesModal) {
+        btnCloseModulesModal.onclick = () => modulesModal.classList.add('hidden');
+    }
+
+    if (modulesModal) {
+        modulesModal.onclick = (e) => { if (e.target === modulesModal) modulesModal.classList.add('hidden'); };
     }
 
     if (btnConfirmNewModule) {
@@ -3195,67 +3209,97 @@ function renderTracking() {
 
         card.style.setProperty('--indicator-color', indicatorColor);
 
-        // Click handler to open the modules popover
+        // Click handler to open the modules modal
         card.addEventListener('click', (e) => {
-            const prevBackdrops = document.querySelectorAll('.modules-popover-backdrop');
-            prevBackdrops.forEach(b => b.remove());
-            const prevPopovers = document.querySelectorAll('.modules-popover');
-            prevPopovers.forEach(p => p.remove());
-
-            const backdrop = document.createElement('div');
-            backdrop.className = 'modules-popover-backdrop';
-            document.body.appendChild(backdrop);
-
-            const popover = document.createElement('div');
-            popover.className = 'modules-popover';
+            if (!modulesModal || !modulesModalGrid || !modulesModalTitle) return;
             
-            const rect = card.getBoundingClientRect();
-            // Position to the right of the card
-            popover.style.top = `${rect.top}px`;
-            popover.style.left = `${rect.right + 10}px`;
-
+            modulesModalTitle.innerHTML = `<i class="ph ph-buildings"></i> ${group.baseName}`;
+            modulesModalGrid.innerHTML = '';
+            
             group.projects.forEach((item, index) => {
                 const isItemActive = item.project.id === localUI.currentProjectId;
                 const activeClass = isItemActive ? 'active-module' : '';
-                const balloon = document.createElement('div');
-                balloon.className = `module-balloon-card ${activeClass}`;
-                balloon.style.animationDelay = `${index * 50}ms`;
                 
-                balloon.innerHTML = `
-                    <i class="ph ph-cube module-icon"></i>
-                    <span class="module-title">${item.parsed.moduleName}</span>
-                    <span class="card-progress-text" style="margin-left:auto;">${item.pct}%</span>
+                // Extrair a etapa ativa deste módulo específico
+                ensureCustomStages(item.project);
+                const itemActiveStage = item.project.customStages.find(s => s.status === 'active') || item.project.customStages[0];
+                let itemDaysDisplay = 0;
+                if (itemActiveStage && itemActiveStage.startDate) {
+                    const start = new Date(itemActiveStage.startDate);
+                    start.setHours(0, 0, 0, 0);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    itemDaysDisplay = Math.floor((today - start) / (1000 * 60 * 60 * 24));
+                    if (itemDaysDisplay < 0) itemDaysDisplay = 0;
+                }
+                
+                let itemDateStr = 'Sem prazo';
+                let dateColor = 'var(--text-muted)';
+                if (item.project.dueDate) {
+                    const diff = calculateDays(item.project.dueDate);
+                    if (diff === 0) {
+                        itemDateStr = `Hoje`;
+                        dateColor = 'var(--warning)';
+                    } else if (diff > 0) {
+                        itemDateStr = `${diff}d`;
+                        dateColor = 'var(--good)';
+                    } else {
+                        itemDateStr = `${Math.abs(diff)}d atrasado`;
+                        dateColor = 'var(--danger)';
+                    }
+                    itemDateStr = `${formatDateToPT(item.project.dueDate)} (${itemDateStr})`;
+                }
+                
+                const mCard = document.createElement('div');
+                mCard.className = `module-rich-card ${activeClass}`;
+                mCard.style.animationDelay = `${index * 50}ms`;
+                
+                mCard.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                        <h4 style="font-size: 1.1rem; font-weight: 600; color: var(--text-main); margin: 0; display: flex; align-items: center; gap: 0.4rem;">
+                            <i class="ph ph-cube" style="color: var(--primary);"></i> ${item.parsed.moduleName}
+                        </h4>
+                        <span style="font-size: 0.85rem; font-weight: 600; background: rgba(var(--primary-rgb), 0.1); color: var(--primary); padding: 0.2rem 0.5rem; border-radius: 1rem;">${item.pct}%</span>
+                    </div>
+                    <div style="font-size: 0.85rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.4rem;">
+                        <div style="display: flex; align-items: center; gap: 0.4rem;">
+                            <i class="ph ph-git-commit"></i> <span>Etapa: <strong style="color: var(--text-main);">${itemActiveStage ? itemActiveStage.title : 'N/A'}</strong></span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.4rem; color: ${dateColor};">
+                            <i class="ph ph-calendar-blank"></i> <span>Entrega: ${itemDateStr}</span>
+                        </div>
+                    </div>
                 `;
                 
-                balloon.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    backdrop.remove();
-                    popover.remove();
+                mCard.addEventListener('click', (ev) => {
+                    ev.stopPropagation();
+                    modulesModal.classList.add('hidden');
                     selectProject(item.project.id);
                 });
                 
-                popover.appendChild(balloon);
+                modulesModalGrid.appendChild(mCard);
             });
             
-            // Botão "+" Adicionar Módulo (apenas para APF)
+            // Botão "+" Adicionar Módulo (apenas ícone, para APF)
             if (isAPF) {
-                const addBalloon = document.createElement('div');
-                addBalloon.className = `module-balloon-card`;
-                addBalloon.style.animationDelay = `${group.projects.length * 50}ms`;
-                addBalloon.style.justifyContent = 'center';
-                addBalloon.style.border = '1px dashed var(--primary)';
-                addBalloon.style.background = 'rgba(var(--primary-rgb), 0.05)';
-                addBalloon.style.color = 'var(--primary)';
+                const addCard = document.createElement('div');
+                addCard.className = `module-rich-card add-module-card`;
+                addCard.style.animationDelay = `${group.projects.length * 50}ms`;
+                addCard.style.display = 'flex';
+                addCard.style.alignItems = 'center';
+                addCard.style.justifyContent = 'center';
+                addCard.style.border = '2px dashed var(--primary)';
+                addCard.style.background = 'rgba(var(--primary-rgb), 0.02)';
+                addCard.style.cursor = 'pointer';
+                addCard.style.minHeight = '100px';
                 
-                addBalloon.innerHTML = `
-                    <i class="ph ph-plus" style="font-size: 1.1rem;"></i>
-                    <span style="font-size: 0.8rem; font-weight: 600;">Adicionar Módulo</span>
+                addCard.innerHTML = `
+                    <i class="ph ph-plus" style="font-size: 2.5rem; color: var(--primary);"></i>
                 `;
                 
-                addBalloon.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    backdrop.remove();
-                    popover.remove();
+                addCard.addEventListener('click', (ev) => {
+                    ev.stopPropagation();
+                    modulesModal.classList.add('hidden');
                     
                     // Set the base ID for module creation
                     window.currentBaseProjectIdForModule = group.baseProjectId;
@@ -3264,10 +3308,11 @@ function renderTracking() {
                     if (newModuleModal) newModuleModal.classList.remove('hidden');
                     if (newModuleNameInp) setTimeout(() => newModuleNameInp.focus(), 100);
                 });
-                popover.appendChild(addBalloon);
+                
+                modulesModalGrid.appendChild(addCard);
             }
             
-            document.body.appendChild(popover);
+            modulesModal.classList.remove('hidden');
         });
 
         const progressPct = group.avgProgress;
