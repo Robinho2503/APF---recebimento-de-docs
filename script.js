@@ -3237,33 +3237,35 @@ function renderTracking() {
                 popover.appendChild(balloon);
             });
             
-            // Botão "+" Adicionar Módulo
-            const addBalloon = document.createElement('div');
-            addBalloon.className = `module-balloon-card`;
-            addBalloon.style.animationDelay = `${group.projects.length * 50}ms`;
-            addBalloon.style.justifyContent = 'center';
-            addBalloon.style.border = '1px dashed var(--primary)';
-            addBalloon.style.background = 'rgba(var(--primary-rgb), 0.05)';
-            addBalloon.style.color = 'var(--primary)';
-            
-            addBalloon.innerHTML = `
-                <i class="ph ph-plus" style="font-size: 1.1rem;"></i>
-                <span style="font-size: 0.8rem; font-weight: 600;">Adicionar Módulo</span>
-            `;
-            
-            addBalloon.addEventListener('click', (e) => {
-                e.stopPropagation();
-                backdrop.remove();
-                popover.remove();
+            // Botão "+" Adicionar Módulo (apenas para APF)
+            if (isAPF) {
+                const addBalloon = document.createElement('div');
+                addBalloon.className = `module-balloon-card`;
+                addBalloon.style.animationDelay = `${group.projects.length * 50}ms`;
+                addBalloon.style.justifyContent = 'center';
+                addBalloon.style.border = '1px dashed var(--primary)';
+                addBalloon.style.background = 'rgba(var(--primary-rgb), 0.05)';
+                addBalloon.style.color = 'var(--primary)';
                 
-                // Set the base ID for module creation
-                window.currentBaseProjectIdForModule = group.baseProjectId;
+                addBalloon.innerHTML = `
+                    <i class="ph ph-plus" style="font-size: 1.1rem;"></i>
+                    <span style="font-size: 0.8rem; font-weight: 600;">Adicionar Módulo</span>
+                `;
                 
-                if (newModuleNameInp) newModuleNameInp.value = '';
-                if (newModuleModal) newModuleModal.classList.remove('hidden');
-                if (newModuleNameInp) setTimeout(() => newModuleNameInp.focus(), 100);
-            });
-            popover.appendChild(addBalloon);
+                addBalloon.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    backdrop.remove();
+                    popover.remove();
+                    
+                    // Set the base ID for module creation
+                    window.currentBaseProjectIdForModule = group.baseProjectId;
+                    
+                    if (newModuleNameInp) newModuleNameInp.value = '';
+                    if (newModuleModal) newModuleModal.classList.remove('hidden');
+                    if (newModuleNameInp) setTimeout(() => newModuleNameInp.focus(), 100);
+                });
+                popover.appendChild(addBalloon);
+            }
             
             document.body.appendChild(popover);
         });
