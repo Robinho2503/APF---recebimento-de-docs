@@ -1498,6 +1498,42 @@ function initEventListeners() {
                     proj.cidade = city;
                     proj.dueDate = dueDate;
                     proj.isOle = isOle;
+                    
+                    // Sincronizar dados para todos os módulos do mesmo grupo
+                    let baseNameToSync;
+                    if (proj.parentProjectId) {
+                        const parent = state.projects.find(x => x.id === proj.parentProjectId);
+                        baseNameToSync = parent ? parseProjectName(parent.name).baseName : parseProjectName(proj.name).baseName;
+                    } else {
+                        baseNameToSync = parseProjectName(proj.name).baseName;
+                    }
+
+                    state.projects.forEach(p => {
+                        if (p.id === 'p_default') return;
+                        let pBase;
+                        if (p.parentProjectId) {
+                            const pParent = state.projects.find(x => x.id === p.parentProjectId);
+                            pBase = pParent ? parseProjectName(pParent.name).baseName : parseProjectName(p.name).baseName;
+                        } else {
+                            pBase = parseProjectName(p.name).baseName;
+                        }
+                        
+                        if (pBase === baseNameToSync && p.id !== proj.id) {
+                            p.uf = uf;
+                            p.cidade = city;
+                            p.dueDate = dueDate;
+                            p.isOle = isOle;
+                            // Se p for um filho de nova geração e proj for o pai, renomeamos o filho para refletir a mudança no pai?
+                            // Não precisa pois renderTracking usa o parseProjectName e herança visual.
+                            // Mas se eles mudarem o nome do pai, os filhos que foram gerados vão ficar com o nome antigo.
+                            // Vamos atualizar o nome do filho herdando o novo nome do pai
+                            if (p.parentProjectId === proj.id) {
+                                const childModule = parseProjectName(p.name).moduleName;
+                                p.name = `${parseProjectName(proj.name).baseName} - ${childModule}`;
+                            }
+                        }
+                    });
+
                     addAuditLog('Empreendimento Editado', `Os dados do empreendimento <strong>${name}</strong> foram atualizados.`, 'info');
                     showTemporaryMessage(`Empreendimento "${name}" atualizado com sucesso!`);
                 }
