@@ -3216,7 +3216,12 @@ function renderTracking() {
             modulesModalTitle.innerHTML = `<i class="ph ph-buildings"></i> ${group.baseName}`;
             modulesModalGrid.innerHTML = '';
             
-            group.projects.forEach((item, index) => {
+            // Organiza por ordem numérica do módulo
+            const sortedProjects = [...group.projects].sort((a, b) => {
+                return a.parsed.moduleName.localeCompare(b.parsed.moduleName, undefined, { numeric: true, sensitivity: 'base' });
+            });
+            
+            sortedProjects.forEach((item, index) => {
                 const isItemActive = item.project.id === localUI.currentProjectId;
                 const activeClass = isItemActive ? 'active-module' : '';
                 
@@ -3231,6 +3236,13 @@ function renderTracking() {
                     today.setHours(0, 0, 0, 0);
                     itemDaysDisplay = Math.floor((today - start) / (1000 * 60 * 60 * 24));
                     if (itemDaysDisplay < 0) itemDaysDisplay = 0;
+                }
+                
+                let stageIcon = 'ph-git-commit';
+                if (itemActiveStage) {
+                    if (itemActiveStage.type === 'doc_inicial') stageIcon = 'ph-folder-open';
+                    else if (itemActiveStage.type === 'analise_caixa') stageIcon = 'ph-bank';
+                    else if (itemActiveStage.type === 'pendencias') stageIcon = 'ph-warning-circle';
                 }
                 
                 let itemDateStr = 'Sem prazo';
@@ -3263,7 +3275,7 @@ function renderTracking() {
                     </div>
                     <div style="font-size: 0.85rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.4rem;">
                         <div style="display: flex; align-items: center; gap: 0.4rem;">
-                            <i class="ph ph-git-commit"></i> <span>Etapa: <strong style="color: var(--text-main);">${itemActiveStage ? itemActiveStage.title : 'N/A'}</strong></span>
+                            <i class="ph ${stageIcon}"></i> <span>Etapa: <strong style="color: var(--text-main);">${itemActiveStage ? itemActiveStage.title : 'N/A'}</strong></span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 0.4rem; color: ${dateColor};">
                             <i class="ph ph-calendar-blank"></i> <span>Entrega: ${itemDateStr}</span>
