@@ -1463,8 +1463,10 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
 
 /* Module Rich Card */
 .module-rich-card {
-    background: rgba(var(--primary-rgb), 0.05);
-    border: 1px solid rgba(var(--primary-rgb), 0.1);
+    background: rgba(30, 30, 30, 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 0.85rem;
     padding: 1.25rem;
     cursor: pointer;
@@ -1478,13 +1480,14 @@ h1, h2, h3 { color: var(--text-main); font-weight: 600; }
 .module-rich-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-    background: rgba(var(--primary-rgb), 0.1);
-    border-color: rgba(var(--primary-rgb), 0.25);
+    background: rgba(30, 30, 30, 0.6);
+    border-color: rgba(255, 255, 255, 0.2);
 }
 .module-rich-card:active { transform: scale(0.97); }
 .module-rich-card.active-module {
     border-color: var(--primary);
     background: rgba(var(--primary-rgb), 0.15);
+    box-shadow: 0 0 0 1px var(--primary);
 }
 
 .tracking-body { flex-grow: 1; display: flex; flex-direction: column; gap: 0.75rem; }

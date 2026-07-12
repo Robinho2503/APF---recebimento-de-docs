@@ -3274,37 +3274,7 @@ function renderTracking() {
                 modulesModalGrid.appendChild(mCard);
             });
             
-            // Botão "+" Adicionar Módulo (apenas ícone, para APF)
-            if (isAPF) {
-                const addCard = document.createElement('div');
-                addCard.className = `module-rich-card add-module-card`;
-                addCard.style.animationDelay = `${group.projects.length * 50}ms`;
-                addCard.style.display = 'flex';
-                addCard.style.alignItems = 'center';
-                addCard.style.justifyContent = 'center';
-                addCard.style.border = '2px dashed var(--primary)';
-                addCard.style.background = 'rgba(var(--primary-rgb), 0.02)';
-                addCard.style.cursor = 'pointer';
-                addCard.style.minHeight = '100px';
-                
-                addCard.innerHTML = `
-                    <i class="ph ph-plus" style="font-size: 2.5rem; color: var(--primary);"></i>
-                `;
-                
-                addCard.addEventListener('click', (ev) => {
-                    ev.stopPropagation();
-                    modulesModal.classList.add('hidden');
-                    
-                    // Set the base ID for module creation
-                    window.currentBaseProjectIdForModule = group.baseProjectId;
-                    
-                    if (newModuleNameInp) newModuleNameInp.value = '';
-                    if (newModuleModal) newModuleModal.classList.remove('hidden');
-                    if (newModuleNameInp) setTimeout(() => newModuleNameInp.focus(), 100);
-                });
-                
-                modulesModalGrid.appendChild(addCard);
-            }
+            // Removed the add module "+" card as requested
             
             modulesModal.classList.remove('hidden');
         });
