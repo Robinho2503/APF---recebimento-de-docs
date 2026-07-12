@@ -153,8 +153,8 @@ function listenToActiveDevices() {
                 <span class="pulse-dot"></span>
                 <span class="presence-text"><b>${activeDevicesCount}</b> dispositivos conectados</span>
             `;
-            // Só exibe se estiver na aba de gestão
-            indicator.style.display = isMgmtActive() ? 'flex' : 'none';
+            // Exibe globalmente no cabeçalho
+            indicator.style.display = 'flex';
         }
 
         updateGlobalDateUI();
