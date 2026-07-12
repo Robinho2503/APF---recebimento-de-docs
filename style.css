@@ -3632,21 +3632,23 @@ hr {
     top: calc(100% + 10px);
     left: 50%;
     transform: translateX(-50%) translateY(5px);
-    background: var(--bg-panel);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 0.75rem;
-    border-radius: 0.5rem;
-    z-index: 50;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-    min-width: 250px;
+    background: rgba(30, 30, 30, 0.98);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 1rem;
+    border-radius: 0.75rem;
+    z-index: 999;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05);
+    min-width: max-content;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: default;
 }
 
 .light-mode .step-date-popover {
-    background: var(--bg-surface);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    background: rgba(255, 255, 255, 0.98);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.15);
 }
 
 .step-date-popover::before {

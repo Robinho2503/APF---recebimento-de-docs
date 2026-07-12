@@ -2578,23 +2578,25 @@ function renderProjectStagesStepper(p) {
                 `;
             } else {
                 inputsHtml = `
-                    <div style="display: flex; flex-direction: column; gap: 0.15rem;">
-                        <label style="font-size: 0.55rem; text-transform: uppercase; color: var(--text-muted); opacity: 0.8; margin:0;">Início</label>
-                        <input type="date" class="step-date-input custom-stage-date-input" data-stage-id="${s.id}" value="${s.startDate || ''}" style="padding: 0.15rem 0.3rem; font-size: 0.7rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.3); color: var(--text-main); height: 22px; width: 105px;">
+                <div style="display: flex; gap: 0.75rem;">
+                    <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                        <label style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin:0; letter-spacing: 0.5px;">Início</label>
+                        <input type="date" class="step-date-input custom-stage-date-input" data-stage-id="${s.id}" value="${s.startDate || ''}" style="padding: 0.3rem 0.5rem; font-size: 0.75rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.4); color: var(--text-main); height: 28px; width: 115px; cursor: pointer;">
                     </div>
-                    <div style="display: flex; flex-direction: column; gap: 0.15rem;">
-                        <label style="font-size: 0.55rem; text-transform: uppercase; color: var(--text-muted); opacity: 0.8; margin:0;">Conclusão</label>
-                        <input type="date" class="step-date-input custom-stage-end-date" data-stage-id="${s.id}" value="${s.endDate || ''}" style="padding: 0.15rem 0.3rem; font-size: 0.7rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.3); color: var(--text-main); height: 22px; width: 105px;">
+                    <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                        <label style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin:0; letter-spacing: 0.5px;">Conclusão</label>
+                        <input type="date" class="step-date-input custom-stage-end-date" data-stage-id="${s.id}" value="${s.endDate || ''}" style="padding: 0.3rem 0.5rem; font-size: 0.75rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.4); color: var(--text-main); height: 28px; width: 115px; cursor: pointer;">
                     </div>
-                `;
+                </div>
+            `;
             }
 
             let transitionBtn = '';
             if (s.status !== 'active') {
                 transitionBtn = `
-                    <div style="display: flex; align-items: flex-end; padding-bottom: 0.05rem;">
-                        <button class="btn btn-outline" onclick="event.stopPropagation(); handleStageTransition('${s.id}')" style="padding: 0 0.5rem; font-size: 0.65rem; height: 22px; border-radius: 4px; border-color: rgba(var(--primary-rgb), 0.3);" title="Tornar esta etapa ativa">
-                            Ativar Etapa
+                    <div style="display: flex; align-items: flex-end;">
+                        <button class="btn btn-outline" onclick="event.stopPropagation(); handleStageTransition('${s.id}')" style="padding: 0 0.75rem; font-size: 0.75rem; height: 28px; border-radius: 6px; border-color: rgba(var(--primary-rgb), 0.5); font-weight: 600; white-space: nowrap;" title="Tornar esta etapa ativa">
+                            <i class="ph ph-play-circle" style="margin-right: 4px; font-size: 0.9rem;"></i> Ativar Etapa
                         </button>
                     </div>
                 `;
@@ -2602,7 +2604,7 @@ function renderProjectStagesStepper(p) {
 
             dateInputHTML = `
                 <div class="step-date-popover" id="date-wrapper-${s.id}" onclick="event.stopPropagation()">
-                    <div style="display: flex; gap: 0.4rem; justify-content: center; align-items: flex-end; flex-wrap: wrap;">
+                    <div style="display: flex; gap: 1rem; justify-content: center; align-items: flex-end;">
                         ${inputsHtml}
                         ${transitionBtn}
                     </div>
