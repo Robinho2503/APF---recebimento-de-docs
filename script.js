@@ -3154,7 +3154,35 @@ function renderTracking() {
             badgeText = '';
         }
         
-        let moduleCountBadge = group.projects.length > 1 ? `<span class="card-status-badge" style="background: rgba(var(--primary-rgb),0.1); color: var(--text-main); margin-left: 5px;">${group.projects.length} Módulos</span>` : '';
+        let dotsHTML = '';
+        if (group.projects.length > 1) {
+            const sortedProjects = [...group.projects].sort((a, b) => {
+                return a.parsed.moduleName.localeCompare(b.parsed.moduleName, undefined, { numeric: true, sensitivity: 'base' });
+            });
+            
+            sortedProjects.forEach(item => {
+                ensureCustomStages(item.project);
+                const itemActiveStage = item.project.customStages.find(s => s.status === 'active') || item.project.customStages[0];
+                let segColor = 'var(--divider-color)';
+                if (itemActiveStage) {
+                    if (itemActiveStage.type === 'analise_caixa') segColor = 'var(--info)';
+                    else if (itemActiveStage.type === 'pendencias') segColor = 'var(--danger)';
+                    else if (itemActiveStage.type === 'doc_inicial') {
+                        if (item.project.dueDate) {
+                            const diff = calculateDays(item.project.dueDate);
+                            if (diff < 0) segColor = 'var(--danger)';
+                            else if (diff <= 7) segColor = 'var(--warning)';
+                            else segColor = 'var(--primary)';
+                        } else {
+                            segColor = 'var(--primary)';
+                        }
+                    }
+                }
+                dotsHTML += `<span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:${segColor}; margin-left:3px;" title="${item.parsed.moduleName}: ${itemActiveStage ? itemActiveStage.title : ''}"></span>`;
+            });
+        }
+
+        let moduleCountBadge = group.projects.length > 1 ? `<span class="card-status-badge" style="background: rgba(var(--primary-rgb),0.1); color: var(--text-main); margin-left: 5px; display: flex; align-items: center;">${group.projects.length} MÓDULOS <div style="margin-left:4px; display:flex;">${dotsHTML}</div></span>` : '';
 
         card.style.setProperty('--indicator-color', indicatorColor);
 
@@ -3323,34 +3351,7 @@ function renderTracking() {
             `;
         }
 
-        let segmentsHTML = '';
-        if (group.projects.length > 1) {
-            const segmentWidth = 100 / group.projects.length;
-            const sortedProjects = [...group.projects].sort((a, b) => {
-                return a.parsed.moduleName.localeCompare(b.parsed.moduleName, undefined, { numeric: true, sensitivity: 'base' });
-            });
-            
-            sortedProjects.forEach(item => {
-                ensureCustomStages(item.project);
-                const itemActiveStage = item.project.customStages.find(s => s.status === 'active') || item.project.customStages[0];
-                let segColor = 'var(--divider-color)';
-                if (itemActiveStage) {
-                    if (itemActiveStage.type === 'analise_caixa') segColor = 'var(--info)';
-                    else if (itemActiveStage.type === 'pendencias') segColor = 'var(--danger)';
-                    else if (itemActiveStage.type === 'doc_inicial') {
-                        if (item.project.dueDate) {
-                            const diff = calculateDays(item.project.dueDate);
-                            if (diff < 0) segColor = 'var(--danger)';
-                            else if (diff <= 7) segColor = 'var(--warning)';
-                            else segColor = 'var(--primary)';
-                        } else {
-                            segColor = 'var(--primary)';
-                        }
-                    }
-                }
-                segmentsHTML += `<div style="width: ${segmentWidth}%; background: ${segColor}; border-right: 1px solid var(--dashboard-card-bg);" title="${item.parsed.moduleName}: ${itemActiveStage ? itemActiveStage.title : ''}"></div>`;
-            });
-        }
+        // (segmentsHTML logic moved to dotsHTML earlier)
 
         card.innerHTML = `
             <div class="card-left-section">
@@ -3372,10 +3373,6 @@ function renderTracking() {
                     ${footerInfoHTML}
                 </div>
                 <div style="margin-top: auto; display: flex; flex-direction: column; gap: 0.3rem;">
-                    ${segmentsHTML ? `
-                    <div style="display: flex; width: calc(100% - 2.5rem); height: 4px; border-radius: 2px; overflow: hidden; opacity: 0.9;" title="Status dos Módulos">
-                        ${segmentsHTML}
-                    </div>` : ''}
                     ${!isCaixaAnalysis ? `
                     <div class="card-progress-row" style="margin-top: 0;">
                         <div class="card-progress-bar-container">
