@@ -3279,39 +3279,74 @@ function renderTracking() {
             modulesModal.classList.remove('hidden');
         });
 
-        const progressPct = group.avgProgress;
-        const isCaixaAnalysis = activeStage && activeStage.type === 'analise_caixa';
+        let nearestDate = null;
+        let nearestDiff = Infinity;
+        group.projects.forEach(item => {
+            if (item.project.dueDate) {
+                const diff = calculateDays(item.project.dueDate);
+                if (nearestDate === null || item.project.dueDate < nearestDate) {
+                    nearestDate = item.project.dueDate;
+                    nearestDiff = diff;
+                }
+            }
+        });
 
         let footerInfoHTML = '';
-        if (activeStage.type === 'doc_inicial') {
-            if (group.dueDate) {
-                const diff = calculateDays(group.dueDate);
-                let prazoDesc = '';
-                let pColorClass = 'good';
-                if (diff === 0) {
-                    prazoDesc = 'Hoje';
-                    pColorClass = 'warning';
-                } else if (diff > 0) {
-                    prazoDesc = `${diff}d`;
-                    pColorClass = 'good';
-                } else {
-                    prazoDesc = `${Math.abs(diff)}d atrasado`;
-                    pColorClass = 'danger';
-                }
-                footerInfoHTML = `
-                    <div class="card-footer-item ${pColorClass}">
-                        <i class="ph ph-calendar-blank"></i>
-                        <span>${formatDateToPT(group.dueDate)} (${prazoDesc})</span>
-                    </div>
-                `;
+        if (nearestDate) {
+            let prazoDesc = '';
+            let pColorClass = 'good';
+            if (nearestDiff === 0) {
+                prazoDesc = 'Hoje';
+                pColorClass = 'warning';
+            } else if (nearestDiff < 0) {
+                prazoDesc = `${Math.abs(nearestDiff)}d atrasado`;
+                pColorClass = 'danger';
             } else {
-                footerInfoHTML = `
-                    <div class="card-footer-item muted">
-                        <i class="ph ph-calendar-blank"></i>
-                        <span>Sem prazo</span>
-                    </div>
-                `;
+                prazoDesc = `${nearestDiff}d`;
+                pColorClass = 'good';
             }
+            footerInfoHTML = `
+                <div class="card-footer-item ${pColorClass}" title="Próxima entrega entre todos os módulos">
+                    <i class="ph ph-calendar-blank"></i>
+                    <span>Entrega: ${formatDateToPT(nearestDate)} (${prazoDesc})</span>
+                </div>
+            `;
+        } else {
+            footerInfoHTML = `
+                <div class="card-footer-item muted" title="Nenhum prazo definido nos módulos">
+                    <i class="ph ph-calendar-blank"></i>
+                    <span>Sem prazo</span>
+                </div>
+            `;
+        }
+
+        let segmentsHTML = '';
+        if (group.projects.length > 1) {
+            const segmentWidth = 100 / group.projects.length;
+            const sortedProjects = [...group.projects].sort((a, b) => {
+                return a.parsed.moduleName.localeCompare(b.parsed.moduleName, undefined, { numeric: true, sensitivity: 'base' });
+            });
+            
+            sortedProjects.forEach(item => {
+                ensureCustomStages(item.project);
+                const itemActiveStage = item.project.customStages.find(s => s.status === 'active') || item.project.customStages[0];
+                let segColor = 'var(--divider-color)';
+                if (itemActiveStage) {
+                    if (itemActiveStage.type === 'analise_caixa') segColor = 'var(--info)';
+                    else if (itemActiveStage.type === 'pendencias') segColor = 'var(--danger)';
+                    else if (itemActiveStage.type === 'doc_inicial') {
+                        if (item.project.dueDate) {
+                            const diff = calculateDays(item.project.dueDate);
+                            if (diff < 0) segColor = 'var(--danger)';
+                            else if (diff <= 7) segColor = 'var(--warning)';
+                            else segColor = 'var(--primary)';
+                        } else {
+                            segColor = 'var(--primary)';
+                        }
+                    }
+                }
+                segmentsHTML += `<div style="width: ${segmentWidth}%; background: ${segColor}; border-right: 1px solid var(--dashboard-card-bg);" title="${item.parsed.moduleName}: ${itemActiveStage ? itemActiveStage.title : ''}"></div>`;
+            });
         }
 
         card.innerHTML = `
@@ -3333,13 +3368,19 @@ function renderTracking() {
                     </div>` : ''}
                     ${footerInfoHTML}
                 </div>
-                ${!isCaixaAnalysis ? `
-                <div class="card-progress-row">
-                    <div class="card-progress-bar-container">
-                        <div class="card-progress-bar" style="width: ${progressPct}%; background: ${progressPct === 100 ? 'var(--accent)' : 'var(--primary)'};"></div>
-                    </div>
-                    <span class="card-progress-text">${progressPct}%</span>
-                </div>` : ''}
+                <div style="margin-top: auto; display: flex; flex-direction: column; gap: 0.3rem;">
+                    ${segmentsHTML ? `
+                    <div style="display: flex; width: calc(100% - 2.5rem); height: 4px; border-radius: 2px; overflow: hidden; opacity: 0.9;" title="Status dos Módulos">
+                        ${segmentsHTML}
+                    </div>` : ''}
+                    ${!isCaixaAnalysis ? `
+                    <div class="card-progress-row" style="margin-top: 0;">
+                        <div class="card-progress-bar-container">
+                            <div class="card-progress-bar" style="width: ${progressPct}%; background: ${progressPct === 100 ? 'var(--accent)' : 'var(--primary)'};"></div>
+                        </div>
+                        <span class="card-progress-text">${progressPct}%</span>
+                    </div>` : ''}
+                </div>
             </div>
         `;
         trackingContainer.appendChild(card);
