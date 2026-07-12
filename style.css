@@ -3550,11 +3550,11 @@ hr {
 .step-item {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.4rem;
     flex: 1 1 0;
-    min-width: 120px;
+    min-width: 100px;
     position: relative;
-    padding: 0.6rem 0.85rem;
+    padding: 0.4rem 0.6rem;
     border-radius: 0.75rem;
     background: rgba(var(--primary-rgb), 0.05);
     border: 1px solid rgba(var(--primary-rgb), 0.05);
@@ -3572,13 +3572,13 @@ hr {
 }
 
 .step-icon-circle {
-    width: 2.2rem;
-    height: 2.2rem;
+    width: 1.8rem;
+    height: 1.8rem;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.1rem;
+    font-size: 0.9rem;
     background: rgba(var(--primary-rgb), 0.05);
     border: 1.5px solid rgba(var(--primary-rgb), 0.05);
     color: var(--text-muted);
@@ -3594,7 +3594,7 @@ hr {
 }
 
 .step-title {
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     font-weight: 700;
     color: var(--text-muted);
     text-transform: uppercase;
@@ -3618,6 +3618,55 @@ hr {
 }
 
 .step-item.expanded .step-date-wrapper {
+    display: block;
+    opacity: 1;
+    animation: fadeInDown 0.2s ease forwards;
+}
+
+/* Popover de datas (super compacto) */
+.step-date-popover {
+    display: none;
+    opacity: 0;
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-panel);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    z-index: 50;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    min-width: 250px;
+    transition: all 0.2s ease;
+    cursor: default;
+}
+
+.light-mode .step-date-popover {
+    background: var(--bg-surface);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.step-date-popover::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    width: 12px;
+    height: 12px;
+    background: inherit;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.light-mode .step-date-popover::before {
+    border-left: 1px solid rgba(0, 0, 0, 0.1);
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.step-item.expanded .step-date-popover {
     display: block;
     opacity: 1;
     animation: fadeInDown 0.2s ease forwards;

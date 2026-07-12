@@ -2601,8 +2601,8 @@ function renderProjectStagesStepper(p) {
             }
 
             dateInputHTML = `
-                <div class="step-date-wrapper" id="date-wrapper-${s.id}" onclick="event.stopPropagation()">
-                    <div style="display: flex; gap: 0.4rem; margin-top: 0.5rem; justify-content: flex-start; align-items: stretch; flex-wrap: wrap;">
+                <div class="step-date-popover" id="date-wrapper-${s.id}" onclick="event.stopPropagation()">
+                    <div style="display: flex; gap: 0.4rem; justify-content: center; align-items: flex-end; flex-wrap: wrap;">
                         ${inputsHtml}
                         ${transitionBtn}
                     </div>
