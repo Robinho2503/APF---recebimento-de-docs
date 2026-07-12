@@ -3279,6 +3279,9 @@ function renderTracking() {
             modulesModal.classList.remove('hidden');
         });
 
+        const progressPct = group.avgProgress;
+        const isCaixaAnalysis = activeStage && activeStage.type === 'analise_caixa';
+
         let nearestDate = null;
         let nearestDiff = Infinity;
         group.projects.forEach(item => {
