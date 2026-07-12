@@ -910,7 +910,7 @@ let btnSettings, btnSaveSettings, btnResetModel, geminiModelInp, geminiKeyInp, b
 let btnTogglePendencias, pendenciasMgmtPanel, btnAddPendencia, btnGenerateOficio, pendenciaStartDateInp, modalOverlay, btnCloseModal;
 let engAnalysisMgmtPanel, engAnalysisStartDateInp;
 let btnShowHistory, historyModal, btnCloseHistory;
-let projectDueDateInp, projectGlobalCountdown, headerLocationInfo;
+let projectDueDateInp, headerLocationInfo;
 let globalLogin, loginSector;
 let btnLogout, topAuthInfo, authNavTabs, btnLoginThemeToggle;
 let sidebarBackdrop;
@@ -998,8 +998,6 @@ function initDOMElements() {
 
     // Inputs
     projectDueDateInp = document.getElementById('project-due-date');
-
-    projectGlobalCountdown = document.getElementById('project-global-countdown');
 
     // History Modal
     btnShowHistory = document.getElementById('btn-show-history');
@@ -2333,7 +2331,6 @@ function updateGlobalDateUI() {
         if (btnRenameProject) btnRenameProject.style.display = 'none';
         if (btnDeleteProject) btnDeleteProject.style.display = 'none';
         if (dueDateContainer) dueDateContainer.style.display = 'none';
-        if (projectGlobalCountdown) projectGlobalCountdown.style.display = 'none';
         if (headerLocationInfo) headerLocationInfo.style.display = 'none';
 
         // Reseta filtro no modelo
@@ -2385,97 +2382,22 @@ function updateGlobalDateUI() {
     if (dueDateContainer) dueDateContainer.style.display = 'none';
     if (projectDueDateInp) { projectDueDateInp.disabled = !isAPF; projectDueDateInp.value = p.dueDate || ''; }
 
+    const btnToggleEngId = 'btn-toggle-eng';
+    const btnToggleEngEl = document.getElementById(btnToggleEngId);
+    if (btnToggleEngEl) {
+        btnToggleEngEl.style.display = 'none';
+    }
+
+    const btnTogglePendenciasId = 'btn-toggle-pendencias';
+    const btnTogglePendenciasEl = document.getElementById(btnTogglePendenciasId);
+    if (btnTogglePendenciasEl) {
+        btnTogglePendenciasEl.style.display = 'none';
+    }
+
     // RENDERIZAR PAINEL UNIFICADO
     console.log('Rendering unified dashboard for:', p.name);
     updateProjectProgressUI(p);
 
-    // Lógica Dinâmica de Contador no Cabeçalho (Relógio)
-    if (projectGlobalCountdown) {
-        let countdownHTML = '';
-        let countdownColor = '';
-        let showCountdown = false;
-
-        if (p.pendenciaActive) {
-            const start = p.pendenciaStartDate ? new Date(p.pendenciaStartDate) : new Date();
-            start.setHours(0, 0, 0, 0);
-            const today = new Date(); today.setHours(0, 0, 0, 0);
-            const diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
-            countdownHTML = `<i class="ph ph-clock"></i> Em resolução a ${diff >= 0 ? diff : 0} dias`;
-            countdownColor = 'var(--danger)';
-            showCountdown = true;
-        } else if (p.engAnalysisOpened) {
-            const start = p.engAnalysisStartDate ? new Date(p.engAnalysisStartDate) : new Date();
-            start.setHours(0, 0, 0, 0);
-            const today = new Date(); today.setHours(0, 0, 0, 0);
-            const diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
-            countdownHTML = `<i class="ph ph-clock"></i> Em análise a ${diff >= 0 ? diff : 0} dias`;
-            countdownColor = 'var(--info)';
-            showCountdown = true;
-        } else if (p.dueDate) {
-            const bizDays = calculateBusinessDays(p.dueDate);
-            const diff = calculateDays(p.dueDate);
-            const isExpired = new Date(p.dueDate) < new Date().setHours(0, 0, 0, 0);
-            if (isExpired) {
-                countdownHTML = `<i class="ph ph-warning-circle"></i> Atrasado ${Math.abs(diff)} dia(s)`;
-                countdownColor = 'var(--danger)';
-            } else {
-                countdownHTML = `<i class="ph ph-clock"></i> ${bizDays} dias úteis restantes`;
-                countdownColor = bizDays <= 5 ? 'var(--warning)' : 'var(--accent)';
-            }
-            showCountdown = true;
-        }
-
-        if (showCountdown) {
-            projectGlobalCountdown.innerHTML = countdownHTML;
-            projectGlobalCountdown.style.color = countdownColor;
-            projectGlobalCountdown.style.display = 'block';
-        } else {
-            projectGlobalCountdown.style.display = 'none';
-        }
-    }
-
-    // Análise CAIXA?
-    const btnToggleEngId = 'btn-toggle-eng';
-    const btnToggleEngEl = document.getElementById(btnToggleEngId);
-
-    if (p.engAnalysisOpened) {
-        let daysDisplay = 0;
-        if (p.engAnalysisStartDate) {
-            const start = new Date(p.engAnalysisStartDate);
-            start.setHours(0, 0, 0, 0);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
-            daysDisplay = diff >= 0 ? diff : 0;
-        }
-
-        const label = `Análise CAIXA │ ${daysDisplay} dias`;
-        if (btnToggleEngEl) {
-            btnToggleEngEl.innerHTML = `<i class="ph ph-calendar"></i> ${label}`;
-            btnToggleEngEl.className = 'btn';
-            btnToggleEngEl.style.backgroundColor = 'rgba(96, 165, 250, 0.1)';
-            btnToggleEngEl.style.color = 'var(--info)';
-            btnToggleEngEl.style.borderColor = 'var(--info)';
-        }
-        if (engAnalysisMgmtPanel) {
-            engAnalysisMgmtPanel.classList.remove('hidden');
-        }
-        if (engAnalysisStartDateInp) {
-            engAnalysisStartDateInp.value = p.engAnalysisStartDate || '';
-        }
-        // O contador global (relógio) agora é gerenciado dinamicamente no início da função
-    } else {
-        if (btnToggleEngEl) {
-            btnToggleEngEl.innerHTML = '<i class="ph ph-calendar"></i> Abrir Engenharia';
-            btnToggleEngEl.className = 'btn btn-outline';
-            btnToggleEngEl.style.backgroundColor = '';
-            btnToggleEngEl.style.color = '';
-            btnToggleEngEl.style.borderColor = '';
-        }
-        if (engAnalysisMgmtPanel) {
-            engAnalysisMgmtPanel.classList.add('hidden');
-        }
-    }
 
     renderProjectStagesStepper(p);
 }
