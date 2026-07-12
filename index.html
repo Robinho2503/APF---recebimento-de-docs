@@ -83,7 +83,8 @@
                 <span id="top-bar-title-text" class="top-bar-title">ENTREGAS PREVISTAS</span>
             </div>
             
-            <div class="top-bar-right">
+            <div class="top-bar-right" style="display: flex; align-items: center; gap: 0.75rem;">
+                <div id="presence-indicator" class="presence-indicator"></div>
                 <div id="top-auth-info" class="top-auth-info" style="display: none;"></div>
                 <div id="auth-nav-tabs" class="auth-nav-tabs">
                     <span class="tab-btn-static" data-tab="management">Administração</span>
@@ -159,11 +160,7 @@
 
             <!-- Conteúdo Real (Abas, Checklist, Análise) -->
             <div id="main-content-wrapper" style="display: none;">
-                <div class="flex-between mb-2" style="justify-content: flex-end;">
-                    <div style="display: flex; gap: 0.5rem; align-items: center; position: relative;">
-                        <div id="presence-indicator" class="presence-indicator"></div>
-                    </div>
-                </div>
+
 
                 <!-- Unified Project Header Bar (Integrated Deck) -->
             <div id="unified-header-deck" class="glass-panel" style="display: none; flex-direction: column; padding: 1.25rem 1.75rem; gap: 1.25rem; border-radius: 1.25rem; margin: 1rem 0 2rem; background: var(--panel-bg); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 12px 40px rgba(0,0,0,0.3);">
