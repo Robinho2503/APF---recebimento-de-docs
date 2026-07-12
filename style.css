@@ -3611,6 +3611,18 @@ hr {
     text-overflow: ellipsis;
 }
 
+.step-date-wrapper {
+    display: none;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.step-item.expanded .step-date-wrapper {
+    display: block;
+    opacity: 1;
+    animation: fadeInDown 0.2s ease forwards;
+}
+
 /* Conectores */
 .step-line {
     height: 2px;

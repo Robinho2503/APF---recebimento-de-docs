@@ -2560,43 +2560,58 @@ function renderProjectStagesStepper(p) {
         // Estilos customizados de variáveis CSS para o estado ativo
         const styleVars = `style="--step-color: ${color}; --step-color-rgb: ${colorRgb};"`;
 
+        let expandedClass = s.status === 'active' ? 'expanded' : '';
+
         let dateInputHTML = '';
         if (isAPF) {
+            let inputsHtml = '';
             if (s.type === 'doc_inicial') {
-                dateInputHTML = `
-                    <div class="step-date-wrapper" onclick="event.stopPropagation()">
-                        <div style="display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.5rem; width: 100%;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
-                                <label class="step-date-label" style="margin: 0; text-transform: uppercase; font-size: 0.65rem;">Previsão (Geral)</label>
-                                <input type="date" class="step-date-input" value="${p.dueDate || ''}" disabled title="Preenchido na aba Acesso APF" style="padding: 0.1rem 0.2rem; font-size: 0.75rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: var(--text-main); height: 22px; width: 110px;">
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
-                                <label class="step-date-label" style="margin: 0; text-transform: uppercase; font-size: 0.65rem;">Realizada</label>
-                                <input type="date" class="step-date-input custom-stage-end-date" data-stage-id="${s.id}" value="${s.endDate || ''}" style="padding: 0.1rem 0.2rem; font-size: 0.75rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: var(--text-main); height: 22px; width: 110px;">
-                            </div>
-                        </div>
+                inputsHtml = `
+                    <div style="display: flex; flex-direction: column; gap: 0.15rem;">
+                        <label style="font-size: 0.55rem; text-transform: uppercase; color: var(--text-muted); opacity: 0.8; margin:0;">Previsão</label>
+                        <input type="date" class="step-date-input" value="${p.dueDate || ''}" disabled title="Preenchido na aba Acesso APF" style="padding: 0.15rem 0.3rem; font-size: 0.7rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.3); color: var(--text-main); height: 22px; width: 105px;">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.15rem;">
+                        <label style="font-size: 0.55rem; text-transform: uppercase; color: var(--text-muted); opacity: 0.8; margin:0;">Realizada</label>
+                        <input type="date" class="step-date-input custom-stage-end-date" data-stage-id="${s.id}" value="${s.endDate || ''}" style="padding: 0.15rem 0.3rem; font-size: 0.7rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.3); color: var(--text-main); height: 22px; width: 105px;">
                     </div>
                 `;
-            } else if (s.type === 'analise_caixa' || s.type === 'pendencias') {
-                dateInputHTML = `
-                    <div class="step-date-wrapper" onclick="event.stopPropagation()">
-                        <div style="display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.5rem; width: 100%;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
-                                <label class="step-date-label" style="margin: 0; text-transform: uppercase; font-size: 0.65rem;">Início</label>
-                                <input type="date" class="step-date-input custom-stage-date-input" data-stage-id="${s.id}" value="${s.startDate || ''}" style="padding: 0.1rem 0.2rem; font-size: 0.75rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: var(--text-main); height: 22px; width: 110px;">
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
-                                <label class="step-date-label" style="margin: 0; text-transform: uppercase; font-size: 0.65rem;">Conclusão</label>
-                                <input type="date" class="step-date-input custom-stage-end-date" data-stage-id="${s.id}" value="${s.endDate || ''}" style="padding: 0.1rem 0.2rem; font-size: 0.75rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: var(--text-main); height: 22px; width: 110px;">
-                            </div>
-                        </div>
+            } else {
+                inputsHtml = `
+                    <div style="display: flex; flex-direction: column; gap: 0.15rem;">
+                        <label style="font-size: 0.55rem; text-transform: uppercase; color: var(--text-muted); opacity: 0.8; margin:0;">Início</label>
+                        <input type="date" class="step-date-input custom-stage-date-input" data-stage-id="${s.id}" value="${s.startDate || ''}" style="padding: 0.15rem 0.3rem; font-size: 0.7rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.3); color: var(--text-main); height: 22px; width: 105px;">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.15rem;">
+                        <label style="font-size: 0.55rem; text-transform: uppercase; color: var(--text-muted); opacity: 0.8; margin:0;">Conclusão</label>
+                        <input type="date" class="step-date-input custom-stage-end-date" data-stage-id="${s.id}" value="${s.endDate || ''}" style="padding: 0.15rem 0.3rem; font-size: 0.7rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.3); color: var(--text-main); height: 22px; width: 105px;">
                     </div>
                 `;
             }
+
+            let transitionBtn = '';
+            if (s.status !== 'active') {
+                transitionBtn = `
+                    <div style="display: flex; align-items: flex-end; padding-bottom: 0.05rem;">
+                        <button class="btn btn-outline" onclick="event.stopPropagation(); handleStageTransition('${s.id}')" style="padding: 0 0.5rem; font-size: 0.65rem; height: 22px; border-radius: 4px; border-color: rgba(var(--primary-rgb), 0.3);" title="Tornar esta etapa ativa">
+                            Ativar Etapa
+                        </button>
+                    </div>
+                `;
+            }
+
+            dateInputHTML = `
+                <div class="step-date-wrapper" id="date-wrapper-${s.id}" onclick="event.stopPropagation()">
+                    <div style="display: flex; gap: 0.4rem; margin-top: 0.5rem; justify-content: flex-start; align-items: stretch; flex-wrap: wrap;">
+                        ${inputsHtml}
+                        ${transitionBtn}
+                    </div>
+                </div>
+            `;
         }
 
         html += `
-            <div class="step-item ${stateClass} ${clickableClass}" ${styleVars} onclick="handleStageTransition('${s.id}')">
+            <div class="step-item ${stateClass} ${clickableClass} ${expandedClass}" id="step-item-${s.id}" ${styleVars} onclick="toggleStageAccordion('${s.id}', event)">
                 ${isAPF && idx > 2 ? `
                     <button class="step-delete-btn" onclick="event.stopPropagation(); handleDeleteCustomStage('${s.id}')" title="Excluir esta etapa">
                         <i class="ph ph-x"></i>
@@ -2693,6 +2708,18 @@ function renderProjectStagesStepper(p) {
         };
     }
 }
+
+window.toggleStageAccordion = function(stageId, event) {
+    if(event) event.stopPropagation();
+    const allItems = document.querySelectorAll('.step-item');
+    allItems.forEach(el => {
+        if (el.id === `step-item-${stageId}`) {
+            el.classList.toggle('expanded');
+        } else {
+            el.classList.remove('expanded');
+        }
+    });
+};
 
 // Handler para transição de estágios
 window.handleStageTransition = function(targetStageId) {
