@@ -3275,7 +3275,7 @@ function renderTracking() {
                     </div>
                     <div style="font-size: 0.85rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.4rem;">
                         <div style="display: flex; align-items: center; gap: 0.4rem;">
-                            <i class="ph ${stageIcon}"></i> <span><strong style="color: var(--text-main);">${itemActiveStage ? itemActiveStage.title : 'N/A'}</strong></span>
+                            <i class="ph ${stageIcon}"></i> <span><strong style="color: var(--text-main);">${itemActiveStage ? itemActiveStage.title : 'N/A'}</strong> <span style="font-size: 0.75rem; opacity: 0.8; font-weight: normal;">(há ${itemDaysDisplay} ${itemDaysDisplay === 1 ? 'dia' : 'dias'})</span></span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 0.4rem; color: ${dateColor};">
                             <i class="ph ph-calendar-blank"></i> <span>Entrega: ${itemDateStr}</span>
