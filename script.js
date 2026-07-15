@@ -3564,13 +3564,20 @@ function generateOficioWord() {
 
     let tableRows = '';
     currentProject.pendencias.forEach((p, index) => {
-        const num = index + 1;
+        const num = String(index + 1).padStart(2, '0');
         tableRows += `
-            <div style="margin-bottom: 25px; font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.5;">
-                <p style="margin: 0 0 5px 0; font-weight: bold;">${num}. ${p.docName || 'Documento'}</p>
-                <p style="margin: 0 0 10px 20px; color: #555555; font-style: italic;">${p.specification || ''}</p>
-                <p style="margin: 0 0 5px 20px; font-weight: bold;">Resolução:</p>
-                <p style="margin: 0 0 20px 20px;"><br><br><br></p>
+            <div style="margin-bottom: 30px; font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.5;">
+                <h3 style="font-size: 12pt; color: #1a365d; margin: 0 0 10px 0; border-bottom: 1px solid #1a365d; padding-bottom: 5px; font-weight: bold; text-transform: uppercase;">
+                    ITEM ${num} - ${p.docName || 'Documento'}
+                </h3>
+                <p style="margin: 8px 0; color: #4a5568;">
+                    <strong>Pendência:</strong> ${p.specification || ''}
+                </p>
+                <p style="margin: 15px 0 5px 0; font-weight: bold;">
+                    Resolução:
+                </p>
+                <p style="margin: 0 0 20px 0;"><br><br><br></p>
+                <div style="border-top: 1px dashed #cbd5e0; height: 1px; margin: 20px 0;"></div>
             </div>
         `;
     });
