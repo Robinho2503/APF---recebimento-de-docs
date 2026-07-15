@@ -3566,22 +3566,12 @@ function generateOficioWord() {
     currentProject.pendencias.forEach((p, index) => {
         const num = index + 1;
         tableRows += `
-            <table style="border-collapse: collapse; width: 100%; margin-bottom: 20px; font-family: Arial, sans-serif; font-size: 11pt;">
-                <tr>
-                    <td style="border: 1px solid #000; padding: 8px; width: 5%; vertical-align: top; text-align: center;">
-                        <strong>${num}</strong>
-                    </td>
-                    <td style="border: 1px solid #000; padding: 8px; width: 95%; vertical-align: top; text-align: justify;">
-                        <strong>${p.docName || 'Documento'}</strong><br><br>
-                        <span style="color: #555555;">${p.specification || ''}</span>
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="2" style="border: 1px solid #000; padding: 8px; vertical-align: top;">
-                        <strong>Resolução:</strong><br><br><br><br><br>
-                    </td>
-                </tr>
-            </table>
+            <div style="margin-bottom: 25px; font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.5;">
+                <p style="margin: 0 0 5px 0; font-weight: bold;">${num}. ${p.docName || 'Documento'}</p>
+                <p style="margin: 0 0 10px 20px; color: #555555; font-style: italic;">${p.specification || ''}</p>
+                <p style="margin: 0 0 5px 20px; font-weight: bold;">Resolução:</p>
+                <p style="margin: 0 0 20px 20px;"><br><br><br></p>
+            </div>
         `;
     });
 
